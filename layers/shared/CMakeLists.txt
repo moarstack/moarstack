@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 project(libmoar_shared) 
 
 set(LIBRARY_OUTPUT_PATH ../../lib)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 file(GLOB SRC_FILES
     "src/*.c"

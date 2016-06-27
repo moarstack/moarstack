@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(moarlayers)
 
-set(LIBRARY_OUTPUT_PATH ../lib)
+#set(LIBRARY_OUTPUT_PATH ../lib)
 
 set(curdir ${CMAKE_CURRENT_SOURCE_DIR})
 FILE(GLOB children ${curdir}/*)

@@ -1,20 +1,23 @@
-#M.O.A.R. stack#
+M.O.A.R. stack
+==============
 
-##General##
+General
+-------
 
-###Name###
+### Name ###
 
 M.O.A.R. - Mesh-Oriented Area Routing, created by **\[censored\] team**. M.O.A.R. stack is a full stack of protocols implemeting base ideas of that routing. Names "MOAR stack", "MOARstack" or even just "MOAR" are also available and means "M.O.A.R. stack" in most cases. 
 
-###Description###
+### Description ###
 
 M.O.A.R stack provides way of connecting with unlimited count of devices when no predefined routes are presented and even no special routers exist within the whole network. Actually, M.O.A.R. stack makes any node within the network be a kind of router. Due to no need in predefined structure, the whole network can easily change its topology, and the only aftermath will be the need to find new routes by every involved node.
 
 Current implementation of M.O.A.R. stack is made with C99 (ANSI C99) standard of C language and aims Linux systems with kernel of 2.6 version or later.
 
-##Structure##
+Structure
+---------
 
-###Logical structure###
+### Logical structure ###
 
 M.O.A.R. stack logical structure contains several layers (sometime also called levels):
 
@@ -26,7 +29,7 @@ M.O.A.R. stack logical structure contains several layers (sometime also called l
 
 Layers are presented above in the order from the closest to the hardware (interface) to the most abstract (service).
 
-###Directories structure###
+### Directories structure ###
 
 Most of directories in the M.O.A.R. stack repository have their own purposes:
 
@@ -38,17 +41,19 @@ Most of directories in the M.O.A.R. stack repository have their own purposes:
 * `moard` - sources and headers, gathering all the layers into the linux daemon.
 * `tools` - sources and headers of additional service programms using M.O.A.R. stack or to be used with M.O.A.R. stack.
 
-##Tools##
+Tools
+-----
 
 There are no tools implemented yet, but creating of at least one is planned:
 
-###Ping###
+### Ping ###
 
 Program to check accessibility of node specified by its address. Sends special packets with some interval, receives replies and gathers statistics about delivering these packets.
 
-##Copyright##
+Copyright
+---------
 
-###License###
+### License ###
 
 License for M.O.A.R. stack is not specified yet, but this issue is under active work. Next points should be accomplished with license for M.O.A.R. stack:
 
@@ -60,6 +65,6 @@ License for M.O.A.R. stack is not specified yet, but this issue is under active 
 
 NOTE: "To compose" in above text means "to use by linkage with - both static or dynamic - or by copying and possible modifying of source code - both partially or the whole".
 
-###Copyright holder###
+### Copyright holder ###
 
 No matter of license type, author of MOAR is **\[censored\] team**, and rights to decide how to deal with project and what license to use belongs to the **\[censored\] team**.

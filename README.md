@@ -57,13 +57,14 @@ Copyright
 
 License for M.O.A.R. stack is not specified yet, but this issue is under active work. Next points should be accomplished with license for M.O.A.R. stack:
 
-1. Permission to compose MOAR with proprietary projects (for example, to use proprietary WiFi drivers and so on).
-2. Permission to compose open source projects with MOAR (for example, to include MOAR into Linux kernel).
-3. Permission to run derivative proprietary or open source projects by composing them with MOAR.
-4. Permission to compose MOAR with any derivative project with licensing MOAR under the same (as current) license with no breaking of derivative product license.
-5. In order to keep compatibility of points 3 and 4 derivative product should have notification that it is using MOAR and about the related MOAR license (including the version information, both for MOAR and its license).
+1. MOAR is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement; in no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
+2. Permission to compose MOAR with proprietary projects (for example, to use proprietary WiFi drivers and so on).
+3. Permission to compose open source projects with MOAR (for example, to include MOAR into Linux kernel).
+4. Permission to run derivative proprietary or open source projects by composing them with MOAR.
+5. Permission to compose MOAR with any derivative project with licensing MOAR under the same (as current) license with no breaking of derivative product license.
+6. In order to keep compatibility of points 4 and 5 derivative product should have notification that it is composed with MOAR and about the related MOAR license (including the version information, both for MOAR and its license).
 
-NOTE: "To compose" in above text means "to use by linkage with - both static or dynamic - or by copying and possible modifying of source code - both partially or the whole".
+NOTE: "To compose" in above text means "to use by linkage with - whether static or dynamic - or by copying and possible modifying of the source code - whether partially or in the whole".
 
 ### Copyright holder ###
 

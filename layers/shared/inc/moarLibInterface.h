@@ -26,13 +26,13 @@ typedef struct{
     MoarLayerType_T LayerType;
 } MoarLibInfo_T;
 
-typedef int8_t (*moarLibraryInfo)(MoarLibInfo_T* libInfo);
+typedef int (*moarLibraryInfo)(MoarLibInfo_T* libInfo);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int8_t MoarLibraryInfo(MoarLibInfo_T* libInfo);
+extern int MoarLibraryInfo(MoarLibInfo_T* libInfo);
 
 #ifdef __cplusplus
 };

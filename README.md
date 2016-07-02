@@ -1,8 +1,6 @@
-M.O.A.R. stack
-==============
+# M.O.A.R. stack #
 
-General
--------
+## General ##
 
 ### Name ###
 
@@ -14,8 +12,7 @@ M.O.A.R stack provides way of connecting with unlimited count of devices when no
 
 Current implementation of M.O.A.R. stack is made with C99 (ANSI C99) standard of C language and aims Linux systems with kernel of 2.6 version or later.
 
-Structure
----------
+## Structure ##
 
 ### Logical structure ###
 
@@ -41,8 +38,7 @@ Most of directories in the M.O.A.R. stack repository have their own purposes:
 * `moard` - sources and headers, gathering all the layers into the linux daemon.
 * `tools` - sources and headers of additional service programms using M.O.A.R. stack or to be used with M.O.A.R. stack.
 
-Tools
------
+## Tools ##
 
 There are no tools implemented yet, but creating of at least one is planned:
 
@@ -50,8 +46,7 @@ There are no tools implemented yet, but creating of at least one is planned:
 
 Program to check accessibility of node specified by its address. Sends special packets with some interval, receives replies and gathers statistics about delivering these packets.
 
-Copyright
----------
+## Copyright ##
 
 ### License ###
 

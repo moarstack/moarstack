@@ -6,6 +6,9 @@
 #define MOARSTACK_LIBINTERFACE_H
 
 #include "stdint.h"
+
+#define MOAR_API_CURRENT_VERSION 1 //should be incremented on every not back compatible change of crosslayer api
+
 typedef enum{
     MoarLayer_Interface,
     MoarLayer_Channel,
@@ -22,9 +25,10 @@ typedef struct{
     uint16_t VersionMajor;
     uint16_t VersionMinor;
     uint16_t VersionBuild;
-    uint16_t MinMoarLevel;
+    uint16_t MinMoarApiVersion; // version of build moar shared library
     MoarLayerType_T LayerType;
 } MoarLibInfo_T;
+
 
 typedef int (*moarLibraryInfo_F)(MoarLibInfo_T* libInfo);
 

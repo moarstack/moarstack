@@ -16,7 +16,7 @@ int MoarLibraryInfo(MoarLibInfo_T* libInfo){
     libInfo->Author = author;
     libInfo->LibraryName = libName;
     libInfo->ShortDescription = libDescription;
-    libInfo->MinMoarLevel = minMoarVersion;
+    libInfo->MinMoarApiVersion = minMoarVersion;
     libInfo->VersionMajor = versionMajor;
     libInfo->VersionMinor = versionMinor;
     libInfo->VersionBuild = versionBuild;

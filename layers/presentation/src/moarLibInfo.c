@@ -2,10 +2,11 @@
 // Created by svalov on 7/2/16.
 //
 
+#include <moarLibInterface.h>
 #include "moarLibInterface.h"
 
-char author[] = "";
-char libName[] = "";
+char author[] = "[censored]";
+char libName[] = "Presentation Layer";
 char libDescription[] = "";
 uint16_t versionMajor = 0;
 uint16_t versionMinor = 1;
@@ -20,5 +21,6 @@ int8_t GetMoarLibraryInfo(MoarLibInfo_T* libInfo){
     libInfo->VersionMajor = versionMajor;
     libInfo->VersionMinor = versionMinor;
     libInfo->VersionBuild = versionBuild;
+    libInfo->LayerType = MoarLayer_Presentation;
     return 0;
 }

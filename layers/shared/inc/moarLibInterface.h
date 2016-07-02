@@ -6,6 +6,14 @@
 #define MOARSTACK_LIBINTERFACE_H
 
 #include "stdint.h"
+typedef enum{
+    MoarLayer_Interface,
+    MoarLayer_Channel,
+    MoarLayer_Routing,
+    MoarLayer_Router,
+    MoarLayer_Presentation,
+    MoarLayer_Service,
+} MoarLayerType_T;
 
 typedef struct{
     char* Author;
@@ -15,6 +23,7 @@ typedef struct{
     uint16_t VersionMinor;
     uint16_t VersionBuild;
     uint16_t MinMoarLevel;
+    MoarLayerType_T LayerType;
 } MoarLibInfo_T;
 
 #ifdef __cplusplus

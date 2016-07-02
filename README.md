@@ -4,7 +4,7 @@
 
 ### Name ###
 
-M.O.A.R. - Mesh-Oriented Area Routing, created by **\[censored\] team**. M.O.A.R. stack is a full stack of protocols implemeting base ideas of that routing. Names "MOAR stack", "MOARstack" or even just "MOAR" are also available and means "M.O.A.R. stack" in most cases. 
+M.O.A.R. - Mesh-Oriented Adaptive Routing, created by **\[censored\] team**. M.O.A.R. stack is a full stack of protocols implemeting base ideas of that routing. Names "MOAR stack", "MOARstack" or even just "MOAR" are also available and means "M.O.A.R. stack" in most cases. 
 
 ### Description ###
 

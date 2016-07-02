@@ -12,6 +12,8 @@
 #define LIBRARY_LOAD_FAILED 1
 #define LIBRARY_LOAD_NONMOAR 2
 #define LIBRARY_LOAD_NONLAYER 3
+#define LIBRARY_CLOSE_OK 0
+#define LIBRARY_CLOSE_FAILED 1
 
 typedef struct{
     char* Filename;

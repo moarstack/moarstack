@@ -3,17 +3,40 @@
 //
 #include <libraryLoader.h>
 #include <dlfcn.h>
+#include <stddef.h>
 
 int loadLibrary(char* name, MoarLibrary_T* library){
+    if(NULL == name || NULL == library)
+        return LIBRARY_LOAD_FAILED;
+    //fill in
     library->Filename = name;
-    //load library
+    library->Handle = dlopen(name, RTLD_LAZY);
+    if(NULL == library->Handle)
+        return LIBRARY_LOAD_FAILED;
+
     //search library info function
+    library->LibraryInfoFunction = (moarLibraryInfo_F)dlsym(library->Handle, MOAR_LIBRARY_INFO_NAME);
+    if(NULL == library->LibraryInfoFunction)
+        return LIBRARY_LOAD_NONMOAR;
+
+    //get library info
+    if(library->LibraryInfoFunction(&(library->Info)))
+        return LIBRARY_LOAD_NONMOAR;
+
     //search entry point function
-    return LIBRARY_LOAD_FAILED;
+    library->LayerEntryPointFunction = (moarLayerEntryPoint_F)dlsym(library->Handle, MOAR_LAYER_ENTRY_POINT_NAME);
+    return LIBRARY_LOAD_OK;
 }
 
 int closeLibrary(MoarLibrary_T* library){
+    if(NULL == library)
+        return LIBRARY_CLOSE_FAILED;
     //close handle
+    //TODO check later for returning value
+    dlclose(library->Handle);
     //fill pointers with null
-    return 0;
+    library->Handle = NULL;
+    library->LayerEntryPointFunction = NULL;
+    library->LibraryInfoFunction = NULL;
+    return LIBRARY_CLOSE_OK;
 }

@@ -3,7 +3,6 @@
 //
 
 #include <moarLibInterface.h>
-#include "moarLibInterface.h"
 
 char author[] = "[censored]";
 char libName[] = "Routing Layer";
@@ -13,7 +12,7 @@ uint16_t versionMinor = 1;
 uint16_t versionBuild = 1;
 uint16_t minMoarVersion = 1;
 
-int8_t GetMoarLibraryInfo(MoarLibInfo_T* libInfo){
+int8_t MoarLibraryInfo(MoarLibInfo_T* libInfo){
     libInfo->Author = author;
     libInfo->LibraryName = libName;
     libInfo->ShortDescription = libDescription;

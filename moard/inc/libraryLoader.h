@@ -18,8 +18,10 @@ typedef struct{
     MoarLibInfo_T Info;
     moarLibraryInfo_F LibraryInfoFunction;
     moarLayerEntryPoint_F LayerEntryPointFunction;
+    void* Handle;
 } MoarLibrary_T;
 
 int loadLibrary(char* name, MoarLibrary_T* library);
+int closeLibrary(MoarLibrary_T* library);
 
 #endif //MOARSTACK_LIBRARYLOADER_H

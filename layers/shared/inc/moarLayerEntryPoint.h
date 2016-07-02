@@ -5,6 +5,9 @@
 #ifndef MOARSTACK_MOARLAYERENTRYPOINT_H
 #define MOARSTACK_MOARLAYERENTRYPOINT_H
 
+#define MOAR_LAYER_ENTRY_POINT MoarLayerEntryPoint
+#define MOAR_LAYER_ENTRY_POINT_NAME "MoarLayerEntryPoint"
+
 typedef struct{
     int UpSocketHandler;
     int DownSocketHandler;
@@ -16,7 +19,7 @@ typedef void* (*moarLayerEntryPoint_F)(void *);
 extern "C" {
 #endif
 
-extern void* MoarLayerEntryPoint(void* arg);
+extern void* MOAR_ENTRY_POINT_FUNCTION(void* arg);
 
 #ifdef __cplusplus
 };

@@ -13,7 +13,7 @@ uint16_t versionMinor = 1;
 uint16_t versionBuild = 1;
 uint16_t targetMoarVersion = 1;
 
-int MoarLibraryInfo(MoarLibInfo_T* libInfo){
+int MOAR_LIBRARY_INFO(MoarLibInfo_T* libInfo){
     if(NULL == libInfo)
         return MOAR_LIBRARY_INFO_FAILED;
     libInfo->Author = author;

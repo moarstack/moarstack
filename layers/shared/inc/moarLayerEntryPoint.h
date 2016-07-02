@@ -10,7 +10,7 @@ typedef struct{
     int DownSocketHandler;
 } MoarLayerStartupParams_T;
 
-typedef void* (*moarLayerEntryPoint)(void *);
+typedef void* (*moarLayerEntryPoint_F)(void *);
 
 #ifdef __cplusplus
 extern "C" {

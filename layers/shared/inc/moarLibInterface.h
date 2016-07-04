@@ -8,6 +8,8 @@
 #include "stdint.h"
 
 #define MOAR_API_CURRENT_VERSION 1 //should be incremented on every not back compatible change of crosslayer api
+#define MOAR_LIBRARY_INFO_OK 0
+#define MOAR_LIBRARY_INFO_FAILED 1
 
 typedef enum{
     MoarLayer_Interface,

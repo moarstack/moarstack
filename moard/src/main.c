@@ -3,34 +3,37 @@
 //
 #include <libraryLoader.h>
 #include <stdio.h>
+#include <configFiles.h>
 #include <moarLibInterface.h>
 
-MoarLibrary_T libs[MoarLayer_LayersCount];
-char *names[MoarLayer_LayersCount];
+MoarLibrary_T libraries[MoarLayer_LayersCount];
+char *fileNames[MoarLayer_LayersCount];
 
 int main(int argc, char** argv)
 {
-    names[MoarLayer_Interface] = "../layers/interface/libmoar_interface.so";
-    names[MoarLayer_Channel] = "../layers/channel/libmoar_channel.so";
-    names[MoarLayer_Routing] = "../layers/routing/libmoar_routing.so";
-    names[MoarLayer_Presentation] = "../layers/presentation/libmoar_presentation.so";
-    names[MoarLayer_Service] = "../layers/service/libmoar_service.so";
+    fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERACE;
+    fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
+    fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;
+    fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
+    fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
 
     for(int i=0; i<MoarLayer_LayersCount;i++) {
-        int res = loadLibrary(names[i], &(libs[i]));
+        int res = loadLibrary(fileNames[i], &(libraries[i]));
         if (!res)
-            printf("%s loaded\n", libs[i].Info.LibraryName);
+            printf("%s from %s loaded\n", libraries[i].Info.LibraryName, libraries[i].Info.Author);
         else
-            printf("load failed\n");
+            printf("%s load failed\n",fileNames[i]);
     }
+    //start layers here
 
+    //
     for(int i=0; i<MoarLayer_LayersCount;i++) {
-        int res = closeLibrary(&(libs[i]));
+        int res = closeLibrary(&(libraries[i]));
+        //check for empty lib closing
         if (!res)
-            printf("library closed\n");
+            printf("library %s closed\n",libraries[i].Filename);
         else
-            printf("close failed\n");
+            printf("close %s failed\n",libraries[i].Filename);
     }
-
     return 0;
 }

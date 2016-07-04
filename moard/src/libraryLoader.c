@@ -29,11 +29,15 @@ int loadLibrary(char* name, MoarLibrary_T* library){
 }
 
 int closeLibrary(MoarLibrary_T* library){
+    //check for correct input values
     if(NULL == library)
         return LIBRARY_CLOSE_FAILED;
+    if(NULL == library->Handle)
+        return LIBRARY_CLOSE_FAILED;
     //close handle
-    //TODO check later for returning value
-    dlclose(library->Handle);
+    int res = dlclose(library->Handle);
+    if(res)
+        return LIBRARY_CLOSE_FAILED;
     //fill pointers with null
     library->Handle = NULL;
     library->LayerEntryPointFunction = NULL;

@@ -18,6 +18,7 @@ typedef enum{
     MoarLayer_Router,
     MoarLayer_Presentation,
     MoarLayer_Service,
+    MoarLayer_LayersCount,
 } MoarLayerType_T;
 
 typedef struct{

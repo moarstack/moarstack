@@ -25,7 +25,7 @@ typedef struct{
     uint16_t VersionMajor;
     uint16_t VersionMinor;
     uint16_t VersionBuild;
-    uint16_t MinMoarApiVersion; // version of build moar shared library
+    uint16_t TargetMoarApiVersion; // version of build moar shared library
     MoarLayerType_T LayerType;
 } MoarLibInfo_T;
 

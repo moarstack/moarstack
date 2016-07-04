@@ -10,13 +10,13 @@ char libDescription[] = "";
 uint16_t versionMajor = 0;
 uint16_t versionMinor = 1;
 uint16_t versionBuild = 1;
-uint16_t moarVersion = 1;
+uint16_t targetMoarVersion = 1;
 
 int MoarLibraryInfo(MoarLibInfo_T* libInfo){
     libInfo->Author = author;
     libInfo->LibraryName = libName;
     libInfo->ShortDescription = libDescription;
-    libInfo->TargetMoarApiVersion = moarVersion;
+    libInfo->TargetMoarApiVersion = targetMoarVersion;
     libInfo->VersionMajor = versionMajor;
     libInfo->VersionMinor = versionMinor;
     libInfo->VersionBuild = versionBuild;

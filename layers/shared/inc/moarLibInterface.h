@@ -18,7 +18,6 @@ typedef enum{
     MoarLayer_Interface,
     MoarLayer_Channel,
     MoarLayer_Routing,
-    MoarLayer_Router,
     MoarLayer_Presentation,
     MoarLayer_Service,
     MoarLayer_LayersCount,

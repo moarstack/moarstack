@@ -19,7 +19,7 @@ typedef void* (*moarLayerEntryPoint_F)(void *);
 extern "C" {
 #endif
 
-extern void* MOAR_ENTRY_POINT_FUNCTION(void* arg);
+extern void* MoarLayerEntryPoint(void* arg);
 
 #ifdef __cplusplus
 };

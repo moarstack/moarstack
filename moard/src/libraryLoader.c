@@ -13,7 +13,7 @@ int loadLibrary(char* name, MoarLibrary_T* library){
     library->Filename = name;
     //use dlmopen instead dlopen to load libraries to different namespaces
     //that allow to load multiple independent copies of single library
-    library->Handle = dlmopen(LM_ID_NEWLM, name, RTLD_LAZY);
+    library->Handle = dlmopen(LM_ID_NEWLM, name, RTLD_LAZY | RTLD_LOCAL);
     if(NULL == library->Handle)
         return LIBRARY_LOAD_FAILED;
 

@@ -6,5 +6,6 @@
 #define MOARSTACK_MOARCHANNEL_H
 
 #include "moarInterfaceChannel.h"
+#include "moarChannelRouting.h"
 
 #endif //MOARSTACK_MOARCHANNEL_H

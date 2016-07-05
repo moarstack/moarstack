@@ -1,5 +1,5 @@
 //
-// Created by svalov, kryvashek on 05.07.16
+// Created by svalov, kryvashek on 05.07.16.
 //
 
 #include "moarLayerEntryPoint.h"

@@ -5,6 +5,10 @@
 #ifndef MOARSTACK_MOARCOMMONS_H
 #define MOARSTACK_MOARCOMMONS_H
 
+#include <stdint.h>
+#include <stddef.h>
+
+
 // stack-wide command type
 typedef enum {
     LayerCommandType_ProcessData,
@@ -30,6 +34,6 @@ typedef struct {
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
 // save bytes in the same memory if output = NULL or output = input
-extern void MoarChangeOrder( void * output, const void * input, const size_t size );
+extern void ChangeBytesOrder(void *output, const void *input, const size_t size);
 
 #endif //MOARSTACK_MOARCOMMONS_H

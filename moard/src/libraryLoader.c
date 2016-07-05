@@ -1,6 +1,7 @@
 //
 // Created by svalov on 7/2/16.
 //
+#define _GNU_SOURCE
 #include <libraryLoader.h>
 #include <dlfcn.h>
 #include <stddef.h>
@@ -10,7 +11,9 @@ int loadLibrary(char* name, MoarLibrary_T* library){
         return LIBRARY_LOAD_FAILED;
     //fill in
     library->Filename = name;
-    library->Handle = dlopen(name, RTLD_LAZY);
+    //use dlmopen instead dlopen to load libraries to different namespaces
+    //that allow to load multiple independent copies of single library
+    library->Handle = dlmopen(LM_ID_NEWLM, name, RTLD_LAZY);
     if(NULL == library->Handle)
         return LIBRARY_LOAD_FAILED;
 

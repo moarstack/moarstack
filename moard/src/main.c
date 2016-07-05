@@ -42,6 +42,14 @@ int main(int argc, char** argv)
     }
     //wait
     pause();
+    //stop
+    for(int i=0; i<LAYERS_COUNT;i++) {
+        int res = exitThread(&(libraries[i]));
+        if(THREAD_EXIT_OK == res)
+            printf("thread %s exited\n",libraries[i].Info.LibraryName);
+        else
+            printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
+    }
     //unload
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = closeLibrary(libraries+i);

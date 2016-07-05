@@ -5,10 +5,14 @@
 #include <stdio.h>
 #include <configFiles.h>
 #include <moarLibInterface.h>
+#include <unistd.h>
+#include <threadManager.h>
+
+#define LAYERS_COUNT (MoarLayer_LayersCount+1)
 
 int main(int argc, char** argv)
 {
-    MoarLibrary_T libraries[MoarLayer_LayersCount+1];
+    MoarLibrary_T libraries[LAYERS_COUNT];
 
     char *fileNames[MoarLayer_LayersCount+1];
     fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
@@ -20,7 +24,7 @@ int main(int argc, char** argv)
     fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
 
     //load
-    for(int i=0; i<MoarLayer_LayersCount+1;i++) {
+    for(int i=0; i<LAYERS_COUNT;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);
         if (LIBRARY_LOAD_OK == res)
             printf("%s by %s loaded\n", libraries[i].Info.LibraryName, libraries[i].Info.Author);
@@ -29,9 +33,17 @@ int main(int argc, char** argv)
     }
     //prepare sockets
     //start layers here
-
+    for(int i=0; i<LAYERS_COUNT;i++) {
+        int res = createThread(&(libraries[i]),NULL);
+        if(THREAD_CREATE_OK == res)
+            printf("thread for %s created\n",libraries[i].Info.LibraryName);
+        else
+            printf("failed thread creation for %s\n",libraries[i].Info.LibraryName);
+    }
+    //wait
+    pause();
     //unload
-    for(int i=0; i<MoarLayer_LayersCount;i++) {
+    for(int i=0; i<LAYERS_COUNT;i++) {
         int res = closeLibrary(libraries+i);
         //check for empty lib closing
         if (LIBRARY_CLOSE_OK == res)

@@ -48,20 +48,53 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 		Die(*sock, "poll_ctl: sock"); 
 }
 
-void ReceiveData(int clientfd) {
-	static char buf[STR_SIZE];
+void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
+	static int i;
+        for(i = 0; '0' <= buf[i] && buf[i] <= '9'; i++)
+        	*naim = 10 * (*naim) + buf[i] - '0';
+
+        static int j = 0;
+        for(; buf[i] && j < *naim; i++)
+        	if ('0' <= buf[i] && buf[i] <= '9') {
+                	aim[j] = 0;
+                        while (buf[i] && '0' <= buf[i] && buf[i] <= '9') {
+                        	aim[j] = 10 * aim[j] + buf[i] - '0';
+                                ++i;
+                        }
+                        ++j;
+                }
+
+        memset(&msg, 0, sizeof(msg));
+        strcpy(msg, &buf[i]);
+}
+
+void TransmitData(int clientfd, int nclients, int clients[]) {
+	static char buf[STR_SIZE], msg[STR_SIZE], errmsg[STR_SIZE];
+	static int naim, aim[MAX_EVENTS];
+	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
         printf("%s\n", buf);
-        char msg[STR_SIZE] = "zdraste\n";
-        send(clientfd, msg, sizeof(msg), 0);
+        
+	Unpacking(buf, &naim, aim, msg);
+	
+	int i;
+	for(i = 0; i < naim; i++)
+		if (aim[i] < nclients)
+			send(clients[aim[i]], msg, sizeof(msg), 0);
+		else {
+			sprintf(errmsg, "Address %d doesn't exist\n", aim[i]);
+			send(clientfd, errmsg, sizeof(errmsg), 0);
+		}
 }
 
-void ClientRegister(int sock, int pollfd) {
+void ClientRegister(int sock, int pollfd, int *nclients, int clients[]) {
 	static struct epoll_event ev;
 	int newsock = accept(sock, 0,0);
 	if (newsock == -1)
 		Die(sock, "Ошибка: принятия");
+
+	clients[(*nclients)++] = newsock;	
 
 	//setnonblocking(newsock);                		
 	ev.events = EPOLLIN | EPOLLET;
@@ -70,19 +103,26 @@ void ClientRegister(int sock, int pollfd) {
 		Die(sock, "epoll_ctl_add: newsock");
 }
 
-void ClientUnregister(int sock, int pollfd, int clientfd) {
+void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int clients[]) {
 	static struct epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
 		Die(sock, "epoll_ctl_del: newsock"); 
-	else {
-		shutdown(clientfd, SHUT_RDWR);
-		close(clientfd);
-	}
+
+	int i;
+	for(i = 0; i < *nclients; i++)
+		if (clients[i] == clientfd) {
+			clients[i] = clients[--(*nclients)];
+			break;
+		}
+
+	shutdown(clientfd, SHUT_RDWR);
+	close(clientfd);
 }
 
 void Task(int sock, int pollfd) {
-	static struct epoll_event ev, events[MAX_EVENTS];
+	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, n, newsock;	
+	int nclients = 0, clients[MAX_EVENTS];
 
 	for( ; ; ) {
 		nfds = epoll_wait(pollfd, events, MAX_EVENTS, -1);
@@ -91,12 +131,12 @@ void Task(int sock, int pollfd) {
 		
 		for (n = 0; n < nfds; ++n) {
 			if (events[n].data.fd == sock)
-				ClientRegister(sock, pollfd);
+				ClientRegister(sock, pollfd, &nclients, clients);
 			else {
 				if (events[n].events == EPOLLERR)
-					ClientUnregister(sock, pollfd, events[n].data.fd);
+					ClientUnregister(sock, pollfd, events[n].data.fd, &nclients, clients);
 				else if(events[n].events == EPOLLIN)
-					ReceiveData(events[n].data.fd);
+					TransmitData(events[n].data.fd, nclients, clients);
 			}
 			
 		}
@@ -109,7 +149,7 @@ void Deinit(int sock, struct sockaddr_un stSockAddr) {
 	unlink(stSockAddr.sun_path);
 }
 
-int main(void){
+int main(void) {
 	int pollfd, sock;
 	struct sockaddr_un stSockAddr;	
 

@@ -1,6 +1,5 @@
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/poll.h>
 #include <sys/epoll.h>
 #include <sys/un.h>
 #include <stdlib.h>
@@ -68,21 +67,34 @@ void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
         strcpy(msg, &buf[i]);
 }
 
+int FindPos(int clientfd, int nclients, int clients[]) {
+	int i;
+	for(i = 0; i < nclients; i++)
+		if (clients[i] == clientfd)
+			return i;
+
+	return -1; 
+}
+
 void TransmitData(int clientfd, int nclients, int clients[]) {
 	static char buf[STR_SIZE], msg[STR_SIZE], errmsg[STR_SIZE];
 	static int naim = 0, aim[MAX_EVENTS];
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
-        printf("%s\n", buf);
+        //printf("%s\n", buf);
         
 	memset(&msg, 0, sizeof(msg));
 	Unpacking(buf, &naim, aim, msg);
 	
 	int i;
 	for(i = 0; i < naim; i++)
-		if (aim[i] < nclients)
-			send(clients[aim[i]], msg, sizeof(msg), 0);
+		if (aim[i] < nclients) {
+			printf("\nClient %d from address %d\n", clientfd, FindPos(clientfd, nclients, clients)); 
+			printf("send message: %s", msg);
+			printf("to client %d from address %d\n", clients[aim[i]], aim[i]);
+			send(clients[aim[i]], msg, sizeof(msg), 0);		
+		}
 		else {
 			sprintf(errmsg, "Address %d doesn't exist\n", aim[i]);
 			send(clientfd, errmsg, sizeof(errmsg), 0);
@@ -96,6 +108,7 @@ void ClientRegister(int sock, int pollfd, int *nclients, int clients[]) {
 		Die(sock, "Ошибка: принятия");
 
 	clients[(*nclients)++] = newsock;	
+	printf("\nClient %d has been connected and get address %d\n", newsock, *nclients - 1); 
 
 	//setnonblocking(newsock);                		
 	ev.events = EPOLLIN | EPOLLET;
@@ -112,6 +125,10 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int cli
 	int i;
 	for(i = 0; i < *nclients; i++)
 		if (clients[i] == clientfd) {
+			printf("\nClient %d has been unregistered from address %d\n", clientfd, i);
+			if (i != *nclients - 1)
+				printf("\nClient %d from address %d has gotten new address %d\n", clients[*nclients - 1], (*nclients) - 1, i);
+	
 			clients[i] = clients[--(*nclients)];
 			break;
 		}

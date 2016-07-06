@@ -7,6 +7,7 @@
 #include <moarLibInterface.h>
 #include <unistd.h>
 #include <threadManager.h>
+#include <moarLibrary.h>
 
 #define LAYERS_COUNT (MoarLayer_LayersCount+1)
 
@@ -44,6 +45,7 @@ int main(int argc, char** argv)
     pause();
     //stop
     for(int i=0; i<LAYERS_COUNT;i++) {
+
         int res = exitThread(&(libraries[i]));
         if(THREAD_EXIT_OK == res)
             printf("thread %s exited\n",libraries[i].Info.LibraryName);

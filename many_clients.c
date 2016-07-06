@@ -49,11 +49,12 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 }
 
 void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
-	static int i;
+	*naim = 0;
+	int i;
         for(i = 0; '0' <= buf[i] && buf[i] <= '9'; i++)
         	*naim = 10 * (*naim) + buf[i] - '0';
 
-        static int j = 0;
+        int j = 0;
         for(; buf[i] && j < *naim; i++)
         	if ('0' <= buf[i] && buf[i] <= '9') {
                 	aim[j] = 0;
@@ -64,18 +65,18 @@ void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
                         ++j;
                 }
 
-        memset(&msg, 0, sizeof(msg));
         strcpy(msg, &buf[i]);
 }
 
 void TransmitData(int clientfd, int nclients, int clients[]) {
 	static char buf[STR_SIZE], msg[STR_SIZE], errmsg[STR_SIZE];
-	static int naim, aim[MAX_EVENTS];
+	static int naim = 0, aim[MAX_EVENTS];
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
         printf("%s\n", buf);
         
+	memset(&msg, 0, sizeof(msg));
 	Unpacking(buf, &naim, aim, msg);
 	
 	int i;
@@ -119,12 +120,23 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int cli
 	close(clientfd);
 }
 
+/*void Write(int n, int X[]) {
+	int i;
+	printf("size == %d : ", n);
+	for(i = 0; i < n; i++)
+		printf("%d ", X[i]);
+
+	printf("\n");
+}*/
+
 void Task(int sock, int pollfd) {
 	struct epoll_event ev, events[MAX_EVENTS];
 	int nfds, n, newsock;	
 	int nclients = 0, clients[MAX_EVENTS];
 
 	for( ; ; ) {
+		//printf("clients: ");
+		//Write(nclients, clients);
 		nfds = epoll_wait(pollfd, events, MAX_EVENTS, -1);
 		if(nfds == -1)
 			Die(sock, "poll_pwait");
@@ -133,10 +145,10 @@ void Task(int sock, int pollfd) {
 			if (events[n].data.fd == sock)
 				ClientRegister(sock, pollfd, &nclients, clients);
 			else {
-				if (events[n].events == EPOLLERR)
+				if(events[n].events == EPOLLIN)
+					TransmitData(events[n].data.fd, nclients, clients);	
+				else
 					ClientUnregister(sock, pollfd, events[n].data.fd, &nclients, clients);
-				else if(events[n].events == EPOLLIN)
-					TransmitData(events[n].data.fd, nclients, clients);
 			}
 			
 		}

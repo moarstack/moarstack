@@ -23,7 +23,7 @@ int loadLibrary(char* name, MoarLibrary_T* library){
         return LIBRARY_LOAD_NONMOAR;
 
     //get library info
-    if(library->LibraryInfoFunction(&(library->Info)))
+    if(MOAR_LIBRARY_INFO_OK != library->LibraryInfoFunction(&(library->Info)))
         return LIBRARY_LOAD_NONMOAR;
 
     //search entry point function

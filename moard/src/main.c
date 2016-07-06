@@ -22,7 +22,7 @@ int main(int argc, char** argv)
     //load
     for(int i=0; i<MoarLayer_LayersCount+1;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);
-        if (!res)
+        if (LIBRARY_LOAD_OK == res)
             printf("%s by %s loaded\n", libraries[i].Info.LibraryName, libraries[i].Info.Author);
         else
             printf("%s load failed\n",fileNames[i]);
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
     for(int i=0; i<MoarLayer_LayersCount;i++) {
         int res = closeLibrary(libraries+i);
         //check for empty lib closing
-        if (!res)
+        if (LIBRARY_CLOSE_OK == res)
             printf("library %s closed\n",libraries[i].Filename);
         else
             printf("close %s failed\n",libraries[i].Filename);

@@ -6,6 +6,9 @@
 #include <dlfcn.h>
 #include <stddef.h>
 
+//#define LM_ID LM_ID_NEWLM //use in release
+#define LM_ID LM_ID_BASE //use in debug, not support multiple loads of single library, soft/hard links does`t work
+
 int loadLibrary(char* name, MoarLibrary_T* library){
     if(NULL == name || NULL == library)
         return LIBRARY_LOAD_FAILED;
@@ -13,7 +16,7 @@ int loadLibrary(char* name, MoarLibrary_T* library){
     library->Filename = name;
     //use dlmopen instead dlopen to load libraries to different namespaces
     //that allow to load multiple independent copies of single library
-    library->Handle = dlmopen(LM_ID_NEWLM, name, RTLD_LAZY | RTLD_LOCAL);
+    library->Handle = dlmopen(LM_ID, name, RTLD_LAZY | RTLD_LOCAL);
     if(NULL == library->Handle)
         return LIBRARY_LOAD_FAILED;
 

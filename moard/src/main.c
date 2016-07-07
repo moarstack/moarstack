@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 {
     MoarLibrary_T libraries[LAYERS_COUNT];
 
-    char *fileNames[MoarLayer_LayersCount+1];
+    char *fileNames[LAYERS_COUNT];
     fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
     fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
     fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;

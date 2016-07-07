@@ -23,11 +23,14 @@ int loadLibrary(char* name, MoarLibrary_T* library){
         return LIBRARY_LOAD_NONMOAR;
 
     //get library info
-    if(MOAR_LIBRARY_INFO_OK != library->LibraryInfoFunction(&(library->Info)))
+    int res = library->LibraryInfoFunction(&(library->Info));
+    if(MOAR_LIBRARY_INFO_OK != res)
         return LIBRARY_LOAD_NONMOAR;
 
     //search entry point function
     library->LayerEntryPointFunction = (moarLayerEntryPoint_F)dlsym(library->Handle, MOAR_LAYER_ENTRY_POINT_NAME);
+    if(NULL == library->LayerEntryPointFunction)
+        return LIBRARY_LOAD_NONLAYER;
     return LIBRARY_LOAD_OK;
 }
 

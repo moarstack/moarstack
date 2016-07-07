@@ -6,6 +6,8 @@
 #define MOARSTACK_MOARPRESENTATIONSERVICE_H
 
 #include <stddef.h>
+#include "moarPresentation.h"
+#include "moarService.h"
 
 const size_t	PRESENT_MSG_UP_SIZE = sizeof( PresentMsgUp_T );
 const size_t	SERVICE_MSG_DOWN_SIZE = sizeof( ServiceMsgDown_T );

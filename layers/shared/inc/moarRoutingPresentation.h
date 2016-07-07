@@ -6,6 +6,8 @@
 #define MOARSTACK_MOARROUTINGPRESENTATION_H
 
 #include <stddef.h>
+#include "moarRouting.h"
+#include "moarPresentation.h"
 
 const size_t	ROUTING_MSG_UP_SIZE = sizeof( RoutingMsgUp_T );
 const size_t	PRESENT_MSG_DOWN_SIZE = sizeof( PresentMsgDown_T );

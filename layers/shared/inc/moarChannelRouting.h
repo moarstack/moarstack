@@ -6,6 +6,8 @@
 #define MOARSTACK_MOARCHANNELROUTING_H
 
 #include <stddef.h>
+#include "moarChannel.h"
+#include "moarRouting.h"
 
 const size_t	CHANNEL_MSG_UP_SIZE = sizeof( ChannelMsgUp_T );
 const size_t	ROUTING_MSG_DOWN_SIZE = sizeof( RoutingMsgDown_T );

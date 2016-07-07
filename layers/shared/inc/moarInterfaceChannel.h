@@ -6,6 +6,8 @@
 #define MOARSTACK_MOARINTERFACECHANNEL_H
 
 #include <stddef.h>
+#include "moarInterface.h"
+#include "moarChannnel.h"
 
 const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );
 const size_t	CHANNEL_MSG_DOWN_SIZE = sizeof( ChannelMsgDown_T );

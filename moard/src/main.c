@@ -8,8 +8,16 @@
 #include <unistd.h>
 #include <threadManager.h>
 #include <moarLibrary.h>
+#include <signal.h>
+#define LAYERS_COUNT (MoarLayer_LayersCount)
 
-#define LAYERS_COUNT (MoarLayer_LayersCount+1)
+void signalHandler(int signo){
+    if(SIGINT == signo){
+        printf("Recieved SIGINT, terminating\n");
+    }
+    else
+        printf("Recieved signal %d\n",signo);
+}
 
 int main(int argc, char** argv)
 {
@@ -22,8 +30,9 @@ int main(int argc, char** argv)
     fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
     fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
     //testing multiple instances
-    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
-
+    //fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
+    //setup signal handler
+    signal(SIGINT, signalHandler);
     //load
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);

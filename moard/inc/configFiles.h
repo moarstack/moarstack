@@ -10,7 +10,6 @@
 #ifdef USE_CLION
 //clion files
 #define LIBRARY_PATH_INTERFACE "../layers/interface/libmoar_interface.so";
-#define LIBRARY_PATH_INTERFACE "../layers/interface/libmoar_interface.1.so";
 #define LIBRARY_PATH_CHANNEL "../layers/channel/libmoar_channel.so";
 #define LIBRARY_PATH_ROUTING "../layers/routing/libmoar_routing.so";
 #define LIBRARY_PATH_PRESENTATION "../layers/presentation/libmoar_presentation.so";

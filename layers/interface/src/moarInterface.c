@@ -4,6 +4,7 @@
 
 #include "moarLayerEntryPoint.h"
 #include "moarInterface.h"
+#include "moarInterfaceChannel.h"
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 

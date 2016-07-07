@@ -4,6 +4,8 @@
 
 #include <moarLayerEntryPoint.h>
 #include "moarPresentation.h"
+#include "moarRoutingPresentation.h"
+#include "moarPresentationService.h"
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 

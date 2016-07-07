@@ -11,6 +11,10 @@
 #define BUF_SIZE 256
 #define MSG_SIZE 256
 #define ERRMSG_SIZE 256
+#define POWER_CONSTANT 63
+#define HASH_CONSTANT 4096
+#define HASH_EMPTY -1
+#define HASH_DELETED -2
 
 //const int MAX_CLIENTS = 10;
 //const int STR_SIZE = 256;
@@ -48,6 +52,68 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
 		Die(*sock, "epoll_ctl: sock"); 
 }
+
+int Hash(int data){
+	int key = data;
+	key = (key + ~(key << 16))%HASH_CONSTANT;
+	key = (key ^ (key >> 5))%HASH_CONSTANT;
+	key = (key + (key << 3))%HASH_CONSTANT;
+	key = (key ^ (key >> 13))%HASH_CONSTANT;
+	key = (key + ~(key << 9))%HASH_CONSTANT;
+	key = (key ^ (key >> 17))%HASH_CONSTANT;
+	return key;
+} 
+
+int Rehash(int pos){
+	return (pos + 1)%HASH_CONSTANT;
+}
+
+int Search_Hash(int H[], int data){
+	int key = Hash(data);
+	while(1){
+		if (H[key] == HASH_EMPTY)
+			return -1;
+		if (H[key] == data)
+			return key;
+		key = Rehash(key);
+	}
+}
+
+void Add_Hash(int H[], int data){
+	if (Search_Hash(H, data) != -1)
+		return;
+	int key = Hash(data);
+	while(1){
+		if (H[key] == HASH_EMPTY || H[key] == HASH_DELETED){
+			H[key] = data;
+			return;
+		}
+		key = Rehash(key);
+	}
+}
+
+void Delete_Hash(int H[], int data){
+	int key = Hash(data);
+	while(1){
+		if (H[key] == HASH_EMPTY)
+			return;
+		if (H[key] == data){
+			H[key] = HASH_DELETED;
+			return;
+		}
+		key = Rehash(key);
+	}			
+}
+
+
+double Distance(double x1, double y1, double x2, double y2){
+	return (x1-x2) * (x1-x2) + (y1 - y2) * (y1 - y2);
+}
+
+double Power(double x1, double y1, double x2, double y2, double start_power ){
+	return (start_power - POWER_CONSTANT * Distance(x1, y1, x2, y2));
+}
+
 
 void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
 	char *p;
@@ -146,7 +212,10 @@ void Task(int sock, int pollfd) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
 	int nclients = 0, clients[MAX_CLIENTS];
-
+	int H[HASH_CONSTANT];
+	int i;
+	for(i = 0; i < HASH_CONSTANT; ++i)
+		H[i]=-1;
 	for( ; ; ) {
 		//printf("clients: ");
 		//Write(nclients, clients);

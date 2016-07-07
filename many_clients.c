@@ -25,34 +25,6 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
-	*sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (*sock == -1)
-		Die(0, "socket failed");
-	
-	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
-	stSockAddr->sun_family=AF_UNIX;
-	realpath(".", stSockAddr->sun_path);
-	strcat(stSockAddr->sun_path, "/socket");
-	unlink (stSockAddr->sun_path);
-	
-	if(bind(*sock, (struct sockaddr*) stSockAddr, sizeof(*stSockAddr)) == -1)
-		Die(*sock, "Ошибка: связывания");
-		
-	if (listen(*sock, 1) == -1)
-		Die(*sock, "Ошибка: прослушивания");
-
-	*pollfd = epoll_create(MAX_CLIENTS);
-	if (*pollfd == -1)
-		Die(*sock, "epoll_create");
-	
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = *sock;
-	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
-		Die(*sock, "epoll_ctl: sock"); 
-}
-
 int Hash(int data){
 	int key = data;
 	key = (key + ~(key << 16))%HASH_CONSTANT;
@@ -79,14 +51,14 @@ int Search_Hash(int H[], int data){
 	}
 }
 
-void Add_Hash(int H[], int data){
+int  Add_Hash(int H[], int data){
 	if (Search_Hash(H, data) != -1)
-		return;
+		return -1;
 	int key = Hash(data);
 	while(1){
 		if (H[key] == HASH_EMPTY || H[key] == HASH_DELETED){
 			H[key] = data;
-			return;
+			return key;
 		}
 		key = Rehash(key);
 	}
@@ -105,6 +77,47 @@ void Delete_Hash(int H[], int data){
 	}			
 }
 
+void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd, int X[], int Y[], int Address[]) {
+	*sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (*sock == -1)
+		Die(0, "socket failed");
+	
+	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
+	stSockAddr->sun_family=AF_UNIX;
+	realpath(".", stSockAddr->sun_path);
+	strcat(stSockAddr->sun_path, "/socket");
+	unlink (stSockAddr->sun_path);
+	
+	if(bind(*sock, (struct sockaddr*) stSockAddr, sizeof(*stSockAddr)) == -1)
+		Die(*sock, "Ошибка: связывания");
+		
+	if (listen(*sock, 1) == -1)
+		Die(*sock, "Ошибка: прослушивания");
+
+	*pollfd = epoll_create(MAX_CLIENTS);
+	if (*pollfd == -1)
+		Die(*sock, "epoll_create");
+	
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = *sock;
+	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
+		Die(*sock, "epoll_ctl: sock");
+
+	int n;
+	int addr, x, y ;
+	FILE *in;
+	in = fopen(in, "config.txt");
+	fscanf(in, "%d\n", &n);
+	int i;
+	for (i=0; i<n; i++){
+		fscanf(in, "%d%d%d\n", &addr, &x, &y);
+		int index=Add_Hash(Address, addr);
+		X[index]=x;
+		Y[index]=y;
+	}	
+	fclose(in);
+}
 
 double Distance(double x1, double y1, double x2, double y2){
 	return (x1-x2) * (x1-x2) + (y1 - y2) * (y1 - y2);
@@ -115,14 +128,10 @@ double Power(double x1, double y1, double x2, double y2, double start_power ){
 }
 
 
-void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
+void Unpacking(char buf[],  char msg[], float* power) {
 	char *p;
-	*naim = strtol(buf, &p, 0);
-
-	int i;
-	for(i = 0; i < *naim; i++)
-		aim[i] = strtol(p, &p, 0);
-	
+	*power = strtolf(buf, &p, 0);
+		
 	while (*p == ' ')
 		++p;
 
@@ -140,15 +149,22 @@ int FindPos(int clientfd, int nclients, int clients[]) {
 
 void TransmitData(int clientfd, int nclients, int clients[]) {
 	static char buf[BUF_SIZE], msg[MSG_SIZE], errmsg[ERRMSG_SIZE];
-	static int naim = 0, aim[MAX_CLIENTS];
+	static float power;
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
         //printf("%s\n", buf);
-        
-	memset(&msg, 0, sizeof(msg));
-	Unpacking(buf, &naim, aim, msg);
-	
+	if (buf[0] == 'a'){
+		int addr = strtol(buf + 1, 0, 0);
+		int pos=Search_Hash(Address, addr);
+		if (pos > -1)
+			flag[pos] = true;
+		Add_Hash(Hash_Socket, clientfd);		
+	}	
+	else{
+		memset(&msg, 0, sizeof(msg));
+		Unpacking(buf, msg, &power);
+	}
 	int i;
 	for(i = 0; i < naim; i++)
 		if (aim[i] < nclients) {
@@ -195,6 +211,8 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int cli
 			break;
 		}
 
+	Delete_Hash(Hash_Socket, clientfd);
+	
 	shutdown(clientfd, SHUT_RDWR);
 	close(clientfd);
 }
@@ -212,7 +230,7 @@ void Task(int sock, int pollfd) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
 	int nclients = 0, clients[MAX_CLIENTS];
-	int H[HASH_CONSTANT];
+	int Address[HASH_CONSTANT];
 	int i;
 	for(i = 0; i < HASH_CONSTANT; ++i)
 		H[i]=-1;

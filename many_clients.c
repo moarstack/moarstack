@@ -7,10 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#define MAX_EVENTS 10
-#define STR_SIZE 256
+#define MAX_CLIENTS 10
+#define BUF_SIZE 256
+#define MSG_SIZE 256
+#define ERRMSG_SIZE 256
 
-//const int MAX_EVENTS = 10;
+//const int MAX_CLIENTS = 10;
 //const int STR_SIZE = 256;
 
 int Die(int sock, const char *str) {
@@ -24,7 +26,7 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	if (*sock == -1)
 		Die(0, "socket failed");
 	
-	memset(stSockAddr, 0, sizeof(*stSockAddr));
+	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
 	stSockAddr->sun_family=AF_UNIX;
 	realpath(".", stSockAddr->sun_path);
 	strcat(stSockAddr->sun_path, "/socket");
@@ -36,35 +38,29 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	if (listen(*sock, 1) == -1)
 		Die(*sock, "Ошибка: прослушивания");
 
-	*pollfd = epoll_create(10);
+	*pollfd = epoll_create(MAX_CLIENTS);
 	if (*pollfd == -1)
-		Die(*sock, "poll_create");
+		Die(*sock, "epoll_create");
 	
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = *sock;
 	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
-		Die(*sock, "poll_ctl: sock"); 
+		Die(*sock, "epoll_ctl: sock"); 
 }
 
 void Unpacking(char buf[], int *naim, int aim[], char msg[]) {
-	*naim = 0;
+	char *p;
+	*naim = strtol(buf, &p, 0);
+
 	int i;
-        for(i = 0; '0' <= buf[i] && buf[i] <= '9'; i++)
-        	*naim = 10 * (*naim) + buf[i] - '0';
+	for(i = 0; i < *naim; i++)
+		aim[i] = strtol(p, &p, 0);
+	
+	while (*p == ' ')
+		++p;
 
-        int j = 0;
-        for(; buf[i] && j < *naim; i++)
-        	if ('0' <= buf[i] && buf[i] <= '9') {
-                	aim[j] = 0;
-                        while (buf[i] && '0' <= buf[i] && buf[i] <= '9') {
-                        	aim[j] = 10 * aim[j] + buf[i] - '0';
-                                ++i;
-                        }
-                        ++j;
-                }
-
-        strcpy(msg, &buf[i]);
+	strcpy(msg, p);
 }
 
 int FindPos(int clientfd, int nclients, int clients[]) {
@@ -77,8 +73,8 @@ int FindPos(int clientfd, int nclients, int clients[]) {
 }
 
 void TransmitData(int clientfd, int nclients, int clients[]) {
-	static char buf[STR_SIZE], msg[STR_SIZE], errmsg[STR_SIZE];
-	static int naim = 0, aim[MAX_EVENTS];
+	static char buf[BUF_SIZE], msg[MSG_SIZE], errmsg[ERRMSG_SIZE];
+	static int naim = 0, aim[MAX_CLIENTS];
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
@@ -90,9 +86,9 @@ void TransmitData(int clientfd, int nclients, int clients[]) {
 	int i;
 	for(i = 0; i < naim; i++)
 		if (aim[i] < nclients) {
-			printf("\nClient %d from address %d\n", clientfd, FindPos(clientfd, nclients, clients)); 
+			printf("\nClient %d with address %d\n", clientfd, FindPos(clientfd, nclients, clients)); 
 			printf("send message: %s", msg);
-			printf("to client %d from address %d\n", clients[aim[i]], aim[i]);
+			printf("to client %d with address %d\n", clients[aim[i]], aim[i]);
 			send(clients[aim[i]], msg, sizeof(msg), 0);		
 		}
 		else {
@@ -147,14 +143,14 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int cli
 }*/
 
 void Task(int sock, int pollfd) {
-	struct epoll_event ev, events[MAX_EVENTS];
+	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
-	int nclients = 0, clients[MAX_EVENTS];
+	int nclients = 0, clients[MAX_CLIENTS];
 
 	for( ; ; ) {
 		//printf("clients: ");
 		//Write(nclients, clients);
-		nfds = epoll_wait(pollfd, events, MAX_EVENTS, -1);
+		nfds = epoll_wait(pollfd, events, MAX_CLIENTS, -1);
 		if(nfds == -1)
 			Die(sock, "poll_pwait");
 		

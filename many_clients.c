@@ -27,17 +27,17 @@ int Die(int sock, const char *str) {
 
 int Hash(int data){
 	int key = data;
-	key = (key + ~(key << 16))%HASH_CONSTANT;
-	key = (key ^ (key >> 5))%HASH_CONSTANT;
-	key = (key + (key << 3))%HASH_CONSTANT;
-	key = (key ^ (key >> 13))%HASH_CONSTANT;
-	key = (key + ~(key << 9))%HASH_CONSTANT;
-	key = (key ^ (key >> 17))%HASH_CONSTANT;
+	key = (key + ~(key << 16)) % HASH_CONSTANT;
+	key = (key ^ (key >> 5)) % HASH_CONSTANT;
+	key = (key + (key << 3)) % HASH_CONSTANT;
+	key = (key ^ (key >> 13)) % HASH_CONSTANT;
+	key = (key + ~(key << 9)) % HASH_CONSTANT;
+	key = (key ^ (key >> 17)) % HASH_CONSTANT;
 	return key;
 } 
 
 int Rehash(int pos){
-	return (pos + 1)%HASH_CONSTANT;
+	return (pos + 1) % HASH_CONSTANT;
 }
 
 int Search_Hash(int H[], int data){
@@ -77,7 +77,30 @@ void Delete_Hash(int H[], int data){
 	}			
 }
 
-void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd, int X[], int Y[], int Address[]) {
+void ReadConfig(int Address[], double X[], double Y[]) {
+	FILE *in;
+	in = fopen("config.txt", "r");
+
+	int i;	
+	for(i = 0; i < HASH_CONSTANT; i++)
+		Address[i] = HASH_EMPTY;
+	
+	int n;
+	fscanf(in, "%d\n", &n);
+	
+	int index, addr;
+	double x, y;
+	for (i = 0; i < n; i++){
+		fscanf(in, "%d%lf%lf\n", &addr, &x, &y);
+		index = Add_Hash(Address, addr);
+		X[index] = x;
+		Y[index] = y;
+	}	
+	
+	fclose(in);
+}
+
+void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	*sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (*sock == -1)
 		Die(0, "socket failed");
@@ -94,7 +117,7 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd, int X[], int Y
 	if (listen(*sock, 1) == -1)
 		Die(*sock, "Ошибка: прослушивания");
 
-	*pollfd = epoll_create(MAX_CLIENTS);
+	*pollfd = epoll_create(MAX_CLIENTS + 1);
 	if (*pollfd == -1)
 		Die(*sock, "epoll_create");
 	
@@ -103,32 +126,17 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd, int X[], int Y
 	ev.data.fd = *sock;
 	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
 		Die(*sock, "epoll_ctl: sock");
-
-	int n;
-	int addr, x, y ;
-	FILE *in;
-	in = fopen(in, "config.txt");
-	fscanf(in, "%d\n", &n);
-	int i;
-	for (i=0; i<n; i++){
-		fscanf(in, "%d%d%d\n", &addr, &x, &y);
-		int index=Add_Hash(Address, addr);
-		X[index]=x;
-		Y[index]=y;
-	}	
-	fclose(in);
 }
 
-double Distance(double x1, double y1, double x2, double y2){
-	return (x1-x2) * (x1-x2) + (y1 - y2) * (y1 - y2);
+double Distance(double x1, double y1, double x2, double y2) {
+	return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
 }
 
-double Power(double x1, double y1, double x2, double y2, double start_power ){
+double Power(double x1, double y1, double x2, double y2, double start_power ) {
 	return (start_power - POWER_CONSTANT * Distance(x1, y1, x2, y2));
 }
 
-
-void Unpacking(char buf[],  char msg[], float* power) {
+/*void Unpacking(char buf[],  char msg[], float* power) {
 	char *p;
 	*power = strtolf(buf, &p, 0);
 		
@@ -215,31 +223,16 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int *nclients, int cli
 	
 	shutdown(clientfd, SHUT_RDWR);
 	close(clientfd);
-}
-
-/*void Write(int n, int X[]) {
-	int i;
-	printf("size == %d : ", n);
-	for(i = 0; i < n; i++)
-		printf("%d ", X[i]);
-
-	printf("\n");
 }*/
 
-void Task(int sock, int pollfd) {
+void Task(int sock, int pollfd, int Address[], double X[], double Y[]) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
-	int nclients = 0, clients[MAX_CLIENTS];
-	int Address[HASH_CONSTANT];
-	int i;
-	for(i = 0; i < HASH_CONSTANT; ++i)
-		H[i]=-1;
-	for( ; ; ) {
-		//printf("clients: ");
-		//Write(nclients, clients);
+	
+	/*for( ; ; ) {
 		nfds = epoll_wait(pollfd, events, MAX_CLIENTS, -1);
 		if(nfds == -1)
-			Die(sock, "poll_pwait");
+			Die(sock, "epoll_wait");
 		
 		for (n = 0; n < nfds; ++n) {
 			if (events[n].data.fd == sock)
@@ -252,7 +245,7 @@ void Task(int sock, int pollfd) {
 			}
 			
 		}
-	}
+	}*/
 }
 
 void Deinit(int sock, struct sockaddr_un stSockAddr) {
@@ -262,14 +255,17 @@ void Deinit(int sock, struct sockaddr_un stSockAddr) {
 }
 
 int main(void) {
+	int Address[HASH_CONSTANT];
+	double X[HASH_CONSTANT], Y[HASH_CONSTANT];
+	ReadConfig(Address, X, Y);
+	
 	int pollfd, sock;
 	struct sockaddr_un stSockAddr;	
-
 	Init(&sock, &stSockAddr, &pollfd);
 	
-	Task(sock, pollfd);
+	Task(sock, pollfd, Address, X, Y);
 
-	Deinit(sock, stSockAddr);
+	Deinit(sock, stSockAddr);*/
 
 	return 0; 
 }

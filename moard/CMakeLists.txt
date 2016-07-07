@@ -18,3 +18,4 @@ include_directories(inc)
 #add library
 add_executable(moard ${SRC_FILES})
 target_link_libraries(moard moar_shared)
+target_link_libraries(moard dl)

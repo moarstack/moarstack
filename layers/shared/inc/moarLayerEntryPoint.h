@@ -5,6 +5,9 @@
 #ifndef MOARSTACK_MOARLAYERENTRYPOINT_H
 #define MOARSTACK_MOARLAYERENTRYPOINT_H
 
+#define MOAR_LAYER_ENTRY_POINT MoarLayerEntryPoint
+#define MOAR_LAYER_ENTRY_POINT_NAME "MoarLayerEntryPoint"
+
 typedef struct{
     int UpSocketHandler;
     int DownSocketHandler;

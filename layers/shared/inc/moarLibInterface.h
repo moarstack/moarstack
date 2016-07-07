@@ -11,11 +11,13 @@
 #define MOAR_LIBRARY_INFO_OK 0
 #define MOAR_LIBRARY_INFO_FAILED 1
 
+#define MOAR_LIBRARY_INFO MoarLibraryInfo
+#define MOAR_LIBRARY_INFO_NAME "MoarLibraryInfo"
+
 typedef enum{
     MoarLayer_Interface,
     MoarLayer_Channel,
     MoarLayer_Routing,
-    MoarLayer_Router,
     MoarLayer_Presentation,
     MoarLayer_Service,
     MoarLayer_LayersCount,
@@ -39,7 +41,7 @@ typedef int (*moarLibraryInfo_F)(MoarLibInfo_T* libInfo);
 extern "C" {
 #endif
 
-extern int MoarLibraryInfo(MoarLibInfo_T* libInfo);
+extern int MOAR_LIBRARY_INFO(MoarLibInfo_T* libInfo);
 
 #ifdef __cplusplus
 };

@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include "moarCommons.h"
+#include "moarRouting.h"	// RouteAddr_T
 #include "moarPresentation.h"
 #include "moarService.h"
 

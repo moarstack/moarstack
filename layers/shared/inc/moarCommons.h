@@ -8,8 +8,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define ROUTE_ADDR_SIZE	8
-
 // stack-wide command type
 typedef enum {
     LayerCommandType_ProcessData,
@@ -31,8 +29,6 @@ typedef struct {
     NearmatesCount_T    Count;      // count of nearmates in report
     size_t              EntrySize;  // size of data per one nearmate
 } NearmatesReportMeta_T;
-
-typedef uint8_t	RouteAddr_T[ ROUTE_ADDR_SIZE ];
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL

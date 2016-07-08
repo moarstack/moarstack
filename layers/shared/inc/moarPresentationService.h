@@ -6,6 +6,7 @@
 #define MOARSTACK_MOARPRESENTATIONSERVICE_H
 
 #include <stddef.h>
+#include "moarCommons.h"
 #include "moarPresentation.h"
 #include "moarService.h"
 

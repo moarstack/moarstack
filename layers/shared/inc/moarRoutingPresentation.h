@@ -6,6 +6,7 @@
 #define MOARSTACK_MOARROUTINGPRESENTATION_H
 
 #include <stddef.h>
+#include "moarCommons.h"
 #include "moarRouting.h"
 #include "moarPresentation.h"
 

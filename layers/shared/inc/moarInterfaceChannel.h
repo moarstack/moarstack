@@ -6,6 +6,7 @@
 #define MOARSTACK_MOARINTERFACECHANNEL_H
 
 #include <stddef.h>
+#include "moarCommons.h"
 #include "moarInterface.h"
 #include "moarChannnel.h"
 

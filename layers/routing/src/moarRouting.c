@@ -3,6 +3,7 @@
 //
 
 #include <moarLayerEntryPoint.h>
+#include "moarCommons.h"
 #include "moarRouting.h"
 #include "moarChannelRouting.h"
 #include "moarRoutingPresentation.h"

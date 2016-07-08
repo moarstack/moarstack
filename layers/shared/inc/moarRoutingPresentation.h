@@ -10,9 +10,6 @@
 #include "moarRouting.h"
 #include "moarPresentation.h"
 
-const size_t	ROUTE_MSG_UP_SIZE = sizeof( RouteMsgUp_T );
-const size_t	PRESENT_MSG_DOWN_SIZE = sizeof( PresentMsgDown_T );
-
 // possible states of packet when it is moving from routing to presentation
 typedef enum {
 	PackStateRoute_None, 		// not defined state of enum
@@ -32,5 +29,8 @@ typedef struct {
 	RouteAddr_T	Destination;
 	size_t		Size;
 } PresentMsgDown_T;
+
+const size_t	ROUTE_MSG_UP_SIZE = sizeof( RouteMsgUp_T );
+const size_t	PRESENT_MSG_DOWN_SIZE = sizeof( PresentMsgDown_T );
 
 #endif //MOARSTACK_MOARROUTINGPRESENTATION_H

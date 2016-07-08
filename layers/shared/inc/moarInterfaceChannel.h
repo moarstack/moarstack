@@ -8,10 +8,7 @@
 #include <stddef.h>
 #include "moarCommons.h"
 #include "moarInterface.h"
-#include "moarChannnel.h"
-
-const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );
-const size_t	CHANNEL_MSG_DOWN_SIZE = sizeof( ChannelMsgDown_T );
+#include "moarChannel.h"
 
 // possible states of packet when it is moving from interface to channel
 typedef enum {
@@ -36,5 +33,8 @@ typedef struct {
 	IfaceAddr_T	Bridge;
 	size_t		Size;
 } ChannelMsgDown_T;
+
+const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );
+const size_t	CHANNEL_MSG_DOWN_SIZE = sizeof( ChannelMsgDown_T );
 
 #endif //MOARSTACK_MOARINTERFACECHANNEL_H

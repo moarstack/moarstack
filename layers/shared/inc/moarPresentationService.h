@@ -22,15 +22,15 @@ typedef enum {
 
 // metadata of packet moving from presentation to service
 typedef struct {
-	PackStatePresentation_T	State;	// state of packet moving from channel to routing
-	size_t					Size;	// size of payload
-	RoutingAddr_T			Source; // source node of current packet
+	PackStatePresent_T	State;	// state of packet moving from channel to routing
+	size_t				Size;	// size of payload
+	RouteAddr_T			Source; // source node of current packet
 } PresentMsgUp_T;
 
 // metadata of packet moving from service to presentation
 typedef struct {
-	RoutingAddr_T	Destination;
-	size_t			Size;
+	RouteAddr_T	Destination;
+	size_t		Size;
 } ServiceMsgDown_T;
 
 #endif //MOARSTACK_MOARPRESENTATIONSERVICE_H

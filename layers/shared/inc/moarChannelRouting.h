@@ -10,7 +10,7 @@
 #include "moarRouting.h"
 
 const size_t	CHANNEL_MSG_UP_SIZE = sizeof( ChannelMsgUp_T );
-const size_t	ROUTING_MSG_DOWN_SIZE = sizeof( RoutingMsgDown_T );
+const size_t	ROUTE_MSG_DOWN_SIZE = sizeof( RouteMsgDown_T );
 
 // possible states of packet when it is moving from channel to routing
 typedef enum {
@@ -31,6 +31,6 @@ typedef struct {
 typedef struct {
 	ChannelAddr_T	Bridge;
 	size_t			Size;
-} RoutingMsgDown_T;
+} RouteMsgDown_T;
 
 #endif //MOARSTACK_MOARCHANNELROUTING_H

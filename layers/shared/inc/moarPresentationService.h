@@ -15,10 +15,10 @@ const size_t	SERVICE_MSG_DOWN_SIZE = sizeof( ServiceMsgDown_T );
 
 // possible states of packet when it is moving from presentation to service
 typedef enum {
-	PackStateRouting_None, 			// not defined state of enum
-	PackStateRouting_Sent,			// current packet is sent and has no need to get response
-	PackStateRouting_NotSent,		// current packet is sent and now is waiting for response
-	PackStateRouting_Received		// current packet was received
+	PackStatePresent_None, 			// not defined state of enum
+	PackStatePresent_Sent,			// current packet is sent and has no need to get response
+	PackStatePresent_NotSent,		// current packet is sent and now is waiting for response
+	PackStatePresent_Received		// current packet was received
 } PackStatePresent_T;
 
 // metadata of packet moving from presentation to service

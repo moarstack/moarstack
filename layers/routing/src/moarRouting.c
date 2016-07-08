@@ -2,7 +2,7 @@
 // Created by svalov, kryvashek on 05.07.16.
 //
 
-#include <moarLayerEntryPoint.h>
+#include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
 #include "moarRouting.h"
 #include "moarChannelRouting.h"

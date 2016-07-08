@@ -37,13 +37,13 @@ typedef struct {
 			Msg;		// place of layer message in memory (in memory space of current layer!)
 } LayerPacketStruct_T;
 
-typedef uint8_t NearmatesCount_T;   // type to describe nearmates count
+typedef uint8_t NeighborsCount_T;   // type to describe nearmates count
 
 // struct ofr metadata of 'LayerCommandType_ReportNearmates' command
 typedef struct {
-    NearmatesCount_T    Count;      // count of nearmates in report
+	NeighborsCount_T    Count;      // count of nearmates in report
     size_t              EntrySize;  // size of data per one nearmate
-} NearmatesReportMeta_T;
+} NeighborsReportMeta_T;
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL

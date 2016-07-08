@@ -26,15 +26,15 @@ typedef struct {
 typedef struct {
 	LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
 	size_t              MetaSize;   // size of command arguments depending on the command type
-	void *				MetaData;	// metadata for current command
+	void				* MetaData;	// metadata for current command
 } LayerCommandStruct_T;
 
 // struct to describe packet and its metadata (layer message) in memory
 typedef struct {
 	size_t	DataSize,	// size of payload, including all added headers
 			MsgSize;	// size of layer message (differs for different layers, see <Layer>Msg<Up/Down>_T structs)
-	void *	Data,		// place of payload in memory (in memory space of current layer!)
-			Msg;		// place of layer message in memory (in memory space of current layer!)
+	void	* Data,		// place of payload in memory (in memory space of current layer!)
+			* Msg;		// place of layer message in memory (in memory space of current layer!)
 } LayerPacketStruct_T;
 
 typedef uint8_t NeighborsCount_T;   // type to describe nearmates count

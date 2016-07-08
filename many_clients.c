@@ -84,7 +84,7 @@ void Delete_Hash(int H[], int data){
 	}			
 }
 
-void ReadConfig(int Address[], double X[], double Y[]) {
+void ReadConfig(int Address[], float X[], float Y[], float Sensibility[]) {
 	FILE *in;
 	in = fopen("config.txt", "r");
 
@@ -94,12 +94,13 @@ void ReadConfig(int Address[], double X[], double Y[]) {
 	fscanf(in, "%d\n", &n);
 	
 	int i, index, addr;
-	double x, y;
+	float x, y, sens;
 	for (i = 0; i < n; i++){
-		fscanf(in, "%d%lf%lf\n", &addr, &x, &y);
+		fscanf(in, "%d%f%f%f\n", &addr, &x, &y, &sens);
 		index = Add_Hash(Address, addr);
 		X[index] = x;
 		Y[index] = y;
+		Sensibility[index] = sens;
 	}	
 	
 	fclose(in);
@@ -133,18 +134,18 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 		Die(*sock, "epoll_ctl: sock");
 }
 
-double Distance(double x1, double y1, double x2, double y2) {
-	register double dx = x2 - x1, dy = y2 - y1;
+float Distance(float x1, float y1, float x2, float y2) {
+	register float dx = x2 - x1, dy = y2 - y1;
 	return dx * dx + dy * dy;
 }
 
-double Power(double x1, double y1, double x2, double y2, double start_power) {
+float Power(float x1, float y1, float x2, float y2, float start_power) {
 	return (start_power - POWER_CONSTANT * Distance(x1, y1, x2, y2));
 }
 
-void Unpacking(char buf[], char msg[], double* power) {
+void Unpacking(char buf[], char msg[], float* power) {
 	char *p;
-	*power = strtod(buf, &p);
+	*power = strtof(buf, &p);
 		
 	while (*p == ' ')
 		++p;
@@ -161,9 +162,9 @@ int FindPos(int clientfd, int nclients, int clients[]) {
 	return -1; 
 }
 
-void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int sock_to_addr[], int addr_to_sock[], double X[], double Y[]) {
+void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int sock_to_addr[], int addr_to_sock[], float X[], float Y[], float Sensibility[]) {
 	static char buf[BUF_SIZE], msg[MSG_SIZE], errmsg[ERRMSG_SIZE];
-	static double power;
+	static float power;
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
@@ -191,7 +192,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 		
 		int i;
 		for(i = 0; i < HASH_CONSTANT; i++)
-			if (i != pos && flag[i] /*&& Power(X[i], Y[i], X[pos], Y[pos], power) > 0*/) {
+			if (i != pos && flag[i] /*&& Power(X[i], Y[i], X[pos], Y[pos], power) > Sensibility[i]*/) {
 				send(addr_to_sock[i], msg, sizeof(msg), 0);
 				printf("\nClient %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
 			}
@@ -234,7 +235,7 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int sock_hash[], int s
 	close(clientfd);
 }
 
-void Task(int sock, int pollfd, int Address[], double X[], double Y[]) {
+void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensibility[]) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
 
@@ -262,7 +263,7 @@ void Task(int sock, int pollfd, int Address[], double X[], double Y[]) {
 				ClientRegister(sock, pollfd, sock_hash);
 			else {
 				if(events[n].events == EPOLLIN)
-					TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y);	
+					TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y, Sensibility);	
 				else
 					ClientUnregister(sock, pollfd, events[n].data.fd, sock_hash, sock_to_addr, Address, flag);
 			}
@@ -279,16 +280,14 @@ void Deinit(int sock, struct sockaddr_un stSockAddr) {
 
 int main(void) {
 	int Address[HASH_CONSTANT];
-	double X[HASH_CONSTANT], Y[HASH_CONSTANT];
-	ReadConfig(Address, X, Y);
-
-	printf("pos[123] == %d, pos[5213] == %d\n", Search_Hash(Address, 123), Search_Hash(Address, 5213));	
+	float X[HASH_CONSTANT], Y[HASH_CONSTANT], Sensibility[HASH_CONSTANT];
+	ReadConfig(Address, X, Y, Sensibility);
 	
 	int pollfd, sock;
 	struct sockaddr_un stSockAddr;	
 	Init(&sock, &stSockAddr, &pollfd);
 	
-	Task(sock, pollfd, Address, X, Y);
+	Task(sock, pollfd, Address, X, Y, Sensibility);
 
 	Deinit(sock, stSockAddr);
 

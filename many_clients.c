@@ -164,7 +164,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
-        printf("Server receive message from socket %d : %s\n", clientfd, buf);
+        printf("\nServer receive message from socket %d : %s\n", clientfd, buf);
 
 	memset(&msg, 0, sizeof(msg));
 	Unpacking(buf, msg, &power);
@@ -174,7 +174,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 		
 	int i;
 	for(i = 0; i < HASH_CONSTANT; i++)
-		if (i != pos && flag[i] /*&& Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]*/) {
+		if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
 			send(addr_to_sock[i], msg, sizeof(msg), 0);
 			printf("\nClient %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
 		}
@@ -209,12 +209,12 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 			if (pos == -1){
 				printf("%d is invalid address\n", addr);
 				sprintf(msg, "you have invalid address\n");
-				send(newsock, msg, sizeof(msg), 0);
+				send(newsock, msg, strlen(msg), 0);
 			}
 			else{
 				printf("%d has already registered\n", addr);
-                                sprintf(msg, "this address was registered \n");
-                                send(newsock, msg, sizeof(msg), 0);
+                                sprintf(msg, "this address was registered\n");
+                                send(newsock, msg, strlen(msg), 0);
 			}
 		}
 	}

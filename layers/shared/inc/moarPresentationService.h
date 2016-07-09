@@ -22,14 +22,12 @@ typedef enum {
 // metadata of packet moving from presentation to service
 typedef struct {
 	PackStatePresent_T	State;	// state of packet moving from channel to routing
-	size_t				Size;	// size of payload
 	RouteAddr_T			Source; // source node of current packet
 } PresentMsgUp_T;
 
 // metadata of packet moving from service to presentation
 typedef struct {
 	RouteAddr_T	Destination;
-	size_t		Size;
 } ServiceMsgDown_T;
 
 const size_t	PRESENT_MSG_UP_SIZE = sizeof( PresentMsgUp_T );

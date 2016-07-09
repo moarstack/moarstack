@@ -25,7 +25,6 @@ typedef enum {
 // metadata of packet moving from interface to channel
 typedef struct {
 	PackStateIface_T	State;	// state of packet moving from interface to channel
-	size_t				Size;	// size of payload
 } IfaceMsgUp_T;
 
 const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );

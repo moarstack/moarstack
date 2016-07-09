@@ -11,8 +11,8 @@
 // stack-wide command type
 typedef enum {
     LayerCommandType_ProcessData,
-    LayerCommandType_RequestNearmates,
-    LayerCommandType_ReportNearmates
+    LayerCommandType_RequestNeighbors,
+    LayerCommandType_ReportNeighbors
     // some other commands
 } LayerCommandType_T;
 

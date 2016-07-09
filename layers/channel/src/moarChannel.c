@@ -3,6 +3,7 @@
 //
 
 #include <moarLayerEntryPoint.h>
+#include <stdio.h>
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 

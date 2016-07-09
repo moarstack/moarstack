@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     //prepare sockets
     //start layers here
     for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = createThread(&(libraries[i]),NULL);
+        int res = createThread(libraries+i,NULL);
         if(THREAD_CREATE_OK == res)
             printf("thread for %s created\n",libraries[i].Info.LibraryName);
         else
@@ -63,8 +63,7 @@ int main(int argc, char** argv)
     pause();
     //stop
     for(int i=0; i<LAYERS_COUNT;i++) {
-
-        int res = exitThread(&(libraries[i]));
+        int res = exitThread(libraries+i);
         if(THREAD_EXIT_OK == res)
             printf("thread %s exited\n",libraries[i].Info.LibraryName);
         else

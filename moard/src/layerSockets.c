@@ -4,26 +4,37 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 
 #include "layerSockets.h"
 
-#define SOCKETPAIRS_COUNT (MoarLayer_LayersCount-1)
-
-int sockets[ 2 * SOCKETPAIRS_COUNT ] = { 0 };
+static int	socketsCountUsual,
+			socketsCountIface;
+static int	* socketsUsual = NULL,
+			* socketsIface = NULL;
 
 int socketDown( MoarLayerType_T layerType ) {
-	return ( MoarLayer_Interface == layerType ? -1 : sockets[ 2 * layerType ] );
+	return ( MoarLayer_Interface == layerType ? -1 : socketsUsual[ 2 * layerType ] );
 }
-
+// TODO: change both for work with iface-channel sockets
 int socketUp( MoarLayerType_T layerType ) {
-	return ( MoarLayer_Service == layerType ? -1 : sockets[ 2 * layerType + 1 ] );
+	return ( MoarLayer_Service == layerType ? -1 : socketsUsual[ 2 * layerType + 1 ] );
 }
 
-int socketsPrepare( void ) {
+int socketsPrepare( IfacesCount_T ifacesCount ) {
 	int result = 0;
 
-	for( int i = 0; i < SOCKETPAIRS_COUNT; i++ )
-		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, sockets + 2 * i );
+	socketsCountUsual = 2 * MoarLayer_LayersCount - 4; // -1 for beeing between layers, -1 for exceptin iface-channel pair, then * 2
+	socketsCountIface = 2 * ifacesCount;
+
+	socketsUsual = ( int * )calloc( socketsCountUsual, sizeof( int ) );
+	socketsIface = ( int * )calloc( socketsCountIface, sizeof( int ) );
+
+	for( int i = 0; i < socketsCountUsual; i++ )
+		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, socketsUsual + 2 * i );
+
+	for( int i = 0; i < socketsCountIface; i++ )
+		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, socketsIface + 2 * i );
 
 	return ( result < 0 ? -1 : 0 );
 }

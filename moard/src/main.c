@@ -23,8 +23,10 @@
 
 #ifndef LOAD_MULTIPLE_INTERFACES
 #define LAYERS_COUNT	(MoarLayer_LayersCount)
+#define IFACES_COUNT	1
 #else
 #define LAYERS_COUNT	(MoarLayer_LayersCount+1)
+#define IFACES_COUNT	2
 #endif
 
 void signalHandler(int signo){

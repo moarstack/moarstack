@@ -9,7 +9,14 @@
 #include <threadManager.h>
 #include <moarLibrary.h>
 #include <signal.h>
+
+//#define LOAD_MULTIPLE_INTERFACES
+
+#ifndef LOAD_MULTIPLE_INTERFACES
 #define LAYERS_COUNT (MoarLayer_LayersCount)
+#else
+#define LAYERS_COUNT (MoarLayer_LayersCount+1)
+#endif
 
 void signalHandler(int signo){
     if(SIGINT == signo){
@@ -30,14 +37,16 @@ int main(int argc, char** argv)
     fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
     fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
     //testing multiple instances
-    //fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
+#ifdef LOAD_MULTIPLE_INTERFACES
+    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
+#endif
     //setup signal handler
     signal(SIGINT, signalHandler);
     //load
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);
         if (LIBRARY_LOAD_OK == res)
-            printf("%s by %s loaded\n", libraries[i].Info.LibraryName, libraries[i].Info.Author);
+            printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
         else
             printf("%s load failed\n",fileNames[i]);
     }

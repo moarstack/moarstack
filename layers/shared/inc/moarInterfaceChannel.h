@@ -28,13 +28,6 @@ typedef struct {
 	size_t				Size;	// size of payload
 } IfaceMsgUp_T;
 
-// metadata of packet moving from channel to interface
-typedef struct {
-	IfaceAddr_T	Bridge;
-	size_t		Size;
-} ChannelMsgDown_T;
-
 const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );
-const size_t	CHANNEL_MSG_DOWN_SIZE = sizeof( ChannelMsgDown_T );
 
 #endif //MOARSTACK_MOARINTERFACECHANNEL_H

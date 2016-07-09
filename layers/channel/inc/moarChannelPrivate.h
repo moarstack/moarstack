@@ -14,4 +14,12 @@ typedef struct {
 	uint8_t 			* Value;
 } UnIfaceAddr_T;
 
+// metadata of packet moving from channel to interface
+typedef struct {
+	UnIfaceAddr_T	Bridge;
+	size_t			Size;
+} ChannelMsgDown_T;
+
+const size_t	CHANNEL_MSG_DOWN_SIZE = sizeof( ChannelMsgDown_T );
+
 #endif //MOARSTACK_MOARCHANNELPRIVATE_H

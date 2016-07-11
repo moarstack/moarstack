@@ -12,13 +12,13 @@
 #include <math.h>
 #include <time.h>
 #include "hash.h"
+#define CONFIG_FILE "config.txt"
 #define MAX_CLIENTS 10
 #define BUF_SIZE 256
 #define MSG_SIZE 256
 #define ERRMSG_SIZE 256
 #define ADDR_SIZE 30
 #define POWER_CONSTANT 63
-#define CONFIG_FILE "config.txt"
 #define PI 3.14159265358
 #define LIGHT_SPEED 299792458
 
@@ -43,7 +43,7 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void ReadConfig(int Address[], float X[], float Y[], float Sensibility[], float *freq ) {
+void ReadConfig(int Address[], float X[], float Y[], float Sensitivity[], float *freq ) {
 	FILE *in;
 	in = fopen(CONFIG_FILE, "r");
 
@@ -59,7 +59,7 @@ void ReadConfig(int Address[], float X[], float Y[], float Sensibility[], float 
 		index = Add_Hash(Address, addr);
 		X[index] = x;
 		Y[index] = y;
-		Sensibility[index] = sens;
+		Sensitivity[index] = sens;
 	}	
 	
 	fclose(in);
@@ -71,9 +71,8 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 		Die(0, "ERROR: socket() failed");
 	
 	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
-	stSockAddr->sun_family=AF_UNIX;
-	realpath(".", stSockAddr->sun_path);
-	strcat(stSockAddr->sun_path, "/socket");
+	stSockAddr->sun_family = AF_UNIX;
+	realpath("./socket", stSockAddr->sun_path);
 	unlink (stSockAddr->sun_path);
 	
 	if(bind(*sock, (struct sockaddr*) stSockAddr, sizeof(*stSockAddr)) == -1)
@@ -115,7 +114,7 @@ void Unpacking(char buf[], char msg[], float* power) {
 	strcpy(msg, p);
 }
 
-void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int sock_to_addr[], int addr_to_sock[], float X[], float Y[], float Sensibility[], float freq) {
+void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int sock_to_addr[], int addr_to_sock[], float X[], float Y[], float Sensitivity[], float freq) {
 	int pos;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
@@ -135,7 +134,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 
 	if (buf[0] == '&') {
 		float sens = strtof(buf + 1, 0);
-		Sensibility[pos] = sens;
+		Sensitivity[pos] = sens;
 		printf("%s : ", GetTime());	
 		printf("Client's sensibility has been changed to %f\n", sens);
 	}	
@@ -144,7 +143,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 		Unpacking(buf, msg, &power);
  	
 		for(int i = 0; i < HASH_CONSTANT; i++)
-			if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
+			if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensitivity[i]) {
 				send(addr_to_sock[i], msg, sizeof(msg), 0);
 				printf("%s : ", GetTime());
 				printf("Client %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
@@ -222,7 +221,7 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int sock_hash[], int s
 	close(clientfd);
 }
 
-void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensibility[], float freq) {
+void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensitivity[], float freq) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;	
 
@@ -242,7 +241,7 @@ void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensi
 			if (events[n].data.fd == sock)
 				ClientRegister(sock, pollfd, sock_hash, sock_to_addr, Address, addr_to_sock, flag);
 			else if (events[n].events == EPOLLIN)
-				TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y, Sensibility, freq);	
+				TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y, Sensitivity, freq);	
 			else 
 				ClientUnregister(sock, pollfd, events[n].data.fd, sock_hash, sock_to_addr, Address, flag);
 			
@@ -259,15 +258,15 @@ void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
 
 int main(void) {
 	int Address[HASH_CONSTANT];
-	float X[HASH_CONSTANT], Y[HASH_CONSTANT], Sensibility[HASH_CONSTANT];
+	float X[HASH_CONSTANT], Y[HASH_CONSTANT], Sensitivity[HASH_CONSTANT];
 	float freq;
-	ReadConfig(Address, X, Y, Sensibility, &freq);
+	ReadConfig(Address, X, Y, Sensitivity, &freq);
 	
 	int pollfd, sock;
 	struct sockaddr_un stSockAddr;	
 	Init(&sock, &stSockAddr, &pollfd);
 	
-	Task(sock, pollfd, Address, X, Y, Sensibility, freq);
+	Task(sock, pollfd, Address, X, Y, Sensitivity, freq);
 
 	Deinit(sock, stSockAddr, pollfd);
 

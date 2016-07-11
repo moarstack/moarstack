@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
 #define MAX_CLIENTS 10
 #define BUF_SIZE 256
 #define MSG_SIZE 256
@@ -22,7 +23,22 @@
 #define PI 3.14159265358
 #define LIGHT_SPEED 299792458
 
+char *GetTime(void) {
+	static char buf[30];
+	time_t sec = time(NULL);
+	struct tm *pt = localtime(&sec);
+	strcpy(buf, asctime(pt));
+
+	char *p = strchr(buf, '\n');
+	if (p)
+		*p = '\0';	
+
+	return buf;
+}
+
 int Die(int sock, const char *str) {
+	perror(GetTime());
+	perror(" : ");
 	perror(str);
 	close(sock);
 	exit(EXIT_FAILURE);
@@ -111,7 +127,7 @@ void ReadConfig(int Address[], float X[], float Y[], float Sensibility[], float 
 void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	*sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (*sock == -1)
-		Die(0, "socket failed");
+		Die(0, "ERROR: socket() failed");
 	
 	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
 	stSockAddr->sun_family=AF_UNIX;
@@ -120,20 +136,20 @@ void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
 	unlink (stSockAddr->sun_path);
 	
 	if(bind(*sock, (struct sockaddr*) stSockAddr, sizeof(*stSockAddr)) == -1)
-		Die(*sock, "Ошибка: связывания");
+		Die(*sock, "ERROR: bind() failed");
 		
 	if (listen(*sock, 1) == -1)
-		Die(*sock, "Ошибка: прослушивания");
+		Die(*sock, "ERROR: listen() failed");
 
 	*pollfd = epoll_create(MAX_CLIENTS);
 	if (*pollfd == -1)
-		Die(*sock, "epoll_create");
+		Die(*sock, "ERROR: epoll_create() failed");
 	
 	struct epoll_event ev;
 	ev.events = EPOLLIN;
 	ev.data.fd = *sock;
 	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
-		Die(*sock, "epoll_ctl: sock");
+		Die(*sock, "ERROR: Init::epoll_ctl() failed");
 }
 
 float Distance(float x1, float y1, float x2, float y2) {
@@ -164,14 +180,21 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 	
 	memset(&buf, 0, sizeof(buf));
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
-        printf("\nServer receive message from socket %d : %s\n", clientfd, buf);
+
+	int l = strlen(buf);
+	if (buf[l - 1] == '\n')
+		buf[l - 1] = '\0';
+
+	printf("%s : ", GetTime());
+        printf("Server receive message from socket %d : %s\n", clientfd, buf);
 
 	int pos = Search_Hash(sock_hash, clientfd);
 	pos = Search_Hash(Address, sock_to_addr[pos]);
 
 	if (buf[0] == '&') {
 		float sens = strtof(buf + 1, 0);
-		Sensibility[pos] = sens;	
+		Sensibility[pos] = sens;
+		printf("%s : ", GetTime());	
 		printf("Client's sensibility has been changed to %f\n", sens);
 	}	
 	else {
@@ -182,7 +205,8 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 		for(i = 0; i < HASH_CONSTANT; i++)
 			if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
 				send(addr_to_sock[i], msg, sizeof(msg), 0);
-				printf("\nClient %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
+				printf("%s : ", GetTime());
+				printf("Client %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
 		}
 	}
 }
@@ -191,11 +215,11 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 	static struct epoll_event ev;
 	int newsock = accept(sock, 0,0);
 	if (newsock == -1)
-		Die(sock, "Ошибка: принятия");
+		Die(sock, "ERROR: accept() failed");
 
 	int pos = Add_Hash(sock_hash, newsock);
-
-	printf("\nSocket %d is added\n", newsock);
+	printf("%s : ", GetTime());
+	printf("Socket %d is added\n", newsock);
 
 	//receiving of node's address
 	static char buf[ADDR_SIZE], msg[ERRMSG_SIZE];
@@ -214,13 +238,16 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 			addr_to_sock[pos] = newsock;
 			int index = Search_Hash(sock_hash, newsock);
 			sock_to_addr[index] = addr;		
-			printf("\nClient %d has been registered\n", addr);	
+			printf("%s : ", GetTime());
+			printf("Client %d has been registered\n", addr);	
 			break;
 		} else {
 			if (pos == -1){
+				printf("%s : ", GetTime());
 				printf("%d is invalid address\n", addr);
 				sprintf(msg, "you have invalid address\n");
 			} else {
+				printf("%s : ", GetTime());
 				printf("%d has already registered\n", addr);
                                 sprintf(msg, "this address was registered\n");
 			}
@@ -231,13 +258,13 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = newsock;
 	if (epoll_ctl(pollfd, EPOLL_CTL_ADD, newsock, &ev) == -1)
-		Die(sock, "epoll_ctl_add: newsock");
+		Die(sock, "ERROR: ClientRegister::epoll_ctl() failed");
 }
 
 void ClientUnregister(int sock, int pollfd, int clientfd, int sock_hash[], int sock_to_addr[], int Address[], bool flag[]) {
 	static struct epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
-		Die(sock, "epoll_ctl_del: newsock"); 
+		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
 
 	int index = Delete_Hash(sock_hash, clientfd);
 	int addr = sock_to_addr[index];
@@ -245,7 +272,8 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int sock_hash[], int s
 	index = Search_Hash(Address, addr);
 	flag[index] = false;
 
-	printf("\nClient %d has been unregistered\n", addr);
+	printf("%s : ", GetTime());
+	printf("Client %d has been unregistered\n", addr);
 
 	shutdown(clientfd, SHUT_RDWR);
 	close(clientfd);
@@ -265,7 +293,7 @@ void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensi
 	for( ; ; ) {
 		nfds = epoll_wait(pollfd, events, MAX_CLIENTS, -1);
 		if(nfds == -1)
-			Die(sock, "epoll_wait");
+			Die(sock, "ERROR: epoll_wait() failed");
 		
 		for (n = 0; n < nfds; ++n)
 			if (events[n].data.fd == sock)

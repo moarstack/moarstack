@@ -242,10 +242,12 @@ void Task(int sock, int pollfd, int addr_hash[], struct AddrData addr_data[], fl
 		for (n = 0; n < nfds; ++n)
 			if (events[n].data.fd == sock)
 				ClientRegister(sock, pollfd, addr_hash, addr_data, sock_hash, sock_to_addr);
-			else if (events[n].events == EPOLLIN)
-				TransmitData(events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr, freq);	
-			else 
-				ClientUnregister(sock, pollfd, events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr);
+			else {
+				if (events[n].events & EPOLLIN)
+					TransmitData(events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr, freq);	
+				if (events[n].events & (EPOLLHUP | EPOLLERR)) 
+					ClientUnregister(sock, pollfd, events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr);
+			}		
 			
 	}
 }

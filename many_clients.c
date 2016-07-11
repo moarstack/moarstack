@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <sys/un.h>
+#include <sys/param.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
@@ -10,15 +11,13 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
+#include "hash.h"
 #define MAX_CLIENTS 10
 #define BUF_SIZE 256
 #define MSG_SIZE 256
 #define ERRMSG_SIZE 256
 #define ADDR_SIZE 30
 #define POWER_CONSTANT 63
-#define HASH_CONSTANT 4096
-#define HASH_EMPTY -1
-#define HASH_DELETED -2
 #define CONFIG_FILE "config.txt"
 #define PI 3.14159265358
 #define LIGHT_SPEED 299792458
@@ -44,64 +43,6 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void Init_Hash(int H[]){	
-	int i;	
-	for(i = 0; i < HASH_CONSTANT; i++)
-		H[i] = HASH_EMPTY;
-}
-
-int Hash(int data){
-	int key = data;
-	key = (key + ~(key << 16)) % HASH_CONSTANT;
-	key = (key ^ (key >> 5)) % HASH_CONSTANT;
-	key = (key + (key << 3)) % HASH_CONSTANT;
-	key = (key ^ (key >> 13)) % HASH_CONSTANT;
-	key = (key + ~(key << 9)) % HASH_CONSTANT;
-	key = (key ^ (key >> 17)) % HASH_CONSTANT;
-	return key;
-} 
-
-int Rehash(int pos){
-	return (pos + 1) % HASH_CONSTANT;
-}
-
-int Search_Hash(int H[], int data){
-	int key = Hash(data);
-	while(1){
-		if (H[key] == HASH_EMPTY)
-			return -1;
-		if (H[key] == data)
-			return key;
-		key = Rehash(key);
-	}
-}
-
-int  Add_Hash(int H[], int data){
-	if (Search_Hash(H, data) != -1)
-		return -1;
-	int key = Hash(data);
-	while(1){
-		if (H[key] == HASH_EMPTY || H[key] == HASH_DELETED){
-			H[key] = data;
-			return key;
-		}
-		key = Rehash(key);
-	}
-}
-
-int Delete_Hash(int H[], int data){
-	int key = Hash(data);
-	while(1){
-		if (H[key] == HASH_EMPTY)
-			return -1;
-		if (H[key] == data){
-			H[key] = HASH_DELETED;
-			return key;
-		}
-		key = Rehash(key);
-	}			
-}
-
 void ReadConfig(int Address[], float X[], float Y[], float Sensibility[], float *freq ) {
 	FILE *in;
 	in = fopen(CONFIG_FILE, "r");
@@ -111,9 +52,9 @@ void ReadConfig(int Address[], float X[], float Y[], float Sensibility[], float 
 	int n;
 	fscanf(in, "%f%d\n", freq, &n);
 	
-	int i, index, addr;
+	int index, addr;
 	float x, y, sens;
-	for (i = 0; i < n; i++){
+	for (int i = 0; i < n; i++){
 		fscanf(in, "%d%f%f%f\n", &addr, &x, &y, &sens);
 		index = Add_Hash(Address, addr);
 		X[index] = x;
@@ -175,6 +116,7 @@ void Unpacking(char buf[], char msg[], float* power) {
 }
 
 void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int sock_to_addr[], int addr_to_sock[], float X[], float Y[], float Sensibility[], float freq) {
+	int pos;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
 	
@@ -188,7 +130,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 	printf("%s : ", GetTime());
         printf("Server receive message from socket %d : %s\n", clientfd, buf);
 
-	int pos = Search_Hash(sock_hash, clientfd);
+	pos = Search_Hash(sock_hash, clientfd);
 	pos = Search_Hash(Address, sock_to_addr[pos]);
 
 	if (buf[0] == '&') {
@@ -201,8 +143,7 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 		memset(&msg, 0, sizeof(msg));
 		Unpacking(buf, msg, &power);
  	
-		int i;
-		for(i = 0; i < HASH_CONSTANT; i++)
+		for(int i = 0; i < HASH_CONSTANT; i++)
 			if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
 				send(addr_to_sock[i], msg, sizeof(msg), 0);
 				printf("%s : ", GetTime());
@@ -213,11 +154,12 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 
 void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], int Address[], int addr_to_sock[], bool flag[]) {
 	static struct epoll_event ev;
+	int pos, addr, index;
 	int newsock = accept(sock, 0,0);
 	if (newsock == -1)
 		Die(sock, "ERROR: accept() failed");
 
-	int pos = Add_Hash(sock_hash, newsock);
+	pos = Add_Hash(sock_hash, newsock);
 	printf("%s : ", GetTime());
 	printf("Socket %d is added\n", newsock);
 
@@ -231,12 +173,12 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 			Delete_Hash(sock_hash, newsock);
 			return;
 		}
-		int addr = atoi(buf);
-		int pos = Search_Hash(Address, addr);
+		addr = atoi(buf);
+		pos = Search_Hash(Address, addr);
 		if (pos > -1 && !flag[pos]) {
 			flag[pos] = true;
 			addr_to_sock[pos] = newsock;
-			int index = Search_Hash(sock_hash, newsock);
+			index = Search_Hash(sock_hash, newsock);
 			sock_to_addr[index] = addr;		
 			printf("%s : ", GetTime());
 			printf("Client %d has been registered\n", addr);	
@@ -263,11 +205,12 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 
 void ClientUnregister(int sock, int pollfd, int clientfd, int sock_hash[], int sock_to_addr[], int Address[], bool flag[]) {
 	static struct epoll_event ev;
+	int index, addr;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
 		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
 
-	int index = Delete_Hash(sock_hash, clientfd);
-	int addr = sock_to_addr[index];
+	index = Delete_Hash(sock_hash, clientfd);
+	addr = sock_to_addr[index];
 
 	index = Search_Hash(Address, addr);
 	flag[index] = false;
@@ -284,9 +227,9 @@ void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensi
 	int nfds, n, newsock;	
 
 	bool flag[HASH_CONSTANT];
-	int  addr_to_sock[HASH_CONSTANT];
 	memset(&flag, 0, sizeof(flag));
-	
+	int addr_to_sock[HASH_CONSTANT];	
+
 	int sock_hash[HASH_CONSTANT], sock_to_addr[HASH_CONSTANT];
 	Init_Hash(sock_hash);	
 

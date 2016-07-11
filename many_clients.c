@@ -166,18 +166,25 @@ void TransmitData(int clientfd, int Address[], bool flag[], int sock_hash[], int
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
         printf("\nServer receive message from socket %d : %s\n", clientfd, buf);
 
-	memset(&msg, 0, sizeof(msg));
-	Unpacking(buf, msg, &power);
- 
 	int pos = Search_Hash(sock_hash, clientfd);
-	pos = Search_Hash(Address, sock_to_addr[pos]);	
-		
-	int i;
-	for(i = 0; i < HASH_CONSTANT; i++)
-		if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
-			send(addr_to_sock[i], msg, sizeof(msg), 0);
-			printf("\nClient %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
+	pos = Search_Hash(Address, sock_to_addr[pos]);
+
+	if (buf[0] == '&') {
+		float sens = strtof(buf + 1, 0);
+		Sensibility[pos] = sens;	
+		printf("Client's sensibility has been changed to %f\n", sens);
+	}	
+	else {
+		memset(&msg, 0, sizeof(msg));
+		Unpacking(buf, msg, &power);
+ 	
+		int i;
+		for(i = 0; i < HASH_CONSTANT; i++)
+			if (i != pos && flag[i] && Power(X[i], Y[i], X[pos], Y[pos], power, freq) > Sensibility[i]) {
+				send(addr_to_sock[i], msg, sizeof(msg), 0);
+				printf("\nClient %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], Address[i]);
 		}
+	}
 }
 
 void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], int Address[], int addr_to_sock[], bool flag[]) {
@@ -194,7 +201,12 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 	static char buf[ADDR_SIZE], msg[ERRMSG_SIZE];
 	while (1){
 		memset(&buf, 0, sizeof(buf));
-		read(newsock, (void *) buf, sizeof(buf));
+		if( 0 == read(newsock, (void *) buf, sizeof(buf)) ) {
+			shutdown(newsock, SHUT_RDWR);
+			close(newsock);
+			Delete_Hash(sock_hash, newsock);
+			return;
+		}
 		int addr = atoi(buf);
 		int pos = Search_Hash(Address, addr);
 		if (pos > -1 && !flag[pos]) {
@@ -204,18 +216,15 @@ void ClientRegister(int sock, int pollfd, int sock_hash[], int sock_to_addr[], i
 			sock_to_addr[index] = addr;		
 			printf("\nClient %d has been registered\n", addr);	
 			break;
-		}
-		else{
+		} else {
 			if (pos == -1){
 				printf("%d is invalid address\n", addr);
 				sprintf(msg, "you have invalid address\n");
-				send(newsock, msg, strlen(msg), 0);
-			}
-			else{
+			} else {
 				printf("%d has already registered\n", addr);
                                 sprintf(msg, "this address was registered\n");
-                                send(newsock, msg, strlen(msg), 0);
 			}
+			send(newsock, msg, strlen(msg), 0);
 		}
 	}
 	
@@ -254,26 +263,18 @@ void Task(int sock, int pollfd, int Address[], float X[], float Y[], float Sensi
 	Init_Hash(sock_hash);	
 
 	for( ; ; ) {
-		/*printf("\nDEBUG\n");
-		int i;
-		for(i = 0; i < HASH_CONSTANT; i++)
-			if (flag[i]) {
-				printf("Address == %d, addr_to_sock == %d\n", Address[i], addr_to_sock[i]);
-			}*/
 		nfds = epoll_wait(pollfd, events, MAX_CLIENTS, -1);
 		if(nfds == -1)
 			Die(sock, "epoll_wait");
 		
-		for (n = 0; n < nfds; ++n) {
+		for (n = 0; n < nfds; ++n)
 			if (events[n].data.fd == sock)
 				ClientRegister(sock, pollfd, sock_hash, sock_to_addr, Address, addr_to_sock, flag);
-			else {
-				if (events[n].events == EPOLLIN)
-					TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y, Sensibility, freq);	
-				else 
-					ClientUnregister(sock, pollfd, events[n].data.fd, sock_hash, sock_to_addr, Address, flag);
-			}
-		}
+			else if (events[n].events == EPOLLIN)
+				TransmitData(events[n].data.fd, Address, flag, sock_hash, sock_to_addr, addr_to_sock, X, Y, Sensibility, freq);	
+			else 
+				ClientUnregister(sock, pollfd, events[n].data.fd, sock_hash, sock_to_addr, Address, flag);
+			
 	}
 }
 

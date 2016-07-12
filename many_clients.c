@@ -3,15 +3,19 @@
 #include <sys/epoll.h>
 #include <sys/un.h>
 #include <sys/param.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
 #include "hash.h"
+#define printTimely( file , ...){ \
+        fprintf ( file, "%s : ", GetTime() );\
+        fprintf ( file, __VA_ARGS__ );\
+}
 #define CONFIG_FILE "config.txt"
 #define MAX_CLIENTS 10
 #define BUF_SIZE 256
@@ -32,19 +36,12 @@ char *GetTime(void) {
 	static char buf[30];
 	time_t sec = time(NULL);
 	struct tm *pt = localtime(&sec);
-	strcpy(buf, asctime(pt));
-
-	char *p = strchr(buf, '\n');
-	if (p)
-		*p = '\0';	
-
+	sprintf (buf, "%d-%.2d-%.2d %.2d:%.2d:%.2d ", pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday,pt->tm_hour, pt->tm_min, pt->tm_sec);
 	return buf;
 }
 
 int Die(int sock, const char *str) {
-	perror(GetTime());
-	perror(" : ");
-	perror(str);
+	printTimely( stderr,  str);
 	close(sock);
 	exit(EXIT_FAILURE);
 }
@@ -130,20 +127,18 @@ void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], in
 	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
 
 	int l = strlen(buf);
-	if (buf[l - 1] == '\n')
-		buf[l - 1] = '\0';
-
-	printf("%s : ", GetTime());
-        printf("Server receive message from socket %d : %s\n", clientfd, buf);
-
+	if (buf[l - 1] == '\n'){
+		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf);
+	}
+	else
+		printTimely( stdout, "Server receive message from socket %d : %s\n", clientfd, buf);
 	pos = Search_Hash(sock_hash, clientfd);
 	pos = Search_Hash(addr_hash, sock_to_addr[pos]);
 
 	if (buf[0] == '&') {
 		float sens = strtof(buf + 1, 0);
 		addr_data[pos].sens = sens;
-		printf("%s : ", GetTime());	
-		printf("Client's sensibility has been changed to %f\n", sens);
+		printTimely( stdout, "Client's sensibility has been changed to %f\n", sens);
 	}	
 	else {
 		memset(&msg, 0, sizeof(msg));
@@ -152,8 +147,7 @@ void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], in
 		for(int i = 0; i < HASH_CONSTANT; i++)
 			if (i != pos && addr_data[i].isPresent && Power(addr_data[i].x, addr_data[i].y, addr_data[pos].x, addr_data[pos].y, power, freq) > addr_data[i].sens) {
 				send(addr_data[i].sock, msg, sizeof(msg), 0);
-				printf("%s : ", GetTime());
-				printf("Client %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[i]);
+				printTimely( stdout, "Client %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[i]);
 		}
 	}
 }
@@ -165,9 +159,7 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], struct AddrData addr_
 	if (newsock == -1)
 		Die(sock, "ERROR: accept() failed");
 
-	
-	printf("%s : ", GetTime());
-	printf("Socket %d is added\n", newsock);
+	printTimely( stdout, "Socket %d is added\n", newsock);
 
 	//receiving of node's address
 	static char buf[ADDR_SIZE], msg[ERRMSG_SIZE];
@@ -186,18 +178,15 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], struct AddrData addr_
 			addr_data[pos].sock = newsock;
 			index = Add_Hash(sock_hash, newsock);
 			sock_to_addr[index] = addr;		
-			printf("%s : ", GetTime());
-			printf("Client %d has been registered\n", addr);	
+			printTimely( stdout, "Client %d has been registered\n", addr);
 			break;
 		} else {
 			if (pos == -1){
-				printf("%s : ", GetTime());
-				printf("%d is invalid address\n", addr);
+				printTimely( stdout, "%d is invalid address\n", addr);
 				sprintf(msg, "you have invalid address\n");
 			} else {
-				printf("%s : ", GetTime());
-				printf("%d has already registered\n", addr);
-                                sprintf(msg, "this address was registered\n");
+				printTimely( stdout, "%d has already registered\n", addr);
+				sprintf(msg, "this address was registered\n");
 			}
 			send(newsock, msg, strlen(msg), 0);
 		}
@@ -220,8 +209,7 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], struc
 	index = Search_Hash(addr_hash, addr);
 	addr_data[index].isPresent = false;
 
-	printf("%s : ", GetTime());
-	printf("Client %d has been unregistered\n", addr);
+	printTimely( stdout, "Client %d has been unregistered\n", addr);
 
 	shutdown(clientfd, SHUT_RDWR);
 	close(clientfd);

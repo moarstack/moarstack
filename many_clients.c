@@ -108,30 +108,29 @@ float Power(float x1, float y1, float x2, float y2, float start_power, float fre
 	return res;  
 }
 
-void Unpacking(char buf[], char msg[], float* power) {
-	char *p;
-	*power = strtof(buf, &p);
+void Unpacking(char buf[], char **p, float* power) {
+	*power = strtof(buf, p);
 		
-	while (*p == ' ')
-		++p;
-
-	strcpy(msg, p);
+	while (**p == ' ')
+		++(*p);
 }
 
 void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], int sock_hash[], int sock_to_addr[], float freq) {
-	int pos;
+	int pos, bytes;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
 	
 	memset(buf, 0, sizeof(buf));
-	recvfrom(clientfd, buf, sizeof(buf), 0,0,0);
+	bytes = recv(clientfd, buf, sizeof(buf), 0);
+	if (bytes <= 0)
+		return;
 
-	int l = strlen(buf);
-	if (buf[l - 1] == '\n'){
+	if (buf[bytes - 1] == '\n'){
 		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf);
 	}
 	else
 		printTimely( stdout, "Server receive message from socket %d : %s\n", clientfd, buf);
+
 	pos = Search_Hash(sock_hash, clientfd);
 	pos = Search_Hash(addr_hash, sock_to_addr[pos]);
 
@@ -140,14 +139,23 @@ void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], in
 		addr_data[pos].sens = sens;
 		printTimely( stdout, "Client's sensibility has been changed to %f\n", sens);
 	}	
-	else {
-		memset(&msg, 0, sizeof(msg));
-		Unpacking(buf, msg, &power);
- 	
-		for(int i = 0; i < HASH_CONSTANT; i++)
-			if (i != pos && addr_data[i].isPresent && Power(addr_data[i].x, addr_data[i].y, addr_data[pos].x, addr_data[pos].y, power, freq) > addr_data[i].sens) {
-				send(addr_data[i].sock, msg, sizeof(msg), 0);
-				printTimely( stdout, "Client %d send message to client %d\n", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[i]);
+	else{
+		float power2;
+		char *p;
+		Unpacking(buf, &p, &power);
+		bytes -= p - buf;
+		while (bytes > 0) {
+			for(int i = 0; i < HASH_CONSTANT; i++){
+				power2 = Power(addr_data[i].x, addr_data[i].y, addr_data[pos].x, addr_data[pos].y, power, freq);
+				if (i != pos && addr_data[i].isPresent && power2 > addr_data[i].sens) {
+					sprintf(msg, "%f %s", power2, p);
+					send(addr_data[i].sock, msg, sizeof(msg), 0);
+					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[i]);
+				}
+			}
+			
+			bytes = recv(clientfd, buf, sizeof(buf), MSG_DONTWAIT);
+			p = buf;	
 		}
 	}
 }
@@ -236,7 +244,6 @@ void Task(int sock, int pollfd, int addr_hash[], struct AddrData addr_data[], fl
 				if (events[n].events & (EPOLLHUP | EPOLLERR)) 
 					ClientUnregister(sock, pollfd, events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr);
 			}		
-			
 	}
 }
 

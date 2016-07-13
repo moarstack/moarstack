@@ -8,8 +8,8 @@
 #include "moarLibInterface.h"	// MoarLayerType_T
 #include "moarChannel.h"		// IfacesCount_T
 
-int socketDown( MoarLayerType_T layerType );
-int socketUp( MoarLayerType_T layerType );
+int socketDown( MoarLayerType_T layerType, IfacesCount_T ifaceIndex );
+int socketUp( MoarLayerType_T layerType, IfacesCount_T ifaceIndex );
 int socketsPrepare( IfacesCount_T ifacesCount );
 
 #endif //MOARSTACK_LAYERSOCKETS_H

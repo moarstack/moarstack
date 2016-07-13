@@ -13,28 +13,26 @@ static int	socketsCountUsual,
 static int	* socketsUsual = NULL,
 			* socketsIface = NULL;
 
-int socketDown( MoarLayerType_T layerType ) {
+int socketDown( MoarLayerType_T layerType, IfacesCount_T ifaceIndex ) {
 	switch( layerType ) {
 		case MoarLayer_Interface:
 			return -1;
 
 		case MoarLayer_Channel:
-			//...
-			break;
+			return ifaceIndex < socketsCountIface ? socketsIface[ 2 * ifaceIndex ] : -1;
 
 		default:
 			return socketsUsual[ 2 * layerType ];
 	}
 }
 // TODO: change both for work with iface-channel sockets
-int socketUp( MoarLayerType_T layerType ) {
+int socketUp( MoarLayerType_T layerType, IfacesCount_T ifaceIndex ) {
 	switch( layerType ) {
 		case MoarLayer_Service:
 			return -1;
 
 		case MoarLayer_Interface:
-			//...
-			break;
+			return ifaceIndex < socketsCountIface ? socketsIface[ 2 * ifaceIndex + 1 ] : -1;
 
 		default:
 			return socketsUsual[ 2 * layerType + 1 ];

@@ -21,7 +21,7 @@
 }
 
 #define CONFIG_FILENAME	"config.txt"
-#define SOCK_FLNM_SZ	255
+#define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
 #define MAX_CLIENTS		10
 #define BUF_SIZE		256
 #define MSG_SIZE		256
@@ -37,6 +37,8 @@ typedef struct {
 	int sock;
 	float x, y, sens;
 } AddrData_T;
+
+typedef struct sockaddr_un SockAddr_T;
 
 const char * getTime( void ) {
 	static struct timeval	moment;
@@ -77,31 +79,37 @@ void readConfig( int addr_hash[], AddrData_T addr_data[], float * freq, char * s
 	fclose( configFile );
 }
 
-void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
-	*sock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (*sock == -1)
-		Die(0, "ERROR: socket() failed");
-	
-	memset(stSockAddr, 0, sizeof(struct sockaddr_un));
-	stSockAddr->sun_family = AF_UNIX;
-	realpath("./socket", stSockAddr->sun_path);
-	unlink (stSockAddr->sun_path);
-	
-	if(bind(*sock, (struct sockaddr*) stSockAddr, sizeof(*stSockAddr)) == -1)
-		Die(*sock, "ERROR: bind() failed");
-		
-	if (listen(*sock, 1) == -1)
-		Die(*sock, "ERROR: listen() failed");
+void serverInit( int *sock, SockAddr_T * stSockAddr, int *pollfd, const char * socketFilename ) {
+	struct epoll_event	ev;
 
-	*pollfd = epoll_create(MAX_CLIENTS);
-	if (*pollfd == -1)
-		Die(*sock, "ERROR: epoll_create() failed");
-	
-	struct epoll_event ev;
+	*sock = socket( AF_UNIX, SOCK_STREAM, 0 );
+
+	if( -1 == *sock )
+		Die( 0, "ERROR: socket() failed" );
+
+	memset( stSockAddr, 0, sizeof( SockAddr_T ) );
+	stSockAddr->sun_family = AF_UNIX;
+	getcwd( stSockAddr->sun_path, SOCK_FLNM_SZ );
+	strncat( stSockAddr->sun_path, "/" , SOCK_FLNM_SZ );
+	strncat( stSockAddr->sun_path, socketFilename , SOCK_FLNM_SZ );
+	unlink( stSockAddr->sun_path );
+
+	if( -1 == bind( *sock, ( struct sockaddr * )stSockAddr, sizeof( SockAddr_T ) ) )
+		Die( *sock, "ERROR: bind() failed" );
+
+	if( -1 == listen( *sock, 1 ) )
+		Die( *sock, "ERROR: listen() failed" );
+
+	*pollfd = epoll_create( MAX_CLIENTS );
+
+	if( -1 == *pollfd )
+		Die( *sock, "ERROR: epoll_create() failed" );
+
 	ev.events = EPOLLIN;
 	ev.data.fd = *sock;
-	if (epoll_ctl(*pollfd, EPOLL_CTL_ADD, *sock, &ev) == -1)
-		Die(*sock, "ERROR: Init::epoll_ctl() failed");
+
+	if( -1 == epoll_ctl( *pollfd, EPOLL_CTL_ADD, *sock, &ev) )
+		Die( *sock, "ERROR: Init::epoll_ctl() failed" );
 }
 
 float Distance(float x1, float y1, float x2, float y2) {
@@ -264,15 +272,15 @@ void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
 }
 
 int main(void) {
-	AddrData_T			addr_data[ HASH_CONSTANT ] = { 0 };
-	int					addr_hash[ HASH_CONSTANT ] = { 0 },
-						pollfd, sock;
-	struct sockaddr_un	stSockAddr;
-	float				freq;
-	char				socketFilename[ SOCK_FLNM_SZ ] = { 0 };
+	AddrData_T	addr_data[ HASH_CONSTANT ] = { 0 };
+	int			addr_hash[ HASH_CONSTANT ] = { 0 },
+				pollfd, sock;
+	SockAddr_T	stSockAddr;
+	float		freq;
+	char		socketFilename[ SOCK_FLNM_SZ ] = { 0 };
 
 	readConfig( addr_hash, addr_data, &freq, socketFilename );
-	Init( &sock, &stSockAddr, &pollfd );
+	serverInit( &sock, &stSockAddr, &pollfd, socketFilename );
 	Task( sock, pollfd, addr_hash, addr_data, freq );
 	Deinit( sock, stSockAddr, pollfd );
 

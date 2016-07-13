@@ -31,11 +31,11 @@
 #define TIME_SIZE		30
 #define M_PI			3.14159265358979323846
 
-struct AddrData {
+typedef struct {
 	bool isPresent;
 	int sock;
 	float x, y, sens;
-};
+} AddrData_T;
 
 const char * getTime( void ) {
 	static struct timeval	moment;
@@ -55,7 +55,7 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void ReadConfig(int addr_hash[], struct AddrData addr_data[], float *freq) {
+void ReadConfig(int addr_hash[], AddrData_T addr_data[], float *freq) {
 	FILE *in;
 	in = fopen(CONFIG_FILE, "r");
 
@@ -124,7 +124,7 @@ void Unpacking(char buf[], char **p, float* power) {
 		++(*p);
 }
 
-void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], int sock_hash[], int sock_to_addr[], float freq) {
+void TransmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[], float freq) {
 	int pos, bytes;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
@@ -169,7 +169,7 @@ void TransmitData(int clientfd, int addr_hash[], struct AddrData addr_data[], in
 	}
 }
 
-void ClientRegister(int sock, int pollfd, int addr_hash[], struct AddrData addr_data[], int sock_hash[], int sock_to_addr[]) {
+void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
 	static struct epoll_event ev;
 	int pos;
 	int newsock = accept(sock, 0,0);
@@ -215,7 +215,7 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], struct AddrData addr_
 		Die(sock, "ERROR: ClientRegister::epoll_ctl() failed");
 }
 
-void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], struct AddrData addr_data[], int sock_hash[], int sock_to_addr[]) {
+void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
 	static struct epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
 		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
@@ -232,7 +232,7 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], struc
 	close(clientfd);
 }
 
-void Task(int sock, int pollfd, int addr_hash[], struct AddrData addr_data[], float freq) {
+void Task(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float freq) {
 	struct epoll_event ev, events[MAX_CLIENTS];
 	int nfds, n, newsock;		
 
@@ -265,18 +265,16 @@ void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
 }
 
 int main(void) {
-	int addr_hash[HASH_CONSTANT];
-	struct AddrData addr_data[HASH_CONSTANT];
-	float freq;
-	ReadConfig(addr_hash, addr_data, &freq);
-	
-	int pollfd, sock;
-	struct sockaddr_un stSockAddr;	
-	Init(&sock, &stSockAddr, &pollfd);
-	
-	Task(sock, pollfd, addr_hash, addr_data, freq);
+	AddrData_T			addr_data[ HASH_CONSTANT ] = { 0 };
+	int					addr_hash[ HASH_CONSTANT ] = { 0 },
+						pollfd, sock;
+	struct sockaddr_un	stSockAddr;
+	float				freq;
 
-	Deinit(sock, stSockAddr, pollfd);
+	ReadConfig( addr_hash, addr_data, &freq );
+	Init( &sock, &stSockAddr, &pollfd );
+	Task( sock, pollfd, addr_hash, addr_data, freq );
+	Deinit( sock, stSockAddr, pollfd );
 
-	return 0; 
+	return 0;
 }

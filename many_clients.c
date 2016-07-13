@@ -40,6 +40,17 @@ typedef struct {
 
 typedef struct sockaddr_un SockAddr_T;
 
+typedef struct {
+	AddrData_T	addr_data[ HASH_CONSTANT ];
+	int			sock_hash[ HASH_CONSTANT ],
+				sock_to_addr[ HASH_CONSTANT ],
+				addr_hash[ HASH_CONSTANT ],
+				pollfd, sock;
+	SockAddr_T	stSockAddr;
+	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
+	char		socketFilename[ SOCK_FLNM_SZ ];
+} Config_T;
+
 const char * getTime( void ) {
 	static struct timeval	moment;
 	static size_t			len;
@@ -48,7 +59,7 @@ const char * getTime( void ) {
 	gettimeofday( &moment, NULL );
 	strftime( buf, TIME_SIZE, "%F %T", localtime( &( moment.tv_sec ) ) );
 	len = strlen( buf );
-	snprintf( buf + len, TIME_SIZE - len - 1, ".%d", moment.tv_usec / 1000 );
+	snprintf( buf + len, TIME_SIZE - len - 1, ".%03d", moment.tv_usec / 1000 );
 	return buf;
 }
 
@@ -58,14 +69,15 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
+void readConfig( Config_T * cfg ) {
 void readConfig( int addr_hash[], AddrData_T addr_data[], float * coefficient, char * socketFilename ) {
 	int		index, addr, clientsLimit;
 	float	x, y, sens;
 	FILE	* configFile;
 
 	configFile = fopen( CONFIG_FILENAME, "r" );
-	fscanf( configFile, "%s%f%d", socketFilename, coefficient, &clientsLimit ); // here coefficient is equal to frequency
-	*coefficient = 4.0 * M_PI * LIGHT_SPEED / *coefficient;
+	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
+	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
 	Init_Hash( addr_hash );
 
 	for( int i = 0; i < clientsLimit; i++ ) {
@@ -125,7 +137,7 @@ float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, flo
 
 void Unpacking(char buf[], char **p, float* power) {
 	*power = strtof(buf, p);
-		
+
 	while (**p == ' ')
 		++(*p);
 }
@@ -134,15 +146,14 @@ void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 	int pos, bytes;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
-	
+
 	memset(buf, 0, sizeof(buf));
 	bytes = recv(clientfd, buf, sizeof(buf), 0);
 	if (bytes <= 0)
 		return;
 
-	if (buf[bytes - 1] == '\n'){
-		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf);
-	}
+	if (buf[bytes - 1] == '\n')
+		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf)
 	else
 		printTimely( stdout, "Server receive message from socket %d : %s\n", clientfd, buf);
 
@@ -153,8 +164,7 @@ void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 		float sens = strtof(buf + 1, 0);
 		addr_data[pos].sens = sens;
 		printTimely( stdout, "Client's sensibility has been changed to %f\n", sens);
-	}	
-	else{
+	} else {
 		float power2;
 		char *p;
 		Unpacking(buf, &p, &power);
@@ -172,9 +182,9 @@ void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[ receiver ]);
 				}
 			}
-			
+
 			bytes = recv(clientfd, buf, sizeof(buf), MSG_DONTWAIT);
-			p = buf;	
+			p = buf;
 		}
 	}
 }
@@ -204,7 +214,7 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 			addr_data[pos].isPresent = true;
 			addr_data[pos].sock = newsock;
 			index = Add_Hash(sock_hash, newsock);
-			sock_to_addr[index] = addr;		
+			sock_to_addr[index] = addr;
 			printTimely( stdout, "Client %d has been registered\n", addr);
 			break;
 		} else {
@@ -218,7 +228,7 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 			send(newsock, msg, strlen(msg), 0);
 		}
 	}
-	
+
 	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = newsock;
 	if (epoll_ctl(pollfd, EPOLL_CTL_ADD, newsock, &ev) == -1)
@@ -228,7 +238,7 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
 	static struct epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
-		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
+		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed");
 
 	int index = Delete_Hash(sock_hash, clientfd);
 	int addr = sock_to_addr[index];
@@ -244,9 +254,7 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrD
 
 void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float coefficient ) {
 	struct epoll_event	events[ MAX_CLIENTS ] = { 0 };
-	int					sock_hash[ HASH_CONSTANT ] = { 0 },
-						sock_to_addr[ HASH_CONSTANT ] = { 0 },
-						eventsCount, eventIndex;
+	int					eventsCount, eventIndex;
 	bool				doNotStop = true;
 
 	Init_Hash( sock_hash );
@@ -273,17 +281,12 @@ void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
 	shutdown(sock, SHUT_RDWR);
 	close(sock);
 	unlink(stSockAddr.sun_path);
-	
+
 	close(pollfd);
 }
 
 int main(void) {
-	AddrData_T	addr_data[ HASH_CONSTANT ] = { 0 };
-	int			addr_hash[ HASH_CONSTANT ] = { 0 },
-				pollfd, sock;
-	SockAddr_T	stSockAddr;
-	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
-	char		socketFilename[ SOCK_FLNM_SZ ] = { 0 };
+	Config_T	configStruct;
 
 	readConfig( addr_hash, addr_data, &coefficient, socketFilename );
 	serverInit( &sock, &stSockAddr, &pollfd, socketFilename );

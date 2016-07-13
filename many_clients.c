@@ -22,15 +22,15 @@
 
 #define CONFIG_FILENAME	"config.txt"
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
-#define MAX_CLIENTS		10
-#define BUF_SIZE		256
-#define MSG_SIZE		256
-#define ERRMSG_SIZE		256
-#define ADDR_SIZE		30
+#define MAX_CLIENTS	10
+#define BUF_SIZE	256
+#define MSG_SIZE	256
+#define ERRMSG_SIZE	256
+#define ADDR_SIZE	30
 #define POWER_CONSTANT	63
-#define LIGHT_SPEED		299792458
-#define TIME_SIZE		30
-#define M_PI			3.14159265358979323846
+#define LIGHT_SPEED	299792458
+#define TIME_SIZE	30
+#define M_PI		3.14159265358979323846
 
 typedef struct {
 	bool isPresent;
@@ -42,8 +42,8 @@ typedef struct sockaddr_un SockAddr_T;
 
 const char * getTime( void ) {
 	static struct timeval	moment;
-	static size_t			len;
-	static char				buf[ TIME_SIZE ];
+	static size_t		len;
+	static char		buf[ TIME_SIZE ];
 
 	gettimeofday( &moment, NULL );
 	strftime( buf, TIME_SIZE, "%F %T", localtime( &( moment.tv_sec ) ) );
@@ -52,14 +52,21 @@ const char * getTime( void ) {
 	return buf;
 }
 
+
+void Kill_sock(int sock){
+	shutdown(sock,SHUT_RDWR );
+	close(sock);
+}
+
 int Die(int sock, const char *str) {
 	printTimely( stderr,  str);
-	close(sock);
+	//close(sock);
+	Kill_sock(sock);
 	exit(EXIT_FAILURE);
 }
 
 void readConfig( int addr_hash[], AddrData_T addr_data[], float * coefficient, char * socketFilename ) {
-	int		index, addr, clientsLimit;
+	int	index, addr, clientsLimit;
 	float	x, y, sens;
 	FILE	* configFile;
 
@@ -131,12 +138,12 @@ void Unpacking(char buf[], char **p, float* power) {
 }
 
 void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[], float coefficient ) {
-	int pos, bytes;
-	static char buf[BUF_SIZE], msg[MSG_SIZE];
-	static float power;
+	int 		pos, bytes;
+	static char 	buf[BUF_SIZE], msg[MSG_SIZE];
+	static float 	power;
 	
 	memset(buf, 0, sizeof(buf));
-	bytes = recv(clientfd, buf, sizeof(buf), 0);
+	bytes = read (clientfd, buf, sizeof(buf));
 	if (bytes <= 0)
 		return;
 
@@ -147,16 +154,18 @@ void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 		printTimely( stdout, "Server receive message from socket %d : %s\n", clientfd, buf);
 
 	pos = Search_Hash(sock_hash, clientfd);
+	//find position of socket in sock_hash
 	pos = Search_Hash(addr_hash, sock_to_addr[pos]);
+	//find position of address of socket in addr_hash
 
 	if (buf[0] == '&') {
-		float sens = strtof(buf + 1, 0);
+		float 	sens = strtof(buf + 1, 0);
 		addr_data[pos].sens = sens;
 		printTimely( stdout, "Client's sensibility has been changed to %f\n", sens);
 	}	
 	else{
-		float power2;
-		char *p;
+		float 	power2;
+		char 	*p;
 		Unpacking(buf, &p, &power);
 		bytes -= p - buf;
 		while (bytes > 0) {
@@ -168,29 +177,29 @@ void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 
 				if( power2 > addr_data[ receiver ].sens ) {
 					sprintf( msg, "%f %s", power2, p );
-					send( addr_data[ receiver ].sock, msg, sizeof(msg), 0);
+					write ( addr_data[ receiver ].sock, msg, sizeof(msg));
 					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[ receiver ]);
 				}
 			}
 			
-			bytes = recv(clientfd, buf, sizeof(buf), MSG_DONTWAIT);
+			bytes = read(clientfd, buf, sizeof(buf));
 			p = buf;	
 		}
 	}
 }
 
 void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
-	static struct epoll_event ev;
-	int pos;
-	int newsock = accept(sock, 0,0);
+	static struct 	epoll_event ev;
+	int 		pos;
+	int 		newsock = accept(sock, 0,0);
 	if (newsock == -1)
 		Die(sock, "ERROR: accept() failed");
 
 	printTimely( stdout, "Socket %d is added\n", newsock);
 
 	//receiving of node's address
-	static char buf[ADDR_SIZE], msg[ERRMSG_SIZE];
-	int addr, index;
+	static char 	buf[ADDR_SIZE], msg[ERRMSG_SIZE];
+	int 		addr, index;
 	while (1){
 		memset(buf, 0, sizeof(buf));
 		if( 0 == read(newsock, (void *) buf, sizeof(buf)) ) {
@@ -210,12 +219,14 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 		} else {
 			if (pos == -1){
 				printTimely( stdout, "%d is invalid address\n", addr);
-				sprintf(msg, "you have invalid address\n");
+				write(newsock, "you have invalid address\n", 25);
+				//sprintf(msg, "you have invalid address\n");
 			} else {
 				printTimely( stdout, "%d has already registered\n", addr);
-				sprintf(msg, "this address was registered\n");
+				write (newsock, "this address was registred\n", 27);
+				//sprintf(msg, "this address was registered\n");
 			}
-			send(newsock, msg, strlen(msg), 0);
+			//write (newsock, msg, strlen(msg));
 		}
 	}
 	
@@ -226,28 +237,29 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 }
 
 void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
-	static struct epoll_event ev;
+	static struct 	epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
 		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
 
-	int index = Delete_Hash(sock_hash, clientfd);
-	int addr = sock_to_addr[index];
+	int 	index = Delete_Hash(sock_hash, clientfd);
+	int 	addr = sock_to_addr[index];
 
 	index = Search_Hash(addr_hash, addr);
 	addr_data[index].isPresent = false;
 
 	printTimely( stdout, "Client %d has been unregistered\n", addr);
 
-	shutdown(clientfd, SHUT_RDWR);
-	close(clientfd);
+	Kill_sock(clientfd);
+	//shutdown(clientfd, SHUT_RDWR);
+	//close(clientfd);
 }
 
 void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float coefficient ) {
 	struct epoll_event	events[ MAX_CLIENTS ] = { 0 };
-	int					sock_hash[ HASH_CONSTANT ] = { 0 },
-						sock_to_addr[ HASH_CONSTANT ] = { 0 },
-						eventsCount, eventIndex;
-	bool				doNotStop = true;
+	int			sock_hash[ HASH_CONSTANT ] = { 0 },
+				sock_to_addr[ HASH_CONSTANT ] = { 0 },
+				eventsCount, eventIndex;
+	bool			doNotStop = true;
 
 	Init_Hash( sock_hash );
 
@@ -270,17 +282,19 @@ void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], f
 }
 
 void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
-	shutdown(sock, SHUT_RDWR);
-	close(sock);
+	//shutdown(sock, SHUT_RDWR);
+	//close(sock);
+	Kill_sock(sock);
 	unlink(stSockAddr.sun_path);
 	
-	close(pollfd);
+	Kill_sock(pollfd);
+	//close(pollfd);
 }
 
 int main(void) {
 	AddrData_T	addr_data[ HASH_CONSTANT ] = { 0 };
-	int			addr_hash[ HASH_CONSTANT ] = { 0 },
-				pollfd, sock;
+	int		addr_hash[ HASH_CONSTANT ] = { 0 },
+			pollfd, sock;
 	SockAddr_T	stSockAddr;
 	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
 	char		socketFilename[ SOCK_FLNM_SZ ] = { 0 };

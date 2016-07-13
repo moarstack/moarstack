@@ -14,11 +14,31 @@ static int	* socketsUsual = NULL,
 			* socketsIface = NULL;
 
 int socketDown( MoarLayerType_T layerType ) {
-	return ( MoarLayer_Interface == layerType ? -1 : socketsUsual[ 2 * layerType ] );
+	switch( layerType ) {
+		case MoarLayer_Interface:
+			return -1;
+
+		case MoarLayer_Channel:
+			//...
+			break;
+
+		default:
+			return socketsUsual[ 2 * layerType ];
+	}
 }
 // TODO: change both for work with iface-channel sockets
 int socketUp( MoarLayerType_T layerType ) {
-	return ( MoarLayer_Service == layerType ? -1 : socketsUsual[ 2 * layerType + 1 ] );
+	switch( layerType ) {
+		case MoarLayer_Service:
+			return -1;
+
+		case MoarLayer_Interface:
+			//...
+			break;
+
+		default:
+			return socketsUsual[ 2 * layerType + 1 ];
+	}
 }
 
 int socketsPrepare( IfacesCount_T ifacesCount ) {

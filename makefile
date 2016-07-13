@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-EXE=a.out
+EXE=server
 BIN=bin
 OBJ=obj
 

@@ -84,6 +84,8 @@ int main(int argc, char** argv)
 #ifdef LOAD_MULTIPLE_INTERFACES
     fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
 #endif
+	IfacesCount_T ifacesRan = 0;
+
     //setup signal handler
     signal(SIGINT, signalHandler);
     //load

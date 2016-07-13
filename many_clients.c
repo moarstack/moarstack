@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include <sys/un.h>
 #include <sys/param.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -15,7 +16,7 @@
 #include "hash.h"
 
 #define printTimely( file , ...){ \
-        fprintf ( file, "%s : ", GetTime() );\
+        fprintf ( file, "%s : ", getTime() );\
         fprintf ( file, __VA_ARGS__ );\
 }
 
@@ -27,6 +28,7 @@
 #define ADDR_SIZE		30
 #define POWER_CONSTANT	63
 #define LIGHT_SPEED		299792458
+#define TIME_SIZE		30
 #define M_PI			3.14159265358979323846
 
 struct AddrData {
@@ -35,11 +37,15 @@ struct AddrData {
 	float x, y, sens;
 };
 
-char *GetTime(void) {
-	static char buf[30];
-	time_t sec = time(NULL);
-	struct tm *pt = localtime(&sec);
-	sprintf (buf, "%d-%.2d-%.2d %.2d:%.2d:%.2d ", pt->tm_year+1900, pt->tm_mon+1, pt->tm_mday,pt->tm_hour, pt->tm_min, pt->tm_sec);
+const char * getTime( void ) {
+	static struct timeval	moment;
+	static size_t			len;
+	static char				buf[ TIME_SIZE ];
+
+	gettimeofday( &moment, NULL );
+	strftime( buf, TIME_SIZE, "%F %T", localtime( &( moment.tv_sec ) ) );
+	len = strlen( buf );
+	snprintf( buf + len, TIME_SIZE - len - 1, ".%d", moment.tv_usec / 1000 );
 	return buf;
 }
 

@@ -58,13 +58,14 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void readConfig( int addr_hash[], AddrData_T addr_data[], float * freq, char * socketFilename ) {
+void readConfig( int addr_hash[], AddrData_T addr_data[], float * coefficient, char * socketFilename ) {
 	int		index, addr, clientsLimit;
 	float	x, y, sens;
 	FILE	* configFile;
 
 	configFile = fopen( CONFIG_FILENAME, "r" );
-	fscanf( configFile, "%s%f%d", socketFilename, freq, &clientsLimit );
+	fscanf( configFile, "%s%f%d", socketFilename, coefficient, &clientsLimit ); // here coefficient is equal to frequency
+	*coefficient = 4.0 * M_PI * LIGHT_SPEED / *coefficient;
 	Init_Hash( addr_hash );
 
 	for( int i = 0; i < clientsLimit; i++ ) {
@@ -112,16 +113,14 @@ void serverInit( int *sock, SockAddr_T * stSockAddr, int *pollfd, const char * s
 		Die( *sock, "ERROR: Init::epoll_ctl() failed" );
 }
 
-float Distance(float x1, float y1, float x2, float y2) {
+float distance( float x1, float y1, float x2, float y2 ) {
 	register float dx = x2 - x1, dy = y2 - y1;
 	return dx * dx + dy * dy;
 }
 
-float Power(float x1, float y1, float x2, float y2, float start_power, float freq) {
-	float free_att = 20.0 * log10f(4.0 * M_PI * Distance(x1, y1, x2, y2) / (LIGHT_SPEED / freq));
-	float res = start_power - free_att;
-	if (start_power < res) res = start_power;
-	return res;  
+float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, float coefficient ) {
+	float finishPower = startPower - 20.0 * log10f( coefficient * distance( to->x, to->y, from->x, from->y ) );
+	return finishPower < startPower ? finishPower : startPower;
 }
 
 void Unpacking(char buf[], char **p, float* power) {
@@ -131,7 +130,7 @@ void Unpacking(char buf[], char **p, float* power) {
 		++(*p);
 }
 
-void TransmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[], float freq) {
+void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[], float coefficient ) {
 	int pos, bytes;
 	static char buf[BUF_SIZE], msg[MSG_SIZE];
 	static float power;
@@ -161,12 +160,16 @@ void TransmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int soc
 		Unpacking(buf, &p, &power);
 		bytes -= p - buf;
 		while (bytes > 0) {
-			for(int i = 0; i < HASH_CONSTANT; i++){
-				power2 = Power(addr_data[i].x, addr_data[i].y, addr_data[pos].x, addr_data[pos].y, power, freq);
-				if (i != pos && addr_data[i].isPresent && power2 > addr_data[i].sens) {
-					sprintf(msg, "%f %s", power2, p);
-					send(addr_data[i].sock, msg, sizeof(msg), 0);
-					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[i]);
+			for( int receiver = 0; receiver < HASH_CONSTANT; receiver++ ) {
+				if( receiver == pos || !addr_data[ receiver ].isPresent )
+					continue;
+
+				power2 = leftPower( addr_data + receiver, addr_data + pos, power, coefficient );
+
+				if( power2 > addr_data[ receiver ].sens ) {
+					sprintf( msg, "%f %s", power2, p );
+					send( addr_data[ receiver ].sock, msg, sizeof(msg), 0);
+					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[ receiver ]);
 				}
 			}
 			
@@ -239,27 +242,30 @@ void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrD
 	close(clientfd);
 }
 
-void Task(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float freq) {
-	struct epoll_event ev, events[MAX_CLIENTS];
-	int nfds, n, newsock;		
+void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float coefficient ) {
+	struct epoll_event	events[ MAX_CLIENTS ] = { 0 };
+	int					sock_hash[ HASH_CONSTANT ] = { 0 },
+						sock_to_addr[ HASH_CONSTANT ] = { 0 },
+						eventsCount, eventIndex;
+	bool				doNotStop = true;
 
-	int sock_hash[HASH_CONSTANT], sock_to_addr[HASH_CONSTANT];
-	Init_Hash(sock_hash);	
+	Init_Hash( sock_hash );
 
-	for( ; ; ) {
-		nfds = epoll_wait(pollfd, events, MAX_CLIENTS, -1);
-		if(nfds == -1)
-			Die(sock, "ERROR: epoll_wait() failed");
-		
-		for (n = 0; n < nfds; ++n)
-			if (events[n].data.fd == sock)
-				ClientRegister(sock, pollfd, addr_hash, addr_data, sock_hash, sock_to_addr);
+	while( doNotStop ) {
+		eventsCount = epoll_wait( pollfd, events, MAX_CLIENTS, -1 );
+
+		if( -1 == eventsCount )
+			Die( sock, "ERROR: epoll_wait() failed" );
+
+		for( eventIndex = 0; eventIndex < eventsCount; eventIndex++ )
+			if( events[ eventIndex ].data.fd == sock )
+				ClientRegister( sock, pollfd, addr_hash, addr_data, sock_hash, sock_to_addr );
 			else {
-				if (events[n].events & EPOLLIN)
-					TransmitData(events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr, freq);	
-				if (events[n].events & (EPOLLHUP | EPOLLERR)) 
-					ClientUnregister(sock, pollfd, events[n].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr);
-			}		
+				if ( events[ eventIndex ].events & EPOLLIN)
+					transmitData( events[ eventIndex ].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr, coefficient );
+				if ( events[ eventIndex ].events & ( EPOLLHUP | EPOLLERR ) )
+					ClientUnregister( sock, pollfd, events[ eventIndex ].data.fd, addr_hash, addr_data, sock_hash, sock_to_addr );
+			}
 	}
 }
 
@@ -276,12 +282,12 @@ int main(void) {
 	int			addr_hash[ HASH_CONSTANT ] = { 0 },
 				pollfd, sock;
 	SockAddr_T	stSockAddr;
-	float		freq;
+	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
 	char		socketFilename[ SOCK_FLNM_SZ ] = { 0 };
 
-	readConfig( addr_hash, addr_data, &freq, socketFilename );
+	readConfig( addr_hash, addr_data, &coefficient, socketFilename );
 	serverInit( &sock, &stSockAddr, &pollfd, socketFilename );
-	Task( sock, pollfd, addr_hash, addr_data, freq );
+	serverWork( sock, pollfd, addr_hash, addr_data, coefficient );
 	Deinit( sock, stSockAddr, pollfd );
 
 	return 0;

@@ -11,20 +11,23 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
+
 #include "hash.h"
+
 #define printTimely( file , ...){ \
         fprintf ( file, "%s : ", GetTime() );\
         fprintf ( file, __VA_ARGS__ );\
 }
-#define CONFIG_FILE "config.txt"
-#define MAX_CLIENTS 10
-#define BUF_SIZE 256
-#define MSG_SIZE 256
-#define ERRMSG_SIZE 256
-#define ADDR_SIZE 30
-#define POWER_CONSTANT 63
-#define PI 3.14159265358
-#define LIGHT_SPEED 299792458
+
+#define CONFIG_FILE		"config.txt"
+#define MAX_CLIENTS		10
+#define BUF_SIZE		256
+#define MSG_SIZE		256
+#define ERRMSG_SIZE		256
+#define ADDR_SIZE		30
+#define POWER_CONSTANT	63
+#define LIGHT_SPEED		299792458
+#define M_PI			3.14159265358979323846
 
 struct AddrData {
 	bool isPresent;
@@ -102,7 +105,7 @@ float Distance(float x1, float y1, float x2, float y2) {
 }
 
 float Power(float x1, float y1, float x2, float y2, float start_power, float freq) {
-	float free_att = 20.0 * log10f(4.0 * PI * Distance(x1, y1, x2, y2) / (LIGHT_SPEED / freq));
+	float free_att = 20.0 * log10f(4.0 * M_PI * Distance(x1, y1, x2, y2) / (LIGHT_SPEED / freq));
 	float res = start_power - free_att;
 	if (start_power < res) res = start_power;
 	return res;  

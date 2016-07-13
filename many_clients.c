@@ -20,7 +20,8 @@
         fprintf ( file, __VA_ARGS__ );\
 }
 
-#define CONFIG_FILE		"config.txt"
+#define CONFIG_FILENAME	"config.txt"
+#define SOCK_FLNM_SZ	255
 #define MAX_CLIENTS		10
 #define BUF_SIZE		256
 #define MSG_SIZE		256
@@ -55,27 +56,25 @@ int Die(int sock, const char *str) {
 	exit(EXIT_FAILURE);
 }
 
-void ReadConfig(int addr_hash[], AddrData_T addr_data[], float *freq) {
-	FILE *in;
-	in = fopen(CONFIG_FILE, "r");
+void readConfig( int addr_hash[], AddrData_T addr_data[], float * freq, char * socketFilename ) {
+	int		index, addr, clientsLimit;
+	float	x, y, sens;
+	FILE	* configFile;
 
-	Init_Hash(addr_hash);
-	
-	int n;
-	fscanf(in, "%f%d\n", freq, &n);
-	
-	int index, addr;
-	float x, y, sens;
-	for (int i = 0; i < n; i++){
-		fscanf(in, "%d%f%f%f\n", &addr, &x, &y, &sens);
-		index = Add_Hash(addr_hash, addr);
-		addr_data[index].x = x;
-		addr_data[index].y = y;
-		addr_data[index].sens = sens;
-		addr_data[index].isPresent = false;
-	}	
-	
-	fclose(in);
+	configFile = fopen( CONFIG_FILENAME, "r" );
+	fscanf( configFile, "%s%f%d", socketFilename, freq, &clientsLimit );
+	Init_Hash( addr_hash );
+
+	for( int i = 0; i < clientsLimit; i++ ) {
+		fscanf( configFile, "%d%f%f%f", &addr, &x, &y, &sens );
+		index = Add_Hash( addr_hash, addr );
+		addr_data[ index ].x = x;
+		addr_data[ index ].y = y;
+		addr_data[ index ].sens = sens;
+		addr_data[ index ].isPresent = false;
+	}
+
+	fclose( configFile );
 }
 
 void Init(int *sock, struct sockaddr_un *stSockAddr, int *pollfd) {
@@ -270,8 +269,9 @@ int main(void) {
 						pollfd, sock;
 	struct sockaddr_un	stSockAddr;
 	float				freq;
+	char				socketFilename[ SOCK_FLNM_SZ ] = { 0 };
 
-	ReadConfig( addr_hash, addr_data, &freq );
+	readConfig( addr_hash, addr_data, &freq, socketFilename );
 	Init( &sock, &stSockAddr, &pollfd );
 	Task( sock, pollfd, addr_hash, addr_data, freq );
 	Deinit( sock, stSockAddr, pollfd );

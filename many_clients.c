@@ -142,11 +142,12 @@ float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, flo
 	return finishPower < startPower ? finishPower : startPower;
 }
 
-void Unpacking(char buf[], char **p, float* power) {
-	*power = strtof(buf, p);
+void Unpacking(char buf[], char *p, float* power) {
+	*power = strtof(buf,&p);
 
-	while (**p == ' ')
+	while (*p == ' ')
 		++(*p);
+	strcpy(buf, p);
 }
 
 void transmitData(Config_T * cfg, int clientfd){
@@ -156,14 +157,14 @@ void transmitData(Config_T * cfg, int clientfd){
 	static float 	power;
 
 	memset(buf, 0, sizeof(buf));
-	bytes = write(clientfd, buf, sizeof(buf));
+	bytes = read(clientfd, buf, sizeof(buf));
 	if (bytes <= 0)
 		return;
 
-	if (buf[bytes - 1] == '\n')
-		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf)
-	else
-		printTimely( stdout, "Server receive message from socket %d : %s\n",clientfd, buf);
+	//if (buf[bytes - 1] == '\n')
+	//	printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf)
+	//else
+	//	printTimely( stdout, "Server receive message from socket %d : %s\n",clientfd, buf);
 	
 	// search position of socket in sock_hash
 	pos = Search_Hash(cfg->sock_hash, clientfd);
@@ -177,8 +178,9 @@ void transmitData(Config_T * cfg, int clientfd){
 	} else {
 		float power2;
 		char *p;
-		Unpacking(buf, &p, &power);
-		bytes -= p - buf;
+		Unpacking(buf, p, &power);
+		strcpy(msg, buf);
+		//bytes -= p - buf;
 		//while (bytes > 0) {
 			for( int receiver = 0; receiver < HASH_CONSTANT; receiver++ ) {
 				if( receiver == pos || !cfg->addr_data[ receiver ].isPresent )
@@ -188,12 +190,12 @@ void transmitData(Config_T * cfg, int clientfd){
 
 				if( power2 > cfg->addr_data[ receiver ].sens ) {
 					sprintf( msg, "%f %s", power2, p );
-					read( cfg->addr_data[ receiver ].sock, msg, sizeof(msg));
+					write( cfg->addr_data[ receiver ].sock, msg, sizeof(msg));
 					printTimely( stdout, "Client %d send message to client %d",cfg->sock_to_addr[Search_Hash(cfg->sock_hash, clientfd)], cfg->addr_hash[ receiver ]);
 				}
 			}
-			bytes = write(clientfd, buf, sizeof(buf));
-			p = buf;
+			//bytes = write(clientfd, buf, sizeof(buf));
+			//p = buf;
 		//}
 	}
 }
@@ -232,11 +234,11 @@ void ClientRegister(Config_T * cfg){
 			if (pos == -1){
 				printTimely( stdout, "%d is invalid address\n", addr);
 				//sprintf(msg, "you have invalid address\n");
-				read(newsock,  "you have invalid address\n", 25 );
+				write(newsock,  "you have invalid address\n", 25 );
 			} else {
 				printTimely( stdout, "%d has already registered\n", addr);
 				//sprintf(msg, "this address was registered\n");
-				read(newsock, "this address was registered\n", 28 );
+				write(newsock, "this address was registered\n", 28 );
 			}
 			//read(newsock, msg, strlen(msg));
 		}

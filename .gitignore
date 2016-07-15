@@ -1,3 +1,2 @@
 /bin/server
-/obj/hash.o
-/obj/many_clients.o
+*.o

@@ -8,7 +8,7 @@ int Hash(int data);
 
 int Rehash(int pos);
 
-int Search_Hash(int H[], int data);
+int Search_Hash( const int H[], const int data );
 
 int Add_Hash(int H[], int data);
 

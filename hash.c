@@ -16,19 +16,19 @@ int Hash(int data){
         return key;
 }
 
-int Rehash(int pos){
-        return (pos + 1) % HASH_CONSTANT;
+int Rehash( const int pos){
+        return ( pos + 1 ) % HASH_CONSTANT;
 }
 
-int Search_Hash(int H[], int data){
-        int key = Hash(data);
-        while(1){
-                if (H[key] == HASH_EMPTY)
-                        return -1;
-                if (H[key] == data)
-                        return key;
-                key = Rehash(key);
-        }
+int Search_Hash( const int H[], const int data ) {
+	int key = Hash( data );
+	while( 1 )
+		if( H[ key ] == HASH_EMPTY )
+			return -1;
+		else if( H[ key ] == data )
+			return key;
+		else
+			key = Rehash( key );
 }
 
 int Add_Hash(int H[], int data){

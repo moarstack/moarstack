@@ -6,8 +6,10 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <math.h>
@@ -15,60 +17,76 @@
 
 #include "hash.h"
 
-#define printTimely( file , ...){ \
-        fprintf ( file, "%s : ", getTime() );\
-        fprintf ( file, __VA_ARGS__ );\
-}
-
 #define CONFIG_FILENAME	"config.txt"
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
-#define MAX_CLIENTS	10
-#define BUF_SIZE	256
-#define MSG_SIZE	256
-#define ERRMSG_SIZE	256
-#define ADDR_SIZE	30
+#define MAX_CLIENTS		10
+#define BUF_SIZE		256
+#define MSG_SIZE		256
+#define ERRMSG_SIZE		256
+#define ADDR_SIZE		30
 #define POWER_CONSTANT	63
-#define LIGHT_SPEED	299792458
-#define TIME_SIZE	30
-#define M_PI		3.14159265358979323846
+#define LIGHT_SPEED		299792458
+#define TIME_SIZE		30
+#define M_PI			3.14159265358979323846
+
+typedef struct sockaddr_un	SockAddr_T;
+typedef int					Addr_T;
 
 typedef struct {
-	bool isPresent;
-	int sock;
-	float x, y, sens;
+	bool	isPresent;
+	int		sock;
+	float	x, y, sens;
 } AddrData_T;
-
-typedef struct sockaddr_un SockAddr_T;
 
 const char * getTime( void ) {
 	static struct timeval	moment;
-	static size_t		len;
-	static char		buf[ TIME_SIZE ];
+	static size_t			len;
+	static char				buf[ TIME_SIZE ];
 
 	gettimeofday( &moment, NULL );
 	strftime( buf, TIME_SIZE, "%F %T", localtime( &( moment.tv_sec ) ) );
 	len = strlen( buf );
-	snprintf( buf + len, TIME_SIZE - len - 1, ".%d", moment.tv_usec / 1000 );
+	snprintf( buf + len, TIME_SIZE - len - 1, ".%03d", ( int )moment.tv_usec / 1000 );
 	return buf;
 }
 
+void printTimely( FILE * stream , const char * format, ... ) {
+	va_list	args;
 
-void Kill_sock(int sock){
-	shutdown(sock,SHUT_RDWR );
-	close(sock);
+	fprintf( stream, "%s : ", getTime() );
+	va_start( args, format );
+	vfprintf( stream, format, args );
+	va_end( args );
+	}
+
+static inline void socketKill( int sock ) {
+	shutdown( sock, SHUT_RDWR );
+	close( sock );
 }
 
-int Die(int sock, const char *str) {
-	printTimely( stderr,  str);
-	//close(sock);
-	Kill_sock(sock);
-	exit(EXIT_FAILURE);
+static inline const int getSocket( const Addr_T addr, const int addr_hash[], const AddrData_T addr_data[] ) {
+	return addr_data[ Search_Hash( addr_hash, addr ) ].sock;
+}
+
+static inline const Addr_T getAddr( const int sock, const int sock_hash[], const Addr_T sock_to_addr[] ) {
+	return sock_to_addr[ Search_Hash( sock_hash, sock ) ];
+}
+
+static inline AddrData_T * getData( const Addr_T addr, const int addr_hash[], AddrData_T addr_data[] ) {
+	return addr_data + Search_Hash( addr_hash, addr );
+}
+
+int die(int sock, const char *str) {
+	printTimely( stderr, str );
+	socketKill( sock );
+	exit( EXIT_FAILURE );
 }
 
 void readConfig( int addr_hash[], AddrData_T addr_data[], float * coefficient, char * socketFilename ) {
-	int	index, addr, clientsLimit;
-	float	x, y, sens;
-	FILE	* configFile;
+	int			addr, clientsLimit;
+	float		x, y, sens;
+	FILE		* configFile;
+	AddrData_T	* curData;
 
 	configFile = fopen( CONFIG_FILENAME, "r" );
 	fscanf( configFile, "%s%f%d", socketFilename, coefficient, &clientsLimit ); // here coefficient is equal to frequency
@@ -77,11 +95,11 @@ void readConfig( int addr_hash[], AddrData_T addr_data[], float * coefficient, c
 
 	for( int i = 0; i < clientsLimit; i++ ) {
 		fscanf( configFile, "%d%f%f%f", &addr, &x, &y, &sens );
-		index = Add_Hash( addr_hash, addr );
-		addr_data[ index ].x = x;
-		addr_data[ index ].y = y;
-		addr_data[ index ].sens = sens;
-		addr_data[ index ].isPresent = false;
+		curData = addr_data + Add_Hash( addr_hash, addr );
+		curData->x = x;
+		curData->y = y;
+		curData->sens = sens;
+		curData->isPresent = false;
 	}
 
 	fclose( configFile );
@@ -93,7 +111,7 @@ void serverInit( int *sock, SockAddr_T * stSockAddr, int *pollfd, const char * s
 	*sock = socket( AF_UNIX, SOCK_STREAM, 0 );
 
 	if( -1 == *sock )
-		Die( 0, "ERROR: socket() failed" );
+		die( 0, "ERROR: socket() failed" );
 
 	memset( stSockAddr, 0, sizeof( SockAddr_T ) );
 	stSockAddr->sun_family = AF_UNIX;
@@ -103,25 +121,26 @@ void serverInit( int *sock, SockAddr_T * stSockAddr, int *pollfd, const char * s
 	unlink( stSockAddr->sun_path );
 
 	if( -1 == bind( *sock, ( struct sockaddr * )stSockAddr, sizeof( SockAddr_T ) ) )
-		Die( *sock, "ERROR: bind() failed" );
+		die( *sock, "ERROR: bind() failed" );
 
 	if( -1 == listen( *sock, 1 ) )
-		Die( *sock, "ERROR: listen() failed" );
+		die( *sock, "ERROR: listen() failed" );
 
 	*pollfd = epoll_create( MAX_CLIENTS );
 
 	if( -1 == *pollfd )
-		Die( *sock, "ERROR: epoll_create() failed" );
+		die( *sock, "ERROR: epoll_create() failed" );
 
 	ev.events = EPOLLIN;
 	ev.data.fd = *sock;
 
 	if( -1 == epoll_ctl( *pollfd, EPOLL_CTL_ADD, *sock, &ev) )
-		Die( *sock, "ERROR: Init::epoll_ctl() failed" );
+		die( *sock, "ERROR: Init::epoll_ctl() failed" );
 }
 
 float distance( float x1, float y1, float x2, float y2 ) {
-	register float dx = x2 - x1, dy = y2 - y1;
+	register float	dx = x2 - x1,
+					dy = y2 - y1;
 	return dx * dx + dy * dy;
 }
 
@@ -132,79 +151,98 @@ float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, flo
 
 void Unpacking(char buf[], char **p, float* power) {
 	*power = strtof(buf, p);
-		
+
 	while (**p == ' ')
 		++(*p);
 }
 
-void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[], float coefficient ) {
-	int 		pos, bytes;
-	static char 	buf[BUF_SIZE], msg[MSG_SIZE];
-	static float 	power;
-	
-	memset(buf, 0, sizeof(buf));
-	bytes = read (clientfd, buf, sizeof(buf));
-	if (bytes <= 0)
+void transmitData(int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], Addr_T sock_to_addr[], float coefficient ) {
+	int 			bytes;
+	static char		buf[ BUF_SIZE ], msg[ MSG_SIZE ];
+	static float	power;
+	Addr_T			senderAddr;
+	AddrData_T		* senderData,
+					* receiverData;
+
+	memset( buf, 0, sizeof( buf ) );
+	bytes = read( clientfd, buf, sizeof( buf ) );
+
+	if( bytes <= 0 )
 		return;
 
-	if (buf[bytes - 1] == '\n'){
-		printTimely( stdout, "Server receive message from socket %d : %s", clientfd, buf);
-	}
-	else
-		printTimely( stdout, "Server receive message from socket %d : %s\n", clientfd, buf);
+	senderAddr = getAddr( clientfd, sock_hash, sock_to_addr );
+	senderData = getData( senderAddr, addr_hash, addr_data );
 
-	pos = Search_Hash(sock_hash, clientfd);
-	//find position of socket in sock_hash
-	pos = Search_Hash(addr_hash, sock_to_addr[pos]);
-	//find position of address of socket in addr_hash
-
-	if (buf[0] == '&') {
-		float 	sens = strtof(buf + 1, 0);
-		addr_data[pos].sens = sens;
-		printTimely( stdout, "Client's sensibility has been changed to %f\n", sens);
-	}	
-	else{
+	if( '$' == buf[ 0 ] ) {
+		senderData->sens = strtof( buf + 1, 0 );
+		printTimely( stdout, "Node %08X : new sensitivity : %f\n", senderAddr, senderData->sens );
+	} else {
 		float 	power2;
 		char 	*p;
-		Unpacking(buf, &p, &power);
+
+		printTimely( stdout, "Node %08X : sent message : %s", senderAddr, buf );
+
+		if( buf[ bytes - 1 ] != '\n' )
+			fprintf( stdout, "\n" );
+
+		Unpacking( buf, &p, &power );
 		bytes -= p - buf;
-		while (bytes > 0) {
-			for( int receiver = 0; receiver < HASH_CONSTANT; receiver++ ) {
-				if( receiver == pos || !addr_data[ receiver ].isPresent )
+
+		while( 0 < bytes ) {
+			for( int receiverIndex = 0; receiverIndex < HASH_CONSTANT; receiverIndex++ ) {
+				receiverData = addr_data + receiverIndex;
+
+				if( addr_hash[ receiverIndex ] == HASH_EMPTY || addr_hash[ receiverIndex ] == HASH_DELETED ||
+					receiverData->sock == clientfd || !( receiverData->isPresent ) )
 					continue;
 
-				power2 = leftPower( addr_data + receiver, addr_data + pos, power, coefficient );
+				power2 = leftPower( receiverData, senderData, power, coefficient );
 
-				if( power2 > addr_data[ receiver ].sens ) {
+				if( power2 > receiverData->sens ) {
 					sprintf( msg, "%f %s", power2, p );
-					write ( addr_data[ receiver ].sock, msg, sizeof(msg));
-					printTimely( stdout, "Client %d send message to client %d", sock_to_addr[Search_Hash(sock_hash, clientfd)], addr_hash[ receiver ]);
+					write( receiverData->sock, msg, sizeof( msg ) );
+					printTimely( stdout, "Node %08X : got message from node %08X\n", getAddr( receiverData->sock, sock_hash, sock_to_addr ), senderAddr );
 				}
 			}
-			
-			bytes = read(clientfd, buf, sizeof(buf));
-			p = buf;	
+
+			bytes = read( clientfd, buf, sizeof( buf ) );
+			p = buf;
 		}
 	}
 }
 
-void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
+static inline int socketUnblock( int sock ) {
+	int	oldFlags;
+
+	if( -1 == sock || 0 == sock )
+		printTimely( stderr, "ERROR: wrong file descriptor\n" );
+	else if( -1 == ( oldFlags = fcntl( sock, F_GETFL ) ) )
+		printTimely( stderr, "ERROR: fcntl( F_GETFL )\n" );
+	else if( -1 == fcntl( sock, F_SETFL, oldFlags | O_NONBLOCK ) )
+		printTimely( stderr, "ERROR: fcntl( F_SETFL )\n" );
+	else
+		return 0;
+
+	return -1;
+}
+
+void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], Addr_T sock_to_addr[] ) {
 	static struct 	epoll_event ev;
 	int 		pos;
 	int 		newsock = accept(sock, 0,0);
-	if (newsock == -1)
-		Die(sock, "ERROR: accept() failed");
+	static char 	buf[ ADDR_SIZE ];
+	int 		addr, index;
 
-	printTimely( stdout, "Socket %d is added\n", newsock);
+	if (newsock == -1)
+		die(sock, "ERROR: accept() failed");
+
+	printTimely( stdout, "Socket %4d : opened\n", newsock );
 
 	//receiving of node's address
-	static char 	buf[ADDR_SIZE], msg[ERRMSG_SIZE];
-	int 		addr, index;
 	while (1){
 		memset(buf, 0, sizeof(buf));
 		if( 0 == read(newsock, (void *) buf, sizeof(buf)) ) {
-			shutdown(newsock, SHUT_RDWR);
-			close(newsock);
+			socketKill( newsock );
 			return;
 		}
 		addr = atoi(buf);
@@ -213,53 +251,51 @@ void ClientRegister(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[
 			addr_data[pos].isPresent = true;
 			addr_data[pos].sock = newsock;
 			index = Add_Hash(sock_hash, newsock);
-			sock_to_addr[index] = addr;		
-			printTimely( stdout, "Client %d has been registered\n", addr);
+			sock_to_addr[index] = addr;
+			if( -1 == socketUnblock( newsock ) ) {
+				printTimely( stderr, "ERROR: socket unblocking failed\n" );
+				socketKill( newsock );
+			} else
+				printTimely( stdout, "Socket %4d : node %08X registered\n", newsock, addr );
 			break;
 		} else {
 			if (pos == -1){
-				printTimely( stdout, "%d is invalid address\n", addr);
-				write(newsock, "you have invalid address\n", 25);
-				//sprintf(msg, "you have invalid address\n");
+				printTimely( stdout, "Socket %4d : invalid address %d\n", newsock, addr);
+				write( newsock, "Invalid address\n", 17 );
 			} else {
-				printTimely( stdout, "%d has already registered\n", addr);
-				write (newsock, "this address was registred\n", 27);
-				//sprintf(msg, "this address was registered\n");
+				printTimely( stdout, "Socket %4d : busy address %d\n", newsock , addr);
+				write( newsock, "Busy address\n", 14 );
 			}
-			//write (newsock, msg, strlen(msg));
 		}
 	}
-	
+
 	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = newsock;
 	if (epoll_ctl(pollfd, EPOLL_CTL_ADD, newsock, &ev) == -1)
-		Die(sock, "ERROR: ClientRegister::epoll_ctl() failed");
+		die(sock, "ERROR: ClientRegister::epoll_ctl() failed");
 }
 
-void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], int sock_to_addr[]) {
+void ClientUnregister(int sock, int pollfd, int clientfd, int addr_hash[], AddrData_T addr_data[], int sock_hash[], Addr_T sock_to_addr[] ) {
 	static struct 	epoll_event ev;
 	if (epoll_ctl(pollfd, EPOLL_CTL_DEL, clientfd, &ev) == -1)
-		Die(sock, "ERROR: ClientUnregister::epoll_ctl() failed"); 
+		die(sock, "ERROR: ClientUnregister::epoll_ctl() failed");
 
 	int 	index = Delete_Hash(sock_hash, clientfd);
 	int 	addr = sock_to_addr[index];
 
 	index = Search_Hash(addr_hash, addr);
 	addr_data[index].isPresent = false;
-
-	printTimely( stdout, "Client %d has been unregistered\n", addr);
-
-	Kill_sock(clientfd);
-	//shutdown(clientfd, SHUT_RDWR);
-	//close(clientfd);
+	printTimely( stdout, "Socket %4d : node %08X unregistered\n", clientfd, addr );
+	socketKill( clientfd );
+	printTimely( stdout, "Socket %4d : closed\n", clientfd );
 }
 
 void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], float coefficient ) {
-	struct epoll_event	events[ MAX_CLIENTS ] = { 0 };
-	int			sock_hash[ HASH_CONSTANT ] = { 0 },
-				sock_to_addr[ HASH_CONSTANT ] = { 0 },
-				eventsCount, eventIndex;
-	bool			doNotStop = true;
+	struct epoll_event	events[ MAX_CLIENTS ] = {{ 0 }};
+	int					sock_hash[ HASH_CONSTANT ] = { 0 },
+						eventsCount, eventIndex;;
+	Addr_T				sock_to_addr[ HASH_CONSTANT ] = { 0 };
+	bool				doNotStop = true;
 
 	Init_Hash( sock_hash );
 
@@ -267,7 +303,7 @@ void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], f
 		eventsCount = epoll_wait( pollfd, events, MAX_CLIENTS, -1 );
 
 		if( -1 == eventsCount )
-			Die( sock, "ERROR: epoll_wait() failed" );
+			die( sock, "ERROR: epoll_wait() failed" );
 
 		for( eventIndex = 0; eventIndex < eventsCount; eventIndex++ )
 			if( events[ eventIndex ].data.fd == sock )
@@ -281,20 +317,16 @@ void serverWork(int sock, int pollfd, int addr_hash[], AddrData_T addr_data[], f
 	}
 }
 
-void Deinit(int sock, struct sockaddr_un stSockAddr, int pollfd) {
-	//shutdown(sock, SHUT_RDWR);
-	//close(sock);
-	Kill_sock(sock);
-	unlink(stSockAddr.sun_path);
-	
-	Kill_sock(pollfd);
-	//close(pollfd);
+void Deinit( int sock, struct sockaddr_un stSockAddr, int pollfd ) {
+	socketKill( sock );
+	unlink( stSockAddr.sun_path );
+	socketKill( pollfd );
 }
 
 int main(void) {
-	AddrData_T	addr_data[ HASH_CONSTANT ] = { 0 };
-	int		addr_hash[ HASH_CONSTANT ] = { 0 },
-			pollfd, sock;
+	AddrData_T	addr_data[ HASH_CONSTANT ] = {{ 0 }};
+	int			addr_hash[ HASH_CONSTANT ] = { 0 },
+				pollfd, sock;
 	SockAddr_T	stSockAddr;
 	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
 	char		socketFilename[ SOCK_FLNM_SZ ] = { 0 };

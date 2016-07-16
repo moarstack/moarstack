@@ -20,7 +20,8 @@
 #define CONFIG_FILENAME	"config.txt"
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
 #define MAX_CLIENTS		10
-#define BUF_SIZE		256
+#define BUF_SIZE		32
+#define POWER_BUF_SIZE	10
 #define MSG_SIZE		256
 #define ERRMSG_SIZE		256
 #define ADDR_SIZE		30
@@ -160,78 +161,134 @@ float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, flo
 	return finishPower < startPower ? finishPower : startPower;
 }
 
-char * unpack( char buf[], float * power, int * size ) {
-	char *	end;
+static inline char * unpack( char buf[], float * power, int * size ) {
+	char	* end;
 
 	*power = strtof( buf, &end );
 	*size = ( int )strtol( end, &end, 10 );
-	return end + strspn( end, "\t\n _" );;
+	return end + strspn( end, "\t\n\r " );
 }
 
-void transmitData( Config_T * cfg, int clientfd ) {
-	static int 		bytesRead,
-					bytesExpected,
-					bytesShift;
-	static char		buf[ BUF_SIZE ],
-					* textStart,
-					* message;
-	static float	startPower,
-					finishPower;
-	Addr_T			senderAddr;
-	AddrData_T		* senderData,
-					* receiverData;
+int transmitData( Config_T * cfg, int clientfd, char buf[], int bytesRead, Addr_T senderAddr, AddrData_T * senderData ) {
+	int			bytesExpected,
+				bytesShift,
+				bytesFirst,
+				bytesMissed;
+	float		startPower,
+				finishPower;
+	char		powerBuf[ POWER_BUF_SIZE ],
+				* textStart,
+				* message;
+	AddrData_T	* receiverData;
+
+	textStart = unpack( buf + 1, &startPower, &bytesExpected );
+	bytesMissed = textStart - buf;
+	bytesRead -= bytesMissed;
+	bytesFirst = ( bytesRead < bytesExpected ? bytesRead : bytesExpected );
+	message = ( char * )calloc( bytesExpected, sizeof( char ) );
+	memcpy( message, textStart, bytesFirst );
+	printTimely( stdout, "Node %08X : sent message : %6.3f %d %.*s", senderAddr, startPower, bytesExpected, bytesFirst, textStart );
+
+	if( textStart[ bytesFirst - 1 ] != '\n' )
+		fprintf( stdout, "\n" );
+
+	while( bytesExpected > bytesRead ) {
+		bytesShift = read( clientfd, message + bytesRead, bytesExpected - bytesRead );
+
+		if( 0 < bytesShift )
+			bytesRead += bytesShift;
+		else
+			break;
+	}
+
+	for( int receiverIndex = 0; receiverIndex < HASH_CONSTANT; receiverIndex++ ) {
+		receiverData = cfg->addr_data + receiverIndex;
+
+		if( cfg->addr_hash[ receiverIndex ] == HASH_EMPTY || cfg->addr_hash[ receiverIndex ] == HASH_DELETED ||
+			receiverData->sock == clientfd || !( receiverData->isPresent ) )
+			continue;
+
+		finishPower = leftPower( receiverData, senderData, startPower, cfg->coefficient );
+
+		if( finishPower > receiverData->sens ) {
+			snprintf( powerBuf, sizeof( powerBuf ), "%6.3f %n", finishPower, &bytesShift );
+			write( receiverData->sock, powerBuf, bytesShift );
+			write( receiverData->sock, message, bytesRead );
+			write( receiverData->sock, "\n", 1 );
+			printTimely( stdout, "Node %08X : got message from node %08X\n", getAddr( receiverData->sock, cfg ), senderAddr );
+		}
+	}
+
+	free( message );
+	return bytesExpected + bytesMissed;
+}
+
+static inline int getFloat( char * buffer, float * value ) {
+	static char	* end;
+
+	if( NULL == buffer )
+		return 0;
+
+	if( NULL == value )
+		strtof( buffer, &end );
+	else
+		*value = strtof( buffer, &end );
+
+	return end - buffer;
+}
+
+static inline int action( char * source, float * variable, Addr_T addr, const char message[] ) {
+	static int	result;
+
+	result = getFloat( source + 1, variable );
+	printTimely( stdout, "Node %08X : %s : %f\n", addr, message, *variable );
+	return result + 1;
+}
+
+void processData( Config_T * cfg, int clientfd ) {
+	static int			bytesDone,
+						bytesShift,
+						bytesLeft;
+	static char			buf[ BUF_SIZE ],
+						* start;
+	static Addr_T		senderAddr;
+	static AddrData_T	* senderData;
 
 	memset( buf, 0, sizeof( buf ) );
-	bytesRead = read( clientfd, buf, sizeof( buf ) );
+	bytesLeft = read( clientfd, buf, sizeof( buf ) );
 
-	if( bytesRead <= 0 )
+	if( bytesLeft <= 0 )
 		return;
 
 	senderAddr = getAddr( clientfd, cfg );
 	senderData = getData( senderAddr, cfg );
+	bytesDone = 0;
+	start = buf;
 
-	if( '$' == buf[ 0 ] ) {
-		senderData->sens = strtof( buf + 1, 0 );
-		printTimely( stdout, "Node %08X : new sensitivity : %f\n", senderAddr, senderData->sens );
-	} else {
-		printTimely( stdout, "Node %08X : sent message : %s", senderAddr, buf );
-
-		if( buf[ bytesRead - 1 ] != '\n' )
-			fprintf( stdout, "\n" );
-
-		textStart = unpack( buf, &startPower, &bytesExpected );
-		bytesRead -= ( textStart - buf );
-		message = ( char * )calloc( bytesExpected, sizeof( char ) );
-		memcpy( message, textStart, bytesRead );
-
-		while( bytesExpected > bytesRead ) {
-			bytesShift = read( clientfd, message + bytesRead, bytesExpected - bytesRead );
-
-			if( 0 < bytesShift )
-				bytesRead += bytesShift;
-			else
+	while( 0 < bytesLeft ) {
+		switch( *start ) {
+			case '$' : // sensitivity change
+				bytesShift = action( start, &( senderData->sens ), senderAddr, "new sensitivity" );
 				break;
+
+			case 'x' : // x position change
+				bytesShift = action( start, &( senderData->x ), senderAddr, "new X position" );
+				break;
+
+			case 'y' : // y position change
+				bytesShift = action( start, &( senderData->y ), senderAddr, "new Y position" );
+				break;
+
+			case ':' : // data transmission
+				bytesShift = transmitData( cfg, clientfd, start, bytesLeft, senderAddr, senderData );
+				break;
+
+			default :
+				bytesShift = 1;
 		}
-
-		for( int receiverIndex = 0; receiverIndex < HASH_CONSTANT; receiverIndex++ ) {
-			receiverData = cfg->addr_data + receiverIndex;
-
-			if( cfg->addr_hash[ receiverIndex ] == HASH_EMPTY || cfg->addr_hash[ receiverIndex ] == HASH_DELETED ||
-				receiverData->sock == clientfd || !( receiverData->isPresent ) )
-				continue;
-
-			finishPower = leftPower( receiverData, senderData, startPower, cfg->coefficient );
-
-			if( finishPower > receiverData->sens ) {
-				snprintf( buf, sizeof( buf ), "%6.3f %n", finishPower, &bytesShift );
-				write( receiverData->sock, buf, bytesShift );
-				write( receiverData->sock, message, bytesRead );
-				write( receiverData->sock, "\n", 1 );
-				printTimely( stdout, "Node %08X : got message from node %08X\n", getAddr( receiverData->sock, cfg ), senderAddr );
-			}
-		}
-
-		free( message );
+		bytesDone += bytesShift;
+		bytesLeft -= bytesShift;
+		start += bytesShift;
 	}
 }
 
@@ -335,7 +392,7 @@ void serverWork( Config_T * cfg ) {
 				clientRegister( cfg );
 			else {
 				if( events[ eventIndex ].events & EPOLLIN )
-					transmitData( cfg, events[ eventIndex ].data.fd );
+					processData( cfg, events[ eventIndex ].data.fd );
 				if( events[ eventIndex ].events & ( EPOLLHUP | EPOLLERR ) )
 					clientUnregister( cfg, events[ eventIndex ].data.fd );
 			}

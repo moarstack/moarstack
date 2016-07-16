@@ -187,7 +187,7 @@ int transmitData( Config_T * cfg, int clientfd, char buf[], int bytesRead, Addr_
 	bytesFirst = ( bytesRead < bytesExpected ? bytesRead : bytesExpected );
 	message = ( char * )calloc( bytesExpected, sizeof( char ) );
 	memcpy( message, textStart, bytesFirst );
-	printTimely( stdout, "Node %08X : sent message : %6.3f %d %.*s", senderAddr, startPower, bytesExpected, bytesFirst, textStart );
+	printTimely( stdout, "Node %08X : - message : %6.3f %d %.*s", senderAddr, startPower, bytesExpected, bytesFirst, textStart );
 
 	if( textStart[ bytesFirst - 1 ] != '\n' )
 		fprintf( stdout, "\n" );
@@ -215,7 +215,7 @@ int transmitData( Config_T * cfg, int clientfd, char buf[], int bytesRead, Addr_
 			write( receiverData->sock, powerBuf, bytesShift );
 			write( receiverData->sock, message, bytesRead );
 			write( receiverData->sock, "\n", 1 );
-			printTimely( stdout, "Node %08X : got message from node %08X\n", getAddr( receiverData->sock, cfg ), senderAddr );
+			printTimely( stdout, "Node %08X : + message from node %08X\n", getAddr( receiverData->sock, cfg ), senderAddr );
 		}
 	}
 
@@ -326,7 +326,7 @@ void clientRegister( Config_T * cfg ) {
 			socketKill( newsock );
 			return;
 		}
-		addr = atoi( buf );
+		addr = strtol( buf, NULL, 0 );
 		pos = Search_Hash( cfg->addr_hash, addr );
 		if( -1 < pos && !( cfg->addr_data[ pos ].isPresent ) ) {
 			if( -1 == socketUnblock( newsock ) ) {

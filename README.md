@@ -23,7 +23,7 @@ Configuration for the MockIT should be provided by the suitable configuration fi
 The whole file example:
 
     socket.file
-    123 
+    123
     6
     123 5.31 6.12 1
     5213 512.24 534.21 1
@@ -48,11 +48,9 @@ Every client should work with the MockIT in the following manner:
     * **`$`** - sensitivity change; MockIT will read a number right after that symbol and will remember it as new node\`s sensitivity.
         + Example: **`$2`**
         + MockIT will write message like **`2016-07-16 17:41:36.795 : Node 0000145D : new sensitivity : 2.000000`**
-
     * **`x`**, **`y`** - coordinates change; MockIT will read a number right after that symbol and will remember it as new node\`s coordinate, *X* or *Y*.
         + Example: **`x34`**
         + MockIT will write message like **`2016-07-16 17:43:30.561 : Node 0000145D : new X position : 34.000000`**
-
     * **`:`** - send message; the very next number is assumed to be an output signal power (on sender), the bytes count **`N`** follows it and yet *N* bytes of the message text.
         + Example: **`:275.5 9 Hi there!`**
         + MockIT will write message like **`2016-07-16 17:48:25.598 : Node 0000145D : - message : 275.500 9 Hi there!`**

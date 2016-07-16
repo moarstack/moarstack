@@ -12,7 +12,7 @@
 typedef enum {
 	LayerCommandType_None,
     LayerCommandType_Send,
-	LayerCommandType_Recieve,
+	LayerCommandType_Receive,
     LayerCommandType_NewNeighbor,
     LayerCommandType_LostNeighbor,
 	LayerCommandType_UpdateNeighbor,

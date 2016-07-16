@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "moarCommons.h"
-#include
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
@@ -43,6 +42,7 @@ void ChangeBytesOrder( void * output, const void * input, const size_t size ) {
 
 // read command from socket
 int ReadCommand(int fd, LayerCommandStruct_T* command){
+    //check args
     if(NULL == command)
         return 1;
     if(fd <= 0)
@@ -51,11 +51,11 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
     LayerCommandPlain_T commandPlain;
     size_t commandPlainSize = sizeof(LayerCommandPlain_T);
     //read command
-    ssize_t commandReadedSize = read(fd,&commandPlain, commandPlainSize);
+    ssize_t commandReadedSize = read(fd, &commandPlain, commandPlainSize);
     //check result
     if(-1 == commandReadedSize)
         return 2; //TODO check errno
-    if(commandReadedSize != commandPlainSize)
+    if(commandPlainSize != commandReadedSize)
         return 3;
     command->Command = commandPlain.Command;
     command->MetaSize = commandPlain.MetaSize;
@@ -71,7 +71,7 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
         //check result
         if(-1 == metadataReadedSize)
             return 2; //TODO check errno
-        if(metadataReadedSize != commandPlain.MetaSize)
+        if(commandPlain.MetaSize != metadataReadedSize)
             return 3;
         command->MetaData = (void *)buffer;
     }
@@ -80,6 +80,35 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
 
 // write command to socket
 int WriteCommand(int fd, LayerCommandStruct_T* command){
+    //check args
+    if(NULL == command)
+        return 1;
+    if(fd <= 0)
+        return 1;
+    if(0 != command->MetaSize && NULL == command->MetaData)
+        return 1;
 
+    //fill palin
+    LayerCommandPlain_T commandPlain;
+    size_t commandPlainSize = sizeof(LayerCommandPlain_T);
+    commandPlain.Command = command->Command;
+    commandPlain.MetaSize = command->MetaSize;
+
+    //write command
+    ssize_t writedCommandPlain = write(fd, &commandPlain, commandPlainSize);
+    //check
+    if(-1 != writedCommandPlain)
+        return 2; //TODO check errno
+//    why this conition is true?
+//    if(commandPlainSize != writedCommandPlain)
+//        return 3;
+    //if have metadata
+    if(0 != command->MetaSize)
+    {
+        //write metadata
+        ssize_t writedMetadata = write(fd, command->MetaData, command->MetaSize);
+        if(-1 != writedMetadata)
+            return 2; //TODO check errno
+    }
     return 0;
 }

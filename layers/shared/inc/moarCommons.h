@@ -17,8 +17,10 @@ typedef enum {
     LayerCommandType_LostNeighbor,
 	LayerCommandType_UpdateNeighbor,
 	LayerCommandType_MessageState,
-	LayerCommandType_Connect,
-	LayerCommandType_ConnectResult,
+	LayerCommandType_ConnectInterface,
+	LayerCommandType_ConnectInterfaceResult,
+	LayerCommandType_ConnectApplication,
+	LayerCommandType_ConnectApplicationResult,
 	LayerCommandType_InterfaceState,
 	LayerCommandType_UpdateBeaconPayload,
 	// some other commands

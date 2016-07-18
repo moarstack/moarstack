@@ -10,6 +10,7 @@
 #include "moarChannelPrivate.h"
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
+    // load configuration
     // listen for interface connection
     // in poll
         // if new interface connected
@@ -18,19 +19,28 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
                 // update beacon data
                 // update beacon data in all interfaces
 
+        // timeout
+            //
+
         // if command from interface
 
             // connect
-                //a dd interface record to list
+                // add interface record to list
 
             // disconnect
                 // remove interface record from list
 
             // interface/message state
                 // change state of interface
-                // send message state command to routing
+                // if sended
+                    // send message state command to routing
+                // if have more send trys
+                    // add to queue
+                // else
+                    // send message state to routing
+                    // drop message
                 // if have messages in queue
-                    // get message
+                        // get message
                     // try to send
 
             // received

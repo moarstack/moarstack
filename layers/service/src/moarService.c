@@ -8,5 +8,17 @@
 #include "moarPresentationService.h"
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
-    
+    // load configuration
+    // listen for connection
+    // in poll
+        // if new application connected
+            // accept
+            // add to pool list
+        // if command
+            // connect
+            // disconnect
+            // send
+            // state request
+            // message state
+            // get message
 }

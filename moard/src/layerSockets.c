@@ -5,54 +5,46 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "layerSockets.h"
 
-static int	socketsCountUsual,
-			socketsCountIface;
-static int	* socketsUsual = NULL,
-			* socketsIface = NULL;
+static int	socketsCount;
+static int	* socketValues = NULL;
 
-int socketDown( MoarLayerType_T layerType, IfacesCount_T ifaceIndex ) {
-	switch( layerType ) {
-		case MoarLayer_Interface:
-			return -1;
-
-		case MoarLayer_Channel:
-			return ifaceIndex < socketsCountIface ? socketsIface[ 2 * ifaceIndex ] : -1;
-
-		default:
-			return socketsUsual[ 2 * layerType ];
-	}
-}
-// TODO: change both for work with iface-channel sockets
-int socketUp( MoarLayerType_T layerType, IfacesCount_T ifaceIndex ) {
-	switch( layerType ) {
-		case MoarLayer_Service:
-			return -1;
-
-		case MoarLayer_Interface:
-			return ifaceIndex < socketsCountIface ? socketsIface[ 2 * ifaceIndex + 1 ] : -1;
-
-		default:
-			return socketsUsual[ 2 * layerType + 1 ];
-	}
+int socketDown( MoarLayerType_T layerType ) {
+	return MoarLayer_Interface == layerType ? -1 : socketValues[ 2 * layerType - 1 ];
 }
 
-int socketsPrepare( IfacesCount_T ifacesCount ) {
-	int result = 0;
+int socketUp( MoarLayerType_T layerType ) {
+	return MoarLayer_Service == layerType ? socketValues[ 2 * layerType ] : -1;
+}
 
-	socketsCountUsual = 2 * MoarLayer_LayersCount - 4; // -1 for beeing between layers, -1 for exceptin iface-channel pair, then * 2
-	socketsCountIface = 2 * ifacesCount;
+int socketFillAddress( struct sockaddr * socketAddress, const char * socketFilePath ) {
+	if( NULL == socketFilePath || NULL == socketAddress )
+		return -1;
 
-	socketsUsual = ( int * )calloc( socketsCountUsual, sizeof( int ) );
-	socketsIface = ( int * )calloc( socketsCountIface, sizeof( int ) );
+	memset( socketAddress, 0, sizeof( struct sockaddr ) );
+	socketAddress->sa_family = AF_UNIX;
+	strncpy( socketAddress->sa_data, socketFilePath, SOCKET_FILENAME_SIZE );
+	return unlink( socketAddress->sa_data );
+}
 
-	for( int i = 0; i < socketsCountUsual; i++ )
-		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, socketsUsual + 2 * i );
+int socketsPrepare( const char * ifaceSocketFilePath ) {
+	struct sockaddr	socketFileAddress;
+	int				result = 0;
 
-	for( int i = 0; i < socketsCountIface; i++ )
-		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, socketsIface + 2 * i );
+	socketsCount = 2 * MoarLayer_LayersCount - 2; // -1 for beeing between layers, then * 2
+	socketValues = ( int * )calloc( socketsCount, sizeof( int ) );
+
+	socketFillAddress( &socketFileAddress, ifaceSocketFilePath ); // TODO: replace filepath with specified by config file
+	socketValues[ 0 ] = socket( AF_UNIX, SOCK_DGRAM, 0 );
+	socketValues[ 1 ] = socket( AF_UNIX, SOCK_DGRAM, 0 );
+	bind( socketValues[ 1 ], &socketFileAddress, sizeof( struct sockaddr ) );
+
+	for( MoarLayerType_T layerType = MoarLayer_Channel; layerType < MoarLayer_LayersCount; layerType++ )
+		result += socketpair( AF_UNIX, SOCK_DGRAM, 0, socketValues + 2 * layerType );
 
 	return ( result < 0 ? -1 : 0 );
 }

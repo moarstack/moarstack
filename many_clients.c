@@ -11,13 +11,15 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
 
 #include "hash.h"
 
-#define CONFIG_FILENAME	"config.txt"
+#define CONFIG_FLNM_DEF	"config.txt"
+#define CONFIG_FLNM_SZ	255
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
 #define MAX_CLIENTS		10
 #define BUF_SIZE		32
@@ -47,7 +49,8 @@ typedef struct {
 				pollfd, sock; // sock is already exist in struct AddrData_T
 	SockAddr_T	stSockAddr;
 	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
-	char		socketFilename[ SOCK_FLNM_SZ ];
+	char		socketFilename[ SOCK_FLNM_SZ ],
+				configFilename[ CONFIG_FLNM_SZ ];
 } Config_T;
 
 const char * getTime( void ) {
@@ -100,7 +103,7 @@ void readConfig( Config_T * cfg ) {
 	FILE		* configFile;
 	AddrData_T	* curData;
 
-	configFile = fopen( CONFIG_FILENAME, "r" );
+	configFile = fopen( cfg->configFilename, "r" );
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
 	Init_Hash( cfg->addr_hash );
@@ -405,8 +408,30 @@ void serverStop( Config_T * cfg ) {
 	socketKill( cfg->pollfd );
 }
 
-int main( void ) {
+int readCommandLine( Config_T * cfg, int argc, char * argv[] ) {
+	int	result;
+
+	result = getopt( argc, argv, "c:" );
+
+	if( ( -1 == result && NULL == optarg ) || ( 'c' == result && NULL != optarg ) ) {
+		if( NULL == optarg )
+			strncpy( cfg->configFilename, CONFIG_FLNM_DEF, CONFIG_FLNM_SZ );
+		else
+			strncpy( cfg->configFilename, optarg, CONFIG_FLNM_SZ );
+
+		printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
+		return 0;
+	} else {
+		printTimely( stderr, "Config file not specified\n" );
+		return -1;
+	}
+}
+
+int main( int argc, char * argv[] ) {
 	Config_T	configStruct;
+
+	if( -1 == readCommandLine( &configStruct, argc, argv ) )
+		return -1;
 
 	readConfig( &configStruct );
 	serverInit( &configStruct );

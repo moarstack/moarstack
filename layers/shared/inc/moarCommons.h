@@ -17,10 +17,12 @@ typedef enum {
     LayerCommandType_LostNeighbor,
 	LayerCommandType_UpdateNeighbor,
 	LayerCommandType_MessageState,
-	LayerCommandType_ConnectInterface,
-	LayerCommandType_ConnectInterfaceResult,
+	LayerCommandType_RegisterInterface,
+	LayerCommandType_RegisterInterfaceResult,
+	LayerCommandType_UnregisterInterface,
 	LayerCommandType_ConnectApplication,
 	LayerCommandType_ConnectApplicationResult,
+	LayerCommandType_DisconnectApplication,
 	LayerCommandType_InterfaceState,
 	LayerCommandType_UpdateBeaconPayload,
 	// some other commands
@@ -31,6 +33,8 @@ typedef struct {
     LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
     size_t              MetaSize;   // size of command arguments depending on the command type
 } LayerCommandPlain_T;
+
+const size_t	LAYER_COMMAND_PLAIN_SIZE = sizeof( LayerCommandPlain_T );
 
 // struct to describe command and related arguments (so-called 'metadata') in memory
 typedef struct {

@@ -20,7 +20,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
                     // drop message
                 // if not sended
                     // if no trys
-                        // send message state update to routing
+                        // send message state update to presentation
                     // else
                         // add to routing queue
 

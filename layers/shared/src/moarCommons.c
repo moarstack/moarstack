@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "moarCommons.h"
+#include "funcResults.h"
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
@@ -44,19 +45,19 @@ void ChangeBytesOrder( void * output, const void * input, const size_t size ) {
 int ReadCommand(int fd, LayerCommandStruct_T* command){
     //check args
     if(NULL == command)
-        return 1;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     if(fd <= 0)
-        return 1;
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     LayerCommandPlain_T commandPlain;
-    size_t commandPlainSize = sizeof(LayerCommandPlain_T);
+
     //read command
-    ssize_t commandReadedSize = read(fd, &commandPlain, commandPlainSize);
+    ssize_t commandReadedSize = read(fd, &commandPlain, LAYER_COMMAND_PLAIN_SIZE);
     //check result
     if(-1 == commandReadedSize)
-        return 2; //TODO check errno
-    if(commandPlainSize != commandReadedSize)
-        return 3;
+        return FUNC_RESULT_FAILED_IO; //TODO check errno
+    if(LAYER_COMMAND_PLAIN_SIZE != commandReadedSize)
+        return FUNC_RESULT_FAILED_IO;
     command->Command = commandPlain.Command;
     command->MetaSize = commandPlain.MetaSize;
     //if have metadata
@@ -65,50 +66,51 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
         uint8_t *buffer;
         buffer = (uint8_t *)malloc(commandPlain.MetaSize);
         if(NULL == buffer)
-            return 4;
+            return FUNC_RESULT_FAILED_MEM_ALLOCATION;
         //read metadata
         ssize_t metadataReadedSize = read(fd, buffer, commandPlain.MetaSize);
         //check result
         if(-1 == metadataReadedSize)
-            return 2; //TODO check errno
+            return FUNC_RESULT_FAILED_IO; //TODO check errno
         if(commandPlain.MetaSize != metadataReadedSize)
-            return 3;
+            return FUNC_RESULT_FAILED_IO;
         command->MetaData = (void *)buffer;
     }
-    return 0;
+    return FUNC_RESULT_SUCCESS;
 }
 
 // write command to socket
 int WriteCommand(int fd, LayerCommandStruct_T* command){
     //check args
     if(NULL == command)
-        return 1;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     if(fd <= 0)
-        return 1;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     if(0 != command->MetaSize && NULL == command->MetaData)
-        return 1;
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     //fill palin
     LayerCommandPlain_T commandPlain;
-    size_t commandPlainSize = sizeof(LayerCommandPlain_T);
     commandPlain.Command = command->Command;
     commandPlain.MetaSize = command->MetaSize;
 
     //write command
-    ssize_t writedCommandPlain = write(fd, &commandPlain, commandPlainSize);
+    ssize_t writedCommandPlain = write(fd, &commandPlain, LAYER_COMMAND_PLAIN_SIZE);
     //check
     if(-1 != writedCommandPlain)
-        return 2; //TODO check errno
-//    why this conition is true?
-//    if(commandPlainSize != writedCommandPlain)
-//        return 3;
+        return FUNC_RESULT_FAILED_IO; //TODO check errno
+//    why this condition is true?
+    if(LAYER_COMMAND_PLAIN_SIZE > writedCommandPlain)
+        return FUNC_RESULT_FAILED_IO;
     //if have metadata
     if(0 != command->MetaSize)
     {
         //write metadata
         ssize_t writedMetadata = write(fd, command->MetaData, command->MetaSize);
         if(-1 != writedMetadata)
-            return 2; //TODO check errno
+            return FUNC_RESULT_FAILED_IO; //TODO check errno
+        if(command->MetaSize != writedMetadata)
+            return FUNC_RESULT_FAILED_IO;
     }
-    return 0;
+    return FUNC_RESULT_SUCCESS;
 }

@@ -16,4 +16,6 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
                 // send message to routing
             // message state
                 // send message state update to service
+            // receive
+                // send message to service
 }

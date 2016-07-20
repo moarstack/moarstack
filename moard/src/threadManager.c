@@ -8,25 +8,25 @@
 #include <sched.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <funcResults.h>
 
 int createThread(MoarLibrary_T *lib, void *arg){
     if(NULL == lib)
-        return THREAD_CREATE_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     if(NULL == lib->LayerEntryPointFunction)
-        return THREAD_CREATE_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     //TODO check lib->Thread for valid value
     int res = pthread_create(&(lib->Thread),NULL, lib->LayerEntryPointFunction, arg);
     if(0 != res)
-        return THREAD_CREATE_FAILED;
-    return THREAD_CREATE_OK;
+        return FUNC_RESULT_FAILED;
+    return FUNC_RESULT_SUCCESS;
 }
 int exitThread(MoarLibrary_T *lib){
     if(NULL == lib)
-        return THREAD_EXIT_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     //TODO check lib->Thread for valid value
     int res = pthread_cancel(lib->Thread);
     if(0 != res)
-        return THREAD_EXIT_FAILED;
-    return THREAD_EXIT_OK;
+        return FUNC_RESULT_FAILED;
+    return FUNC_RESULT_SUCCESS;
 }

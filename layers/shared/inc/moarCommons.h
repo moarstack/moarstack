@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
+
+typedef char	SocketFilepath_T[ SOCKET_FILEPATH_SIZE ];
+
 // stack-wide command type
 typedef enum {
 	LayerCommandType_None,

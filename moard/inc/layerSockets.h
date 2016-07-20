@@ -6,9 +6,8 @@
 #define MOARSTACK_LAYERSOCKETS_H
 
 #include "moarLibInterface.h"	// MoarLayerType_T
-#include "moarChannel.h"		// IfacesCount_T
+#include "moarCommons.h"		// SocketFilepath_T
 
-#define SOCKET_FILENAME_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
 
 int socketDown( MoarLayerType_T layerType );
 int socketUp( MoarLayerType_T layerType );

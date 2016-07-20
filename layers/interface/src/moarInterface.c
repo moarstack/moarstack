@@ -10,10 +10,10 @@
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // load configuration
+    // prepare physical interface
     // connect to channel layer
     // send connect command
     // wait for connected answer
-    // prepare physical interface
     // in poll
         // if timeout
             // if time to send beacon | interface ready

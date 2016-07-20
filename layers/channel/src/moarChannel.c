@@ -15,20 +15,20 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // in poll
         // if new interface connected
             // add to pool list
-            // if supported beacon payload
-                // update beacon data
-                // update beacon data in all interfaces
 
-        // timeout
-            //
+        // if interface disconnected
+            // remove from poll list
 
         // if command from interface
 
             // connect
                 // add interface record to list
-
+                // if supported beacon payload
+                    // update beacon data
+                // update beacon data in all interfaces
             // disconnect
                 // remove interface record from list
+                // update beacon data in all interfaces
 
             // interface/message state
                 // change state of interface
@@ -39,9 +39,6 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
                 // else
                     // send message state to routing
                     // drop message
-                // if have messages in queue
-                        // get message
-                    // try to send
 
             // received
                 // if contains neighbors info metadata | hello message
@@ -85,5 +82,8 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
                             // send error to routing
                 // else
                     // send error to routing
-
+        // timeout | end of commands processing
+            // if have messages in queue
+            // get message
+            // try to send
 }

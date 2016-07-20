@@ -11,6 +11,7 @@
 
 int socketDown( MoarLayerType_T layerType );
 int socketUp( MoarLayerType_T layerType );
-int socketsPrepare( const char * ifaceSocketFilePath );
+int socketOpenFile( const SocketFilepath_T socketFilePath );
+int socketsPrepare( const SocketFilepath_T ifaceSocketFilePath, const SocketFilepath_T serviceSocketFilePath  );
 
 #endif //MOARSTACK_LAYERSOCKETS_H

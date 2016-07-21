@@ -1,20 +1,19 @@
 //
 // Created by svalov on 7/2/16.
 //
-#include <libraryLoader.h>
 #include <stdio.h>
-#include <configFiles.h>
-#include <moarLibInterface.h>
 #include <unistd.h>
-#include <threadManager.h>
-#include <moarLibrary.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <moarInterface.h>
 #include <string.h>
 
-#include "layerSockets.h"
-#include "moarInterface.h" // MoarIfaceStartupParams_T
+#include "libraryLoader.h"
+#include "configFiles.h"
+#include "moarLibInterface.h"	// MoarLayerStartupParams_T
+#include "threadManager.h"
+#include "moarLibrary.h"
+#include "layerSockets.h"		// socketsPrepare(), socketUp(), socketDown() and so on
+#include "moarInterface.h"		// MoarIfaceStartupParams_T
 
 #define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
 #define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
@@ -23,10 +22,8 @@
 
 #ifndef LOAD_MULTIPLE_INTERFACES
 #define LAYERS_COUNT	(MoarLayer_LayersCount)
-#define IFACES_COUNT	1
 #else
 #define LAYERS_COUNT	(MoarLayer_LayersCount+1)
-#define IFACES_COUNT	2
 #endif
 
 void signalHandler(int signo){

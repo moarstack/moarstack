@@ -38,8 +38,6 @@ typedef struct {
     size_t              MetaSize;   // size of command arguments depending on the command type
 } LayerCommandPlain_T;
 
-const size_t	LAYER_COMMAND_PLAIN_SIZE = sizeof( LayerCommandPlain_T );
-
 // struct to describe command and related arguments (so-called 'metadata') in memory
 typedef struct {
 	LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T

@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-EXE=server
+EXE=mockit
 BIN=bin
 OBJ=obj
 

@@ -18,6 +18,7 @@
 
 #include "hash.h"
 
+#define MOCKIT_VERSION	"1.0.1"
 #define CONFIG_FLNM_DEF	"config.txt"
 #define CONFIG_FLNM_SZ	255
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
@@ -103,6 +104,7 @@ void readConfig( Config_T * cfg ) {
 	FILE		* configFile;
 	AddrData_T	* curData;
 
+	printTimely( stdout, "Using config file %s\n", cfg->configFilename );
 	configFile = fopen( cfg->configFilename, "r" );
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
@@ -408,23 +410,47 @@ void serverStop( Config_T * cfg ) {
 	socketKill( cfg->pollfd );
 }
 
-int readCommandLine( Config_T * cfg, int argc, char * argv[] ) {
-	int	result;
+void printHelp( FILE * output ) {
+	fprintf( output, "MockIT usage:\n" );
+	fprintf( output, "\tmockit [-c PATH_TO_CONFIG_FILE] - running MockIT\n" );
+	fprintf( output, "\tmockit -v - MockIT version\n" );
+	fprintf( output, "\tmockit -h - print this help\n" );
+}
 
-	result = getopt( argc, argv, "c:" );
-
-	if( ( -1 == result && NULL == optarg ) || ( 'c' == result && NULL != optarg ) ) {
-		if( NULL == optarg )
-			strncpy( cfg->configFilename, CONFIG_FLNM_DEF, CONFIG_FLNM_SZ );
-		else
-			strncpy( cfg->configFilename, optarg, CONFIG_FLNM_SZ );
-
-		printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
-		return 0;
-	} else {
-		printTimely( stderr, "Config file not specified\n" );
+int rememberConfigFile( Config_T * cfg, const char * candidate ) {
+	if( NULL == candidate || -1 == access( candidate, F_OK ) ) {
+		printTimely( stdout, "No such file : %s\n", candidate );
 		return -1;
+	} else {
+		strncpy( cfg->configFilename, candidate, CONFIG_FLNM_SZ );
+		return 0;
 	}
+}
+
+int readCommandLine( Config_T * cfg, int argc, char * argv[] ) {
+	strncpy( cfg->configFilename, CONFIG_FLNM_DEF, CONFIG_FLNM_SZ );
+
+	do
+		switch( getopt( argc, argv, "vhc:" ) ) {
+			case 'v' :
+				fprintf( stdout, "MockIT version: %s\n", MOCKIT_VERSION );
+				exit( 0 );
+
+			case 'h' :
+				printHelp( stdout );
+				exit( 0 );
+
+			case 'c' :
+				return rememberConfigFile( cfg, optarg );
+
+			case -1 :
+				return 0;
+
+			default :
+				printTimely( stderr, "Wrong parameter specified\n" );
+				return -1;
+		}
+	while( true );
 }
 
 int main( int argc, char * argv[] ) {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(moarMockIT) 
+project(mockit) 
 
 set(LIBRARY_OUTPUT_PATH ../../lib)
 set(EXECUTABLE_OUTPUT_PATH  ../../bin)
@@ -16,6 +16,6 @@ file(GLOB SRC_FILES
 include_directories(inc)
 
 #add library
-add_executable(moarMockIT ${SRC_FILES})
-target_link_libraries(moarMockIT m)
+add_executable(mockit ${SRC_FILES})
+target_link_libraries(mockit m)
 file(COPY ${CONFIG_FILE_PATH}/${CONFIG_FILE_NAME} DESTINATION  ${CONFIG_OUTPUT_PATH})

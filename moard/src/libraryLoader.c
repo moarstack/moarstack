@@ -13,7 +13,7 @@
 
 int loadLibrary(char* name, MoarLibrary_T* library){
     if(NULL == name || NULL == library)
-        return LIBRARY_LOAD_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     //fill in
     memset(library,0,sizeof(MoarLibrary_T));
     library->Filename = name;
@@ -21,38 +21,38 @@ int loadLibrary(char* name, MoarLibrary_T* library){
     //that allow to load multiple independent copies of single library
     library->Handle = dlmopen(LM_ID, name, RTLD_LAZY | RTLD_LOCAL);
     if(NULL == library->Handle)
-        return LIBRARY_LOAD_FAILED;
+        return FUNC_RESULT_FAILED;
 
     //search library info function
     library->LibraryInfoFunction = (moarLibraryInfo_F)dlsym(library->Handle, MOAR_LIBRARY_INFO_NAME);
     if(NULL == library->LibraryInfoFunction)
-        return LIBRARY_LOAD_NONMOAR;
+        return FUNC_RESULT_FAILED_NONMOAR;
 
     //get library info
     int res = library->LibraryInfoFunction(&(library->Info));
     if(MOAR_LIBRARY_INFO_OK != res)
-        return LIBRARY_LOAD_NONMOAR;
+        return FUNC_RESULT_FAILED_NONMOAR;
 
     //search entry point function
     library->LayerEntryPointFunction = (moarLayerEntryPoint_F)dlsym(library->Handle, MOAR_LAYER_ENTRY_POINT_NAME);
     if(NULL == library->LayerEntryPointFunction)
-        return LIBRARY_LOAD_NONLAYER;
-    return LIBRARY_LOAD_OK;
+        return FUNC_RESULT_FAILED_NONLAYER;
+    return FUNC_RESULT_SUCCESS;
 }
 
 int closeLibrary(MoarLibrary_T* library){
     //check for correct input values
     if(NULL == library)
-        return LIBRARY_CLOSE_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     if(NULL == library->Handle)
-        return LIBRARY_CLOSE_FAILED;
+        return FUNC_RESULT_FAILED_ARGUMENT;
     //close handle
     int res = dlclose(library->Handle);
     if(res)
-        return LIBRARY_CLOSE_FAILED;
+        return FUNC_RESULT_FAILED;
     //fill pointers with null
     library->Handle = NULL;
     library->LayerEntryPointFunction = NULL;
     library->LibraryInfoFunction = NULL;
-    return LIBRARY_CLOSE_OK;
+    return FUNC_RESULT_SUCCESS;
 }

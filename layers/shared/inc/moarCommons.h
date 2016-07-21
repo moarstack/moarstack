@@ -10,10 +10,22 @@
 
 // stack-wide command type
 typedef enum {
-    LayerCommandType_ProcessData,
-    LayerCommandType_RequestNeighbors,
-    LayerCommandType_ReportNeighbors
-    // some other commands
+	LayerCommandType_None,
+    LayerCommandType_Send,
+	LayerCommandType_Receive,
+    LayerCommandType_NewNeighbor,
+    LayerCommandType_LostNeighbor,
+	LayerCommandType_UpdateNeighbor,
+	LayerCommandType_MessageState,
+	LayerCommandType_RegisterInterface,
+	LayerCommandType_RegisterInterfaceResult,
+	LayerCommandType_UnregisterInterface,
+	LayerCommandType_ConnectApplication,
+	LayerCommandType_ConnectApplicationResult,
+	LayerCommandType_DisconnectApplication,
+	LayerCommandType_InterfaceState,
+	LayerCommandType_UpdateBeaconPayload,
+	// some other commands
 } LayerCommandType_T;
 
 // struct to describe command and related arguments (so-called 'metadata') in socket
@@ -21,6 +33,8 @@ typedef struct {
     LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
     size_t              MetaSize;   // size of command arguments depending on the command type
 } LayerCommandPlain_T;
+
+const size_t	LAYER_COMMAND_PLAIN_SIZE = sizeof( LayerCommandPlain_T );
 
 // struct to describe command and related arguments (so-called 'metadata') in memory
 typedef struct {
@@ -45,9 +59,23 @@ typedef struct {
     size_t              EntrySize;  // size of data per one nearmate
 } NeighborsReportMeta_T;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
 // save bytes in the same memory if output = NULL or output = input
 extern void ChangeBytesOrder(void *output, const void *input, const size_t size);
+
+// read command from socket
+extern int ReadCommand(int fd, LayerCommandStruct_T* command);
+
+// write command to socket
+extern int WriteCommand(int fd, LayerCommandStruct_T* command);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //MOARSTACK_MOARCOMMONS_H

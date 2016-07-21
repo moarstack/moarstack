@@ -6,13 +6,10 @@
 #define MOARSTACK_LIBRARYLOADER_H
 
 #include <moarLibrary.h>
+#include <funcResults.h>
 
-#define LIBRARY_LOAD_OK 0
-#define LIBRARY_LOAD_FAILED 1
-#define LIBRARY_LOAD_NONMOAR 2
-#define LIBRARY_LOAD_NONLAYER 3
-#define LIBRARY_CLOSE_OK 0
-#define LIBRARY_CLOSE_FAILED 1
+#define FUNC_RESULT_FAILED_NONMOAR 2
+#define FUNC_RESULT_FAILED_NONLAYER 3
 
 int loadLibrary(char* name, MoarLibrary_T* library);
 int closeLibrary(MoarLibrary_T* library);

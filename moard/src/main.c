@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     //load
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);
-        if (LIBRARY_LOAD_OK == res)
+        if (FUNC_RESULT_SUCCESS == res)
             printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
         else
             printf("%s load failed\n",fileNames[i]);
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     //start layers here
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = createThread(libraries+i,NULL);
-        if(THREAD_CREATE_OK == res)
+        if(FUNC_RESULT_SUCCESS == res)
             printf("thread for %s created\n",libraries[i].Info.LibraryName);
         else
             printf("failed thread creation for %s\n",libraries[i].Info.LibraryName);
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
     //stop
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = exitThread(libraries+i);
-        if(THREAD_EXIT_OK == res)
+        if(FUNC_RESULT_SUCCESS == res)
             printf("thread %s exited\n",libraries[i].Info.LibraryName);
         else
             printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = closeLibrary(libraries+i);
         //check for empty lib closing
-        if (LIBRARY_CLOSE_OK == res)
+        if (FUNC_RESULT_SUCCESS == res)
             printf("library %s closed\n",libraries[i].Filename);
         else
             printf("close %s failed\n",libraries[i].Filename);

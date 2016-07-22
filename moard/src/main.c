@@ -1,29 +1,70 @@
 //
 // Created by svalov on 7/2/16.
 //
-#include <libraryLoader.h>
 #include <stdio.h>
-#include <configFiles.h>
-#include <moarLibInterface.h>
 #include <unistd.h>
-#include <threadManager.h>
-#include <moarLibrary.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "libraryLoader.h"
+#include "configFiles.h"
+#include "moarLibInterface.h"	// MoarLayerStartupParams_T
+#include "threadManager.h"
+#include "moarLibrary.h"
+#include "layerSockets.h"		// socketsPrepare(), socketUp(), socketDown() and so on
+#include "moarInterface.h"		// MoarIfaceStartupParams_T
+
+#define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
+#define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
 
 //#define LOAD_MULTIPLE_INTERFACES
 
 #ifndef LOAD_MULTIPLE_INTERFACES
-#define LAYERS_COUNT (MoarLayer_LayersCount)
+#define LAYERS_COUNT	(MoarLayer_LayersCount)
 #else
-#define LAYERS_COUNT (MoarLayer_LayersCount+1)
+#define LAYERS_COUNT	(MoarLayer_LayersCount+1)
 #endif
 
 void signalHandler(int signo){
     if(SIGINT == signo){
-        printf("Recieved SIGINT, terminating\n");
+        printf("Received SIGINT, terminating\n");
     }
     else
-        printf("Recieved signal %d\n",signo);
+        printf("Received signal %d\n",signo);
+}
+
+int runLayer( MoarLibrary_T * layerLibrary ) {
+	int				result;
+    void			* vsp;
+    MoarLayerType_T	layerType = layerLibrary->Info.LayerType;
+
+    if( MoarLayer_Interface == layerType ) {  // I DONT LIKE THIS PLACE
+		MoarIfaceStartupParams_T	* spIface;
+
+		spIface = ( MoarIfaceStartupParams_T * )calloc( 1, sizeof( MoarIfaceStartupParams_T ) );
+
+		if( NULL == spIface )
+			return -1;
+
+		strncpy( spIface->socketToChannel, IFACE_CHANNEL_SOCKET_FILE, SOCKET_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE
+		vsp = spIface;
+    } else {
+        MoarLayerStartupParams_T	* spNonIface;
+
+		spNonIface = ( MoarLayerStartupParams_T * )calloc( 1, sizeof( MoarLayerStartupParams_T ) );
+
+        if( NULL == spNonIface )
+            return -1;
+
+		spNonIface->DownSocketHandler = socketDown( layerType );
+		spNonIface->UpSocketHandler = socketUp( layerType );
+        vsp = spNonIface;
+    }
+
+	result = createThread( layerLibrary, vsp );
+	printf( FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName );
+	return result;
 }
 
 int main(int argc, char** argv)
@@ -40,6 +81,7 @@ int main(int argc, char** argv)
 #ifdef LOAD_MULTIPLE_INTERFACES
     fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
 #endif
+
     //setup signal handler
     signal(SIGINT, signalHandler);
     //load
@@ -50,15 +92,11 @@ int main(int argc, char** argv)
         else
             printf("%s load failed\n",fileNames[i]);
     }
-    //prepare sockets
+    socketsPrepare( IFACE_CHANNEL_SOCKET_FILE, SERVICE_APP_SOCKET_FILE );
     //start layers here
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = createThread(libraries+i,NULL);
-        if(FUNC_RESULT_SUCCESS == res)
-            printf("thread for %s created\n",libraries[i].Info.LibraryName);
-        else
-            printf("failed thread creation for %s\n",libraries[i].Info.LibraryName);
-    }
+	for(int i = 0; i < LAYERS_COUNT; i++)
+		runLayer( libraries + i );
+
     //wait
     pause();
     //stop

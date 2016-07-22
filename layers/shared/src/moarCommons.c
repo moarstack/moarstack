@@ -8,6 +8,8 @@
 #include "moarCommons.h"
 #include "funcResults.h"
 
+static const size_t	LAYER_COMMAND_PLAIN_SIZE = sizeof( LayerCommandPlain_T );
+
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
 // save bytes in the same memory if output = NULL or output = input

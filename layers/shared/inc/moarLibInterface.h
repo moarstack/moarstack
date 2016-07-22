@@ -15,7 +15,7 @@
 #define MOAR_LIBRARY_INFO_NAME "MoarLibraryInfo"
 
 typedef enum{
-    MoarLayer_Interface,
+    MoarLayer_Interface = 0,
     MoarLayer_Channel,
     MoarLayer_Routing,
     MoarLayer_Presentation,

@@ -105,7 +105,7 @@ void readConfig( Config_T * cfg ) {
 	if( NULL == configFile )
 		die( 0, "Opening config file is impossible\n" );
 	else
-		printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
+		printTimely( stdout, "Using config file : %s\n", CONFIG_FILENAME );
 
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;

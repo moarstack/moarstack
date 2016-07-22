@@ -11,13 +11,16 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
 
 #include "hash.h"
 
-#define CONFIG_FILENAME	"config.txt"
+#define MOCKIT_VERSION	"1.0.1"
+#define CONFIG_FLNM_DEF	"config.txt"
+#define CONFIG_FLNM_SZ	255
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
 #define MAX_CLIENTS		10
 #define BUF_SIZE		32
@@ -47,7 +50,8 @@ typedef struct {
 				pollfd, sock; // sock is already exist in struct AddrData_T
 	SockAddr_T	stSockAddr;
 	float		coefficient; // after readConfig() or serverInit() will be equal to (4 * Pi * frequency (in MHz) / LIGHT_SPEED)
-	char		socketFilename[ SOCK_FLNM_SZ ];
+	char		socketFilename[ SOCK_FLNM_SZ ],
+				configFilename[ CONFIG_FLNM_SZ ];
 } Config_T;
 
 const char * getTime( void ) {
@@ -100,7 +104,8 @@ void readConfig( Config_T * cfg ) {
 	FILE		* configFile;
 	AddrData_T	* curData;
 
-	configFile = fopen( CONFIG_FILENAME, "r" );
+	printTimely( stdout, "Using config file %s\n", cfg->configFilename );
+	configFile = fopen( cfg->configFilename, "r" );
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
 	Init_Hash( cfg->addr_hash );
@@ -405,8 +410,54 @@ void serverStop( Config_T * cfg ) {
 	socketKill( cfg->pollfd );
 }
 
-int main( void ) {
+void printHelp( FILE * output ) {
+	fprintf( output, "MockIT usage:\n" );
+	fprintf( output, "\tmockit [-c PATH_TO_CONFIG_FILE] - running MockIT\n" );
+	fprintf( output, "\tmockit -v - MockIT version\n" );
+	fprintf( output, "\tmockit -h - print this help\n" );
+}
+
+int rememberConfigFile( Config_T * cfg, const char * candidate ) {
+	if( NULL == candidate || -1 == access( candidate, F_OK ) ) {
+		printTimely( stdout, "No such file : %s\n", candidate );
+		return -1;
+	} else {
+		strncpy( cfg->configFilename, candidate, CONFIG_FLNM_SZ );
+		return 0;
+	}
+}
+
+int readCommandLine( Config_T * cfg, int argc, char * argv[] ) {
+	strncpy( cfg->configFilename, CONFIG_FLNM_DEF, CONFIG_FLNM_SZ );
+
+	do
+		switch( getopt( argc, argv, "vhc:" ) ) {
+			case 'v' :
+				fprintf( stdout, "MockIT version: %s\n", MOCKIT_VERSION );
+				exit( 0 );
+
+			case 'h' :
+				printHelp( stdout );
+				exit( 0 );
+
+			case 'c' :
+				return rememberConfigFile( cfg, optarg );
+
+			case -1 :
+				return 0;
+
+			default :
+				printTimely( stderr, "Wrong parameter specified\n" );
+				return -1;
+		}
+	while( true );
+}
+
+int main( int argc, char * argv[] ) {
 	Config_T	configStruct;
+
+	if( -1 == readCommandLine( &configStruct, argc, argv ) )
+		return -1;
 
 	readConfig( &configStruct );
 	serverInit( &configStruct );

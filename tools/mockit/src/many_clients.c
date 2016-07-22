@@ -101,6 +101,12 @@ void readConfig( Config_T * cfg ) {
 	AddrData_T	* curData;
 
 	configFile = fopen( CONFIG_FILENAME, "r" );
+
+	if( NULL == configFile )
+		die( 0, "Opening config file is impossible\n" );
+	else
+		printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
+
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
 	Init_Hash( cfg->addr_hash );

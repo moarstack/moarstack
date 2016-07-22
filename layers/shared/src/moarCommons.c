@@ -65,18 +65,16 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
     //if have metadata
     if(0 != commandPlain.MetaSize){
         //create buffer
-        uint8_t *buffer;
-        buffer = (uint8_t *)malloc(commandPlain.MetaSize);
-        if(NULL == buffer)
+		command->MetaData = malloc(commandPlain.MetaSize);
+        if(NULL == command->MetaData)
             return FUNC_RESULT_FAILED_MEM_ALLOCATION;
         //read metadata
-        ssize_t metadataReadedSize = read(fd, buffer, commandPlain.MetaSize);
+        ssize_t metadataReadedSize = read(fd, command->MetaData, commandPlain.MetaSize);
         //check result
         if(-1 == metadataReadedSize)
             return FUNC_RESULT_FAILED_IO; //TODO check errno
         if(commandPlain.MetaSize != metadataReadedSize)
             return FUNC_RESULT_FAILED_IO;
-        command->MetaData = (void *)buffer;
     }
     return FUNC_RESULT_SUCCESS;
 }

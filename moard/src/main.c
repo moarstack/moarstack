@@ -63,7 +63,7 @@ int runLayer( MoarLibrary_T * layerLibrary ) {
     }
 
 	result = createThread( layerLibrary, vsp );
-	printf( FUNC_RESULT_SUCCESS == result ? "layer %s started\n" : "failed starting layer %s\n", layerLibrary->Info.LibraryName );
+	printf( FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName );
 	return result;
 }
 
@@ -96,6 +96,7 @@ int main(int argc, char** argv)
     //start layers here
 	for(int i = 0; i < LAYERS_COUNT; i++)
 		runLayer( libraries + i );
+
     //wait
     pause();
     //stop

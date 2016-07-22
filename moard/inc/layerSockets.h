@@ -8,7 +8,6 @@
 #include "moarLibInterface.h"	// MoarLayerType_T
 #include "moarCommons.h"		// SocketFilepath_T
 
-
 int socketDown( MoarLayerType_T layerType );
 int socketUp( MoarLayerType_T layerType );
 int socketOpenFile( const SocketFilepath_T socketFilePath );

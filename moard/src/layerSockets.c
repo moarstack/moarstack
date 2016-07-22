@@ -4,6 +4,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -27,19 +28,23 @@ int socketUp( MoarLayerType_T layerType ) {
 		return socketValues[ 2 * layerType - 1 ];
 }
 
-int socketFillAddress( struct sockaddr * socketAddress, const SocketFilepath_T socketFilePath ) {
+int socketFillAddress( struct sockaddr_un * socketAddress, const SocketFilepath_T socketFilePath ) {
 	if( NULL == socketFilePath || NULL == socketAddress )
 		return -1;
 
-	memset( socketAddress, 0, sizeof( struct sockaddr ) );
-	socketAddress->sa_family = AF_UNIX;
-	strncpy( socketAddress->sa_data, socketFilePath, SOCKET_FILEPATH_SIZE );
-	return unlink( socketAddress->sa_data );
+	memset( socketAddress, 0, sizeof( struct sockaddr_un ) );
+	socketAddress->sun_family = AF_UNIX;
+	strncpy( socketAddress->sun_path, socketFilePath, SOCKET_FILEPATH_SIZE );
+
+	if( -1 != access( socketAddress->sun_path, F_OK ) )
+		return unlink( socketAddress->sun_path );
+	else
+		return 0;
 }
 
 int socketOpenFile( const SocketFilepath_T socketFilePath ) {
-	struct sockaddr	socketFileAddress;
-	int				socketValue;
+	struct sockaddr_un	socketFileAddress;
+	int					socketValue;
 
 	if( -1 == socketFillAddress( &socketFileAddress, socketFilePath ) )
 		return -1;
@@ -49,7 +54,7 @@ int socketOpenFile( const SocketFilepath_T socketFilePath ) {
 	if( -1 == socketValue )
 		return -1;
 
-	return bind( socketValue, &socketFileAddress, sizeof( struct sockaddr ) );
+	return bind( socketValue, ( struct sockaddr * )&socketFileAddress, sizeof( struct sockaddr_un ) );
 }
 
 int socketsPrepare( const SocketFilepath_T ifaceSocketFilePath, const SocketFilepath_T serviceSocketFilePath ) {

@@ -1,0 +1,8 @@
+//
+// Created by kryvashek on 30.07.16.
+//
+
+#ifndef MOARSTACK_MOARMESSAGEID_H
+#define MOARSTACK_MOARMESSAGEID_H
+
+#endif //MOARSTACK_MOARMESSAGEID_H

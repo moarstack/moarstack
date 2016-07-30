@@ -5,6 +5,8 @@
 #ifndef MOARSTACK_MOARMESSAGEID_H
 #define MOARSTACK_MOARMESSAGEID_H
 
+#include <stdint.h> // uint8_t
+
 #include <moarLibInterface.h> // MoarLayerType_T
 
 #define MESSAGE_ID_FREE_SIZE	7

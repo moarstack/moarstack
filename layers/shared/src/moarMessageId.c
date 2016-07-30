@@ -7,7 +7,7 @@
 #include <moarMessageId.h>
 
 // checks whether given message ids are equal; returns true, if are, false otherwise
-extern bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
+bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
 	if( ( NULL != one && NULL == two ) || ( NULL == one && NULL != two ) )
 		return false;
 	else if( one == two ) // pointers are equal
@@ -17,6 +17,6 @@ extern bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
 }
 
 // generates new identifier for some packet
-extern int midGenerate( MessageId_T * identifier, MoarLayerType_T layer ) {
+int midGenerate( MessageId_T * identifier, MoarLayerType_T layer ) {
 	return FUNC_RESULT_SUCCESS;
 }

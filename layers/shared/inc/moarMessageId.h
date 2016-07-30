@@ -19,4 +19,18 @@ typedef struct {
 
 #pragma pack(pop)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// checks whether given message ids are equal; returns true, if are, false otherwise
+extern bool midAreEqual( MessageId_T * one, MessageId_T * two );
+
+// generates new identifier for some packet
+extern int midGenerate( MessageId_T * identifier, MoarLayerType_T layer );
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //MOARSTACK_MOARMESSAGEID_H

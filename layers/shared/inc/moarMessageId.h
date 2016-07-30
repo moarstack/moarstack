@@ -5,7 +5,8 @@
 #ifndef MOARSTACK_MOARMESSAGEID_H
 #define MOARSTACK_MOARMESSAGEID_H
 
-#include <stdint.h> // uint8_t
+#include <stdint.h> 	// uint8_t
+#include <stdbool.h>	// bool
 
 #include <moarLibInterface.h> // MoarLayerType_T
 

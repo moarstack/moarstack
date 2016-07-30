@@ -2,11 +2,18 @@
 // Created by kryvashek on 30.07.16.
 //
 
+#include <string.h> // memcmp()
+
 #include <moarMessageId.h>
 
 // checks whether given message ids are equal; returns true, if are, false otherwise
 extern bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
-	return false;
+	if( ( NULL != one && NULL == two ) || ( NULL == one && NULL != two ) )
+		return false;
+	else if( one == two ) // pointers are equal
+		return true;
+	else
+		return ( 0 == memcmp( one, two, MESSAGE_ID_FULL_SIZE ) );
 }
 
 // generates new identifier for some packet

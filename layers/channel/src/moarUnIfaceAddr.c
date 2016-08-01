@@ -12,7 +12,7 @@
 #include <memory.h>
 
 
-int ReadUnAddressFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* address){
+int unAddressReadFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* address){
 	if(0 <= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == address)
@@ -37,7 +37,7 @@ int ReadUnAddressFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* addres
 	return FUNC_RESULT_SUCCESS;
 }
 
-int WriteUnAddressToSocket(int fd, UnIfaceAddr_T* address){
+int unAddressWriteToSocket(int fd, UnIfaceAddr_T* address){
 	if(0 <= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == address)
@@ -53,7 +53,7 @@ int WriteUnAddressToSocket(int fd, UnIfaceAddr_T* address){
 }
 
 // compare
-bool CompareUnAddress(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2){
+bool unAddressCompare(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2){
 	if(NULL == addr1 || NULL == addr2)
 		return false;
 	if(addr1->Length != addr2->Length)
@@ -65,7 +65,7 @@ bool CompareUnAddress(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2){
 	return true;
 }
 // make copy
-int CloneUnAddress(UnIfaceAddr_T* from, UnIfaceAddr_T* to){
+int unAddressClone(UnIfaceAddr_T* from, UnIfaceAddr_T* to){
 	if( NULL == from)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if( NULL == from->Value)
@@ -88,7 +88,7 @@ int CloneUnAddress(UnIfaceAddr_T* from, UnIfaceAddr_T* to){
 	return FUNC_RESULT_SUCCESS;
 }
 // remove
-int FreeUnAddress(UnIfaceAddr_T* addr){
+int unAddressFree(UnIfaceAddr_T* addr){
 	if( NULL == addr)
 	return FUNC_RESULT_FAILED_ARGUMENT;
 	if( NULL == addr->Value)

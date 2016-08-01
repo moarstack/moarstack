@@ -17,14 +17,14 @@ typedef struct {
 } UnIfaceAddr_T;
 
 // read from socket
-int ReadUnAddressFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* address);
+int unAddressReadFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* address);
 // write to socket
-int WriteUnAddressToSocket(int fd, UnIfaceAddr_T* address);
+int unAddressWriteToSocket(int fd, UnIfaceAddr_T* address);
 // compare
-bool CompareUnAddress(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2);
+bool unAddressCompare(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2);
 // make copy
-int CloneUnAddress(UnIfaceAddr_T* from, UnIfaceAddr_T* to);
+int unAddressClone(UnIfaceAddr_T* from, UnIfaceAddr_T* to);
 // remove
-int FreeUnAddress(UnIfaceAddr_T* addr);
+int unAddressFree(UnIfaceAddr_T* addr);
 
 #endif //MOARSTACK_MOARUNIFACEADDR_H

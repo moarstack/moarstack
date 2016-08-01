@@ -79,9 +79,27 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-void * MOAR_LAYER_ENTRY_POINT(void* arg){
-    // load configuration
-    // prepare physical interface
+void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
+	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
+						oneSocketEvent;
+	int					result,
+						epollHandler;
+
+	if( NULL == arg )
+		return NULL;
+
+	// load configuration
+
+	epollHandler = epoll_create( IFACE_OPENING_SOCKETS );
+	oneSocketEvent.events = EPOLLIN | EPOLLET;
+	result = preparePhysically();
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return NULL;
+
+	oneSocketEvent.data.fd = state.Config.MockitSocket;
+	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.MockitSocket, &oneSocketEvent );
+
     // connect to channel layer
     // send connect command
     // wait for connected answer

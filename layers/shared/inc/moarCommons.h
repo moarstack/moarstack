@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
 #include <moarMessageId.h>
 
 #define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
@@ -35,34 +34,26 @@ typedef enum {
 	// some other commands
 } LayerCommandType_T;
 
+typedef size_t 	PayloadSize_T;
+
 // struct to describe command and related arguments (so-called 'metadata') in socket
 typedef struct {
     LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
-    size_t              MetaSize;   // size of command arguments depending on the command type
+	PayloadSize_T       MetaSize;   // size of command arguments depending on the command type
+	PayloadSize_T 		DataSize;
 } LayerCommandPlain_T;
 
 // struct to describe command and related arguments (so-called 'metadata') in memory
 typedef struct {
 	LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
-	size_t              MetaSize;   // size of command arguments depending on the command type
+	PayloadSize_T       MetaSize;   // size of command arguments depending on the command type
+	PayloadSize_T 		DataSize;
 	void				* MetaData;	// metadata for current command
+	void				* Data;		// data for current command
+
 } LayerCommandStruct_T;
 
-// struct to describe packet and its metadata (layer message) in memory
-typedef struct {
-	size_t	DataSize,	// size of payload, including all added headers
-			MsgSize;	// size of layer message (differs for different layers, see <Layer>Msg<Up/Down>_T structs)
-	void	* Data,		// place of payload in memory (in memory space of current layer!)
-			* Msg;		// place of layer message in memory (in memory space of current layer!)
-} LayerPacketStruct_T;
-
 typedef uint8_t NeighborsCount_T;   // type to describe nearmates count
-
-// struct ofr metadata of 'LayerCommandType_ReportNearmates' command
-typedef struct {
-	NeighborsCount_T    Count;      // count of nearmates in report
-    size_t              EntrySize;  // size of data per one nearmate
-} NeighborsReportMeta_T;
 
 #ifdef __cplusplus
 extern "C" {

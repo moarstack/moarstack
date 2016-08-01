@@ -5,6 +5,8 @@
 #include <moarCommons.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <memory.h>
 #include "moarCommons.h"
 #include "funcResults.h"
 
@@ -51,32 +53,57 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
     if(fd <= 0)
         return FUNC_RESULT_FAILED_ARGUMENT;
 
-    LayerCommandPlain_T commandPlain;
-
-    //read command
+    LayerCommandPlain_T commandPlain = {0};
+	//read command
     ssize_t commandReadedSize = read(fd, &commandPlain, LAYER_COMMAND_PLAIN_SIZE);
     //check result
     if(-1 == commandReadedSize)
         return FUNC_RESULT_FAILED_IO; //TODO check errno
-    if(LAYER_COMMAND_PLAIN_SIZE != commandReadedSize)
+    if((long)LAYER_COMMAND_PLAIN_SIZE != commandReadedSize)
         return FUNC_RESULT_FAILED_IO;
     command->Command = commandPlain.Command;
     command->MetaSize = commandPlain.MetaSize;
+    command->DataSize = commandPlain.DataSize;
+    int res = FUNC_RESULT_SUCCESS;
     //if have metadata
-    if(0 != commandPlain.MetaSize){
+    if(0 != commandPlain.MetaSize) {
         //create buffer
-		command->MetaData = malloc(commandPlain.MetaSize);
-        if(NULL == command->MetaData)
-            return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-        //read metadata
-        ssize_t metadataReadedSize = read(fd, command->MetaData, commandPlain.MetaSize);
-        //check result
-        if(-1 == metadataReadedSize)
-            return FUNC_RESULT_FAILED_IO; //TODO check errno
-        if(commandPlain.MetaSize != metadataReadedSize)
-            return FUNC_RESULT_FAILED_IO;
+        command->MetaData = malloc(commandPlain.MetaSize);
+        if (NULL == command->MetaData)
+            res = FUNC_RESULT_FAILED_MEM_ALLOCATION;
+        else {
+            //read metadata
+            ssize_t metadataReadedSize = read(fd, command->MetaData, command->MetaSize);
+            //check result
+            if (-1 == metadataReadedSize || commandPlain.MetaSize != metadataReadedSize) {
+                res = FUNC_RESULT_FAILED_IO;
+            }
+        }
     }
-    return FUNC_RESULT_SUCCESS;
+    //if have data
+    if(0 != commandPlain.DataSize) {
+        //create buffer
+        command->Data = malloc(commandPlain.DataSize);
+        if (NULL == command->Data)
+            res = FUNC_RESULT_FAILED_MEM_ALLOCATION;
+        else {
+            //read data
+            ssize_t dataReadedSize = read(fd, command->Data, command->DataSize);
+            //check result
+            if (-1 == dataReadedSize || command->DataSize != dataReadedSize) {
+
+                res = FUNC_RESULT_FAILED_IO;
+            }
+        }
+    }
+    if(FUNC_RESULT_SUCCESS != res){
+        //free all memory
+        free(command->Data);
+        command->Data = NULL;
+        free(command->MetaData);
+        command->MetaData = NULL;
+    }
+    return res;
 }
 
 // write command to socket
@@ -90,14 +117,13 @@ int WriteCommand(int fd, LayerCommandStruct_T* command){
         return FUNC_RESULT_FAILED_ARGUMENT;
 
     //fill palin
-    LayerCommandPlain_T commandPlain;
+    LayerCommandPlain_T commandPlain = {0};
     commandPlain.Command = command->Command;
     commandPlain.MetaSize = command->MetaSize;
-
     //write command
     ssize_t writedCommandPlain = write(fd, &commandPlain, LAYER_COMMAND_PLAIN_SIZE);
     //check
-    if(-1 != writedCommandPlain)
+    if(-1 == writedCommandPlain)
         return FUNC_RESULT_FAILED_IO; //TODO check errno
 //    why this condition is true?
     if(LAYER_COMMAND_PLAIN_SIZE > writedCommandPlain)
@@ -107,9 +133,18 @@ int WriteCommand(int fd, LayerCommandStruct_T* command){
     {
         //write metadata
         ssize_t writedMetadata = write(fd, command->MetaData, command->MetaSize);
-        if(-1 != writedMetadata)
+        if(-1 == writedMetadata)
             return FUNC_RESULT_FAILED_IO; //TODO check errno
         if(command->MetaSize != writedMetadata)
+            return FUNC_RESULT_FAILED_IO;
+    }
+    if(0 != command->DataSize)
+    {
+        //write data
+        ssize_t writedData = write(fd, command->Data, command->DataSize);
+        if(-1 == writedData)
+            return FUNC_RESULT_FAILED_IO; //TODO check errno
+        if(command->DataSize != writedData)
             return FUNC_RESULT_FAILED_IO;
     }
     return FUNC_RESULT_SUCCESS;

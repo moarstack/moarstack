@@ -9,6 +9,7 @@
 #include "moarCommons.h"
 #include "moarChannel.h"
 #include "moarRouting.h"
+#include <moarMessageId.h>
 
 // possible states of packet when it is moving from channel to routing
 typedef enum {
@@ -21,15 +22,26 @@ typedef enum {
 
 // metadata of packet moving from channel to routing
 typedef struct {
-	PackStateChannel_T	State;	// state of packet moving from channel to routing
-} ChannelMsgUp_T;
+	MessageId_T Id;
+	ChannelAddr_T	From;
+} ChannelReceiveMetadata_T;
 
 // metadata of packet moving from routing to channel
 typedef struct {
+	MessageId_T Id;
 	ChannelAddr_T	Bridge;
-} RouteMsgDown_T;
+} RouteSendMetadata_T;
 
-const size_t	CHANNEL_MSG_UP_SIZE = sizeof( ChannelMsgUp_T );
-const size_t	ROUTE_MSG_DOWN_SIZE = sizeof( RouteMsgDown_T );
+typedef struct {
+	MessageId_T Id;
+	PackStateChannel_T State;
+} ChannelMessageStateMetadata_T;
+
+typedef struct {
+	ChannelAddr_T	Address;
+} ChannelNeighborMetadata_T;
+
+#define	CHANNEL_RECEIVE_METADATA_SIZE  sizeof( ChannelReceiveMetadata_T )
+#define	ROUTE_SEND_METADATA_SIZE  sizeof( RouteSendMetadata_T )
 
 #endif //MOARSTACK_MOARCHANNELROUTING_H

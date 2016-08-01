@@ -78,8 +78,5 @@ int ReadReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T 
 int ReadRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegisterMetadata_T* metadata);
 int ReadUnregisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceUnregisterMetadata_T* metadata);
 int ReadNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata);
-// write received metadata
-// write message status metadata
-// read send metadata
 
 #endif //MOARSTACK_MOARCHANNELMETADATA_H

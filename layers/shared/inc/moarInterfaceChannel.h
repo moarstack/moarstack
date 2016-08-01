@@ -6,9 +6,10 @@
 #define MOARSTACK_MOARINTERFACECHANNEL_H
 
 #include <stddef.h>
-#include "moarCommons.h"
-#include "moarInterface.h"
-#include "moarChannel.h"
+#include <stdbool.h>
+#include <moarCommons.h>
+#include <moarInterface.h>
+#include <moarChannel.h>
 
 // possible states of packet when it is moving from interface to channel
 typedef enum {
@@ -25,11 +26,15 @@ typedef enum {
 // type for length of universal address
 typedef uint8_t UnIfaceAddrLen_T;
 
-// metadata of packet moving from interface to channel
 typedef struct {
-	PackStateIface_T	State;	// state of packet moving from interface to channel
-} IfaceMsgUp_T;
+	bool Registred;
+} ChannelRegisterResultMetadata_T;
 
-#define	IFACE_MSG_UP_SIZE sizeof( IfaceMsgUp_T )
+typedef struct {
+
+} ChannelUnregisterResultMetadata_T;
+
+#define CHANNEL_REGISTER_RESULT_METADATA_SIZE 		sizeof( ChannelRegisterResultMetadata_T )
+#define CHANNEL_UNREGISTER_RESULT_METADATA_SIZE 	sizeof( ChannelUnregisterResultMetadata_T )
 
 #endif //MOARSTACK_MOARINTERFACECHANNEL_H

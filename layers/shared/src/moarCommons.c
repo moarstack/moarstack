@@ -175,7 +175,12 @@ int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer )
 		return FUNC_RESULT_FAILED_IO;
 
 	if( isServer ) {
-		result = bind( socketValue, ( struct sockaddr * )&socketFileAddress, sizeof( struct sockaddr_un ) );
+		int	reuse = 1;
+
+		result = setsockopt( socketValue, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( int ) );
+
+		if( -1 != result )
+			result = bind( socketValue, ( struct sockaddr * )&socketFileAddress, sizeof( struct sockaddr_un ) );
 
 		if( -1 != result )
 			result = listen( socketValue, 1 );

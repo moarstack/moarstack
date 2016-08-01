@@ -23,6 +23,9 @@ typedef enum {
 	PackStateIface_Received		// current packet was received
 } PackStateIface_T;
 
+// type for length of universal address
+typedef uint8_t UnIfaceAddrLen_T;
+
 typedef struct {
 	bool Registred;
 } ChannelRegisterResultMetadata_T;

@@ -40,7 +40,6 @@
 #define IFACE_MIN_FINISH_POWER			-70 // in dBm
 #define IFACE_MAX_START_POWER			16 // in dBm
 
-typedef uint8_t CurIfaceAddrLen_T;
 typedef float	PowerFloat_T;
 typedef uint8_t PowerInt_T;
 typedef float	LinkQuality_T;
@@ -59,7 +58,7 @@ typedef struct {
 } IfaceAddr_T;
 
 typedef struct {
-	CurIfaceAddrLen_T	Length;
+	UnIfaceAddrLen_T	Length;
 	IfaceAddr_T			Value;
 } IfaceAddrPlain_T;
 

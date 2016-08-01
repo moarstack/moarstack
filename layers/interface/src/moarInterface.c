@@ -10,14 +10,13 @@ ssize_t writeDown( void * buffer, size_t bytes ) {
 	ssize_t result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
-		( NULL != buffer && 0 == bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	result = write( state.Config.MockitSocket, buffer, bytes );
 
 	while( result <= 0 ) {
-		sleep( IFACE_WRITE_MOCKIT_INTERVAL );
+		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 		result = write( state.Config.MockitSocket, buffer, bytes );
 	}
 
@@ -28,14 +27,13 @@ ssize_t readDown( void * buffer, size_t bytes ) {
 	ssize_t	result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
-		( NULL != buffer && 0 == bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	result = read( state.Config.MockitSocket, buffer, bytes );
 
 	while( result <= 0 ) {
-		sleep( IFACE_READ_MOCKIT_INTERVAL );
+		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 		result = read( state.Config.MockitSocket, buffer, bytes );
 	}
 
@@ -50,8 +48,11 @@ int preparePhysically( void ) {
 
 	state.Config.MockitSocket = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false );
 
-	if( FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
-		return FUNC_RESULT_FAILED;
+	do {
+		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
+		state.Config.MockitSocket = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false );
+	}
+	while( FUNC_RESULT_SUCCESS >= state.Config.MockitSocket );
 
 	gettimeofday( &moment, NULL );
 	srand( ( unsigned int )( moment.tv_usec ) );

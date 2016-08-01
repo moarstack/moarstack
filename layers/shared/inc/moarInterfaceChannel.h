@@ -22,11 +22,14 @@ typedef enum {
 	PackStateIface_Received		// current packet was received
 } PackStateIface_T;
 
+// type for length of universal address
+typedef uint8_t UnIfaceAddrLen_T;
+
 // metadata of packet moving from interface to channel
 typedef struct {
 	PackStateIface_T	State;	// state of packet moving from interface to channel
 } IfaceMsgUp_T;
 
-const size_t	IFACE_MSG_UP_SIZE = sizeof( IfaceMsgUp_T );
+#define	IFACE_MSG_UP_SIZE sizeof( IfaceMsgUp_T )
 
 #endif //MOARSTACK_MOARINTERFACECHANNEL_H

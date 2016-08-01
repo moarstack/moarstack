@@ -5,7 +5,7 @@
 #ifndef MOARSTACK_MOARINTERFACE_H
 #define MOARSTACK_MOARINTERFACE_H
 
-#include "moarCommons.h"
+#include <moarCommons.h> // SocketFilepath_T
 
 typedef struct{
 	SocketFilepath_T	socketToChannel;

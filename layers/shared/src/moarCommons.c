@@ -2,13 +2,16 @@
 // Created by kryvashek on 04.07.16.
 //
 
-#include <moarCommons.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <string.h>
 #include <stdbool.h>
 #include <memory.h>
-#include "moarCommons.h"
-#include "funcResults.h"
+
+#include <moarCommons.h>
+#include <funcResults.h>
 
 static const size_t	LAYER_COMMAND_PLAIN_SIZE = sizeof( LayerCommandPlain_T );
 
@@ -148,4 +151,39 @@ int WriteCommand(int fd, LayerCommandStruct_T* command){
             return FUNC_RESULT_FAILED_IO;
     }
     return FUNC_RESULT_SUCCESS;
+}
+
+int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer ) {
+	struct sockaddr_un	socketFileAddress;
+	int					socketValue,
+						result;
+
+	memset( &socketFileAddress, 0, sizeof( struct sockaddr_un ) );
+	socketFileAddress.sun_family = AF_UNIX;
+	strncpy( socketFileAddress.sun_path, socketFilePath, SOCKET_FILEPATH_SIZE );
+	result = access( socketFileAddress.sun_path, F_OK ); // check whether file exists
+
+	if( !isServer ) { // it is client
+		if( -1 == result || -1 == access( socketFileAddress.sun_path, R_OK | W_OK ) ) // file not exists or can`t be accessed
+			return FUNC_RESULT_FAILED_IO;
+	} else if( 0 == result && -1 == unlink( socketFileAddress.sun_path ) ) // it is server, file exists and unable to delete it
+		return FUNC_RESULT_FAILED_IO;
+
+	socketValue = socket( AF_UNIX, SOCK_STREAM, 0 );
+
+	if( -1 == socketValue )
+		return FUNC_RESULT_FAILED_IO;
+
+	if( isServer ) {
+		result = bind( socketValue, ( struct sockaddr * )&socketFileAddress, sizeof( struct sockaddr_un ) );
+
+		if( -1 != result )
+			result = listen( socketValue, 1 );
+	} else
+		result = connect( socketValue, ( struct sockaddr * )&socketFileAddress, sizeof( struct sockaddr_un ) );
+
+	if( -1 == result )
+		return FUNC_RESULT_FAILED_IO;
+
+	return socketValue;
 }

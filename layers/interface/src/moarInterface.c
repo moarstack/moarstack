@@ -4,6 +4,43 @@
 
 #include <moarInterfacePrivate.h>
 
+static IfaceState_T	state = { 0 };
+
+ssize_t writeDown( void * buffer, size_t bytes ) {
+	ssize_t result;
+
+	if( ( NULL == buffer && 0 < bytes ) ||
+		( NULL != buffer && 0 == bytes ) ||
+		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = write( state.Config.MockitSocket, buffer, bytes );
+
+	while( result <= 0 ) {
+		sleep( IFACE_WRITE_MOCKIT_INTERVAL );
+		result = write( state.Config.MockitSocket, buffer, bytes );
+	}
+
+	return result;
+}
+
+ssize_t readDown( void * buffer, size_t bytes ) {
+	ssize_t	result;
+
+	if( ( NULL == buffer && 0 < bytes ) ||
+		( NULL != buffer && 0 == bytes ) ||
+		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = read( state.Config.MockitSocket, buffer, bytes );
+
+	while( result <= 0 ) {
+		sleep( IFACE_READ_MOCKIT_INTERVAL );
+		result = read( state.Config.MockitSocket, buffer, bytes );
+	}
+
+	return result;
+}
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // load configuration
     // prepare physical interface

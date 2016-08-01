@@ -34,6 +34,8 @@
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_BEACON_INTERVAL			120 // in seconds
+#define IFACE_WRITE_MOCKIT_INTERVAL		1 // in seconds
+#define IFACE_READ_MOCKIT_INTERVAL		1 // in seconds
 #define IFACE_MAX_NEIGHBOR_COUNT		10
 #define IFACE_SEND_ATTEMPTS_COUNT		3
 #define IFACE_DEFAULT_LINK_QUALITY		0.5

@@ -41,6 +41,43 @@ ssize_t readDown( void * buffer, size_t bytes ) {
 
 	return result;
 }
+
+int preparePhysically( void ) {
+	struct timeval	moment;
+	int				length,
+					address,
+					result;
+
+	state.Config.MockitSocket = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false );
+
+	if( FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
+		return FUNC_RESULT_FAILED;
+
+	gettimeofday( &moment, NULL );
+	srand( ( unsigned int )( moment.tv_usec ) );
+
+	do {
+		address = 1 + rand() % IFACE_ADDRESS_LIMIT;
+		snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
+		result = writeDown( state.Memory.Buffer, length );
+
+		if( length > result )
+			return FUNC_RESULT_FAILED_IO;
+
+		result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
+
+		if( 0 >= result )
+			return FUNC_RESULT_FAILED_IO;
+
+	} while( 0 != strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, strlen( IFACE_REGISTRATION_OK ) ) );
+
+	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );
+	printf( "Interface registered in MockIT with address %d\n", address );
+	fflush( stdout );
+
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // load configuration
     // prepare physical interface

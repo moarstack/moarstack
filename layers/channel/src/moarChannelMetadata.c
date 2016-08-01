@@ -31,7 +31,7 @@ int readAddressFromMetadata(UnIfaceAddr_T* address, UnIfaceAddrLen_T addrSize, v
 	return FUNC_RESULT_SUCCESS;
 }
 
-int WriteSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dataSize, void* data){
+int writeSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dataSize, void* data){
 	if(0 <= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)
@@ -74,7 +74,7 @@ int WriteSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dat
 
 //allocate addrSize bytes for address storage
 //allocate metadata->MessageSize bytes for data storage
-int ReadReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceReceiveMetadata_T* metadata){
+int readReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceReceiveMetadata_T* metadata){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)
@@ -99,7 +99,7 @@ int ReadReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T 
 	return FUNC_RESULT_SUCCESS;
 }
 //allocate metadataPlain->AddressLength bytes for address storage
-int ReadRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegisterMetadata_T* metadata){
+int readRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegisterMetadata_T* metadata){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)
@@ -127,7 +127,7 @@ int ReadRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegiste
 }
 //allocate addrSize bytes for address storage
 //allocate metadata->BeaconPayloadSize bytes for data storage
-int ReadNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata){
+int readNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)

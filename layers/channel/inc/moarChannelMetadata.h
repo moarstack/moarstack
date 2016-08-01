@@ -73,10 +73,10 @@ typedef struct {
 #define	INTERFACE_NEIGHBOR_METADATA_PLAIN_SIZE 		sizeof( InterfaceUnregisterMetadataPlain_T )
 
 
-int WriteSendMetadata(int fd, ChannelSendMetadata_T* metadata, size_t dataSize, void* data);
-int ReadReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceReceiveMetadata_T* metadata);
-int ReadRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegisterMetadata_T* metadata);
-int ReadUnregisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceUnregisterMetadata_T* metadata);
-int ReadNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata);
+int writeSendMetadata(int fd, ChannelSendMetadata_T* metadata, size_t dataSize, void* data);
+int readReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceReceiveMetadata_T* metadata);
+int readRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegisterMetadata_T* metadata);
+int readUnregisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceUnregisterMetadata_T* metadata);
+int readNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata);
 
 #endif //MOARSTACK_MOARCHANNELMETADATA_H

@@ -7,9 +7,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <moarInterfaceChannel.h>
 
-// type for length of universal address
-typedef uint8_t UnIfaceAddrLen_T;
 
 // struct for iface address of any length
 typedef struct {

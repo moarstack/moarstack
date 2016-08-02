@@ -22,8 +22,8 @@ LinkedListItem_T* DeleteElement(LinkedListItem_T* item){
 		return NULL;
 	LinkedListItem_T* res = item->Prev;
 	//add pointers here
-	item->Prev->Next = item->Next;
-	item->Next->Prev = item->Prev;
+	res->Next = item->Next;
+	item->Next->Prev = res;
 	free(item);
 	return res;
 }

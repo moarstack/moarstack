@@ -38,8 +38,8 @@ typedef struct {
 } InterfaceDescriptor_T;
 
 typedef struct{
-	UnIfaceAddr_T Address;
-	InterfaceDescriptor_T* Interface;
+	UnIfaceAddr_T Address; // address of remote interface
+	InterfaceDescriptor_T* BridgeInterface; // local interface, that can communicate with remote interface
 } RemoteInterface_T;
 
 typedef struct{

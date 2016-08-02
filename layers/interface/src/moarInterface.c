@@ -40,19 +40,28 @@ ssize_t readDown( void * buffer, size_t bytes ) {
 	return result;
 }
 
+int connectDown( int * sock ) {
+	int	result = FUNC_RESULT_FAILED;
+
+	if( NULL == sock )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT && result != FUNC_RESULT_SUCCESS; attempt++ )
+		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, sock );
+
+	return result;
+}
+
 int preparePhysically( void ) {
 	struct timeval	moment;
 	int				length,
 					address,
 					result;
 
-	state.Config.MockitSocket = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false );
+	result = connectDown( &( state.Config.MockitSocket ) );
 
-	do {
-		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
-		state.Config.MockitSocket = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false );
-	}
-	while( FUNC_RESULT_SUCCESS >= state.Config.MockitSocket );
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
 	gettimeofday( &moment, NULL );
 	srand( ( unsigned int )( moment.tv_usec ) );

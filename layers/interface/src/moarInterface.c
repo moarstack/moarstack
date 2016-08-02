@@ -6,35 +6,39 @@
 
 static IfaceState_T	state = { 0 };
 
-ssize_t writeDown( void * buffer, size_t bytes ) {
-	ssize_t result;
+int writeDown( void * buffer, size_t bytes ) {
+	ssize_t result = -1;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = write( state.Config.MockitSocket, buffer, bytes );
-
-	while( result <= 0 ) {
-		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
 		result = write( state.Config.MockitSocket, buffer, bytes );
+
+		if( result == bytes )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
-	return result;
+	return FUNC_RESULT_FAILED_IO;
 }
 
-ssize_t readDown( void * buffer, size_t bytes ) {
-	ssize_t	result;
+int readDown( void * buffer, size_t bytes ) {
+	ssize_t	result = -1;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = read( state.Config.MockitSocket, buffer, bytes );
-
-	while( result <= 0 ) {
-		sleep( IFACE_MOCKIT_WAIT_INTERVAL );
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
 		result = read( state.Config.MockitSocket, buffer, bytes );
+
+		if( 0 < result )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
 	return result;
@@ -54,9 +58,9 @@ int connectDown( int * sock ) {
 
 int preparePhysically( void ) {
 	struct timeval	moment;
-	int				length,
-					address,
-					result;
+	int				result,
+					length,
+					address;
 
 	result = connectDown( &( state.Config.MockitSocket ) );
 
@@ -71,14 +75,13 @@ int preparePhysically( void ) {
 		snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 		result = writeDown( state.Memory.Buffer, length );
 
-		if( length > result )
+		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
 
 		result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
 
-		if( 0 >= result )
+		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
-
 	} while( 0 != strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, strlen( IFACE_REGISTRATION_OK ) ) );
 
 	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );

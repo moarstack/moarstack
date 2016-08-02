@@ -91,6 +91,54 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+IfaceNeighbor_T * neighborFind( IfaceAddr_T * address ) {
+	for( int i = 0; i < state.Config.NeighborsCount; i++ )
+		if( 0 == memcmp( address, &( state.Memory.Neighbors[ i ].Address ), IFACE_ADDR_SIZE ) )
+			return state.Memory.Neighbors + i;
+
+	return NULL;
+}
+
+int neighborAdd( IfaceAddr_T * address, PowerFloat_T minPower ) {
+	if( NULL == address )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( IFACE_MAX_NEIGHBOR_COUNT == state.Config.NeighborsCount )
+		return FUNC_RESULT_FAILED;
+
+	state.Memory.Neighbors[ state.Config.NeighborsCount ].Address = *address;
+	state.Memory.Neighbors[ state.Config.NeighborsCount ].MinPower = minPower;
+	state.Memory.Neighbors[ state.Config.NeighborsCount ].AttemptsLeft = IFACE_SEND_ATTEMPTS_COUNT;
+	state.Memory.Neighbors[ state.Config.NeighborsCount ].LinkQuality = IFACE_DEFAULT_LINK_QUALITY;
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+int neighborRemove( IfaceNeighbor_T * neighbor ) {
+	ptrdiff_t	toPreserve;
+
+	if( NULL == neighbor )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( 0 == state.Config.NeighborsCount )
+		return FUNC_RESULT_FAILED;
+
+	toPreserve = ( state.Memory.Neighbors + state.Config.NeighborsCount ) - ( neighbor + 1 );
+	memmove( neighbor, neighbor + 1, toPreserve * IFACE_NEIGHBOR_SIZE );
+	state.Config.NeighborsCount--;
+	memset( state.Memory.Neighbors + state.Config.NeighborsCount, 0, IFACE_NEIGHBOR_SIZE );
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
+	if( newMinPower < neighbor->MinPower && neighbor->AttemptsLeft < IFACE_SEND_ATTEMPTS_COUNT )
+		neighbor->AttemptsLeft++; // neighbor became closer
+
+	neighbor->MinPower = newMinPower;
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
 						oneSocketEvent;

@@ -137,10 +137,12 @@ void serverInit( Config_T * cfg ){
 
 	memset( &( cfg->stSockAddr ), 0, sizeof( SockAddr_T ) );
 	cfg->stSockAddr.sun_family = AF_UNIX;
-	getcwd( cfg->stSockAddr.sun_path, SOCK_FLNM_SZ );
-	strncat( cfg->stSockAddr.sun_path, "/" , SOCK_FLNM_SZ );
-	strncat( cfg->stSockAddr.sun_path, cfg->socketFilename , SOCK_FLNM_SZ );
-	unlink( cfg->stSockAddr.sun_path );
+	strncpy( cfg->stSockAddr.sun_path, cfg->socketFilename, SOCK_FLNM_SZ );
+
+	if( -1 != access( cfg->stSockAddr.sun_path, F_OK ) && -1 == unlink( cfg->stSockAddr.sun_path ) )
+		die( cfg->sock, "ERROR: access() or unlink() failed" );
+
+	printTimely( stdout, "Using socket file : %s\n", cfg->stSockAddr.sun_path );
 
 	if( -1 == bind( cfg->sock, ( struct sockaddr * )&( cfg->stSockAddr ), sizeof( SockAddr_T ) ) )
 		die( cfg->sock, "ERROR: bind() failed" );

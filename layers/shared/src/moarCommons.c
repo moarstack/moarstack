@@ -153,10 +153,13 @@ int WriteCommand(int fd, LayerCommandStruct_T* command){
     return FUNC_RESULT_SUCCESS;
 }
 
-int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer ) {
+int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer, int * sockResult ) {
 	struct sockaddr_un	socketFileAddress;
 	int					socketValue,
 						result;
+
+	if( NULL == socketFilePath || NULL == sockResult )
+		return FUNC_RESULT_FAILED;
 
 	memset( &socketFileAddress, 0, sizeof( struct sockaddr_un ) );
 	socketFileAddress.sun_family = AF_UNIX;
@@ -190,5 +193,6 @@ int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer )
 	if( -1 == result )
 		return FUNC_RESULT_FAILED_IO;
 
-	return socketValue;
+	memcpy( sockResult, &socketValue, sizeof( int ) );
+	return FUNC_RESULT_SUCCESS;
 }

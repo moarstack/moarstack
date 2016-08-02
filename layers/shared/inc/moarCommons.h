@@ -71,7 +71,7 @@ extern int ReadCommand(int fd, LayerCommandStruct_T* command);
 extern int WriteCommand(int fd, LayerCommandStruct_T* command);
 
 // open fiel socket with specified path
-extern int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer );
+extern int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer, int * sockResult );
 
 #ifdef __cplusplus
 }

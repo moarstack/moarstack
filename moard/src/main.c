@@ -57,8 +57,8 @@ int runLayer( MoarLibrary_T * layerLibrary ) {
         if( NULL == spNonIface )
             return -1;
 
-		spNonIface->DownSocketHandler = socketDown( layerType );
-		spNonIface->UpSocketHandler = socketUp( layerType );
+		spNonIface->DownSocketHandler = SocketDown( layerType );
+		spNonIface->UpSocketHandler = SocketUp( layerType );
         vsp = spNonIface;
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
         else
             printf("%s load failed\n",fileNames[i]);
     }
-    socketsPrepare( IFACE_CHANNEL_SOCKET_FILE, SERVICE_APP_SOCKET_FILE );
+    SocketsPrepare( IFACE_CHANNEL_SOCKET_FILE, SERVICE_APP_SOCKET_FILE );
     //start layers here
 	for(int i = 0; i < LAYERS_COUNT; i++)
 		runLayer( libraries + i );

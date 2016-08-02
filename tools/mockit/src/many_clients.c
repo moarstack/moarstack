@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include <time.h>
+#include <errno.h>
 
 #include "hash.h"
 
@@ -93,7 +94,7 @@ static inline AddrData_T * getData( const Addr_T addr, Config_T * cfg ) {
 }
 
 int die( int sock, const char *str ) {
-	printTimely( stderr, str );
+	printTimely( stderr, "%s (%s)\n", str, strerror( errno ) );
 	socketKill( sock );
 	exit( EXIT_FAILURE );
 }
@@ -104,12 +105,11 @@ void readConfig( Config_T * cfg ) {
 	FILE		* configFile;
 	AddrData_T	* curData;
 
+	printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
 	configFile = fopen( cfg->configFilename, "r" );
 
 	if( NULL == configFile )
-		die( 0, "Opening config file is impossible\n" );
-	else
-		printTimely( stdout, "Using config file : %s\n", cfg->configFilename );
+		die( 0, "Opening config file is impossible" );
 
 	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
@@ -348,6 +348,7 @@ void clientRegister( Config_T * cfg ) {
 				index = Add_Hash( cfg->sock_hash, newsock );
 				cfg->sock_to_addr[ index ] = addr;
 				printTimely( stdout, "Socket %4d : node %08X registered\n", newsock, addr );
+				write( newsock, "Registration ok\n", 17 );
 			}
 			break;
 		} else {

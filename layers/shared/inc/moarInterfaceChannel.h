@@ -32,7 +32,6 @@ typedef struct {
 	PackStateIface_T	State;	// state of packet moving from interface to channel
 } InterfaceStateMetadata_T;
 
-
 typedef struct {
 	bool Registred;
 } ChannelRegisterResultMetadata_T;
@@ -40,6 +39,7 @@ typedef struct {
 typedef struct {
 
 } ChannelUnregisterResultMetadata_T;
+
 #define CHANNEL_REGISTER_RESULT_METADATA_SIZE 		sizeof(ChannelRegisterResultMetadata_T)
 #define CHANNEL_UNREGISTER_RESULT_METADATA_SIZE 	sizeof(ChannelUnregisterResultMetadata_T)
 #endif //MOARSTACK_MOARINTERFACECHANNEL_H

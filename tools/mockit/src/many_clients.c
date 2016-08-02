@@ -129,6 +129,7 @@ void readConfig( Config_T * cfg ) {
 
 void serverInit( Config_T * cfg ){
 	struct epoll_event	ev;
+	int					reuse;
 
 	cfg->sock = socket( AF_UNIX, SOCK_STREAM, 0 );
 
@@ -143,6 +144,10 @@ void serverInit( Config_T * cfg ){
 		die( cfg->sock, "ERROR: access() or unlink() failed" );
 
 	printTimely( stdout, "Using socket file : %s\n", cfg->stSockAddr.sun_path );
+	reuse = 1;
+
+	if( -1 == setsockopt( cfg->sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof( int ) ) )
+		die( cfg->sock, "ERROR: setsockopt() failed" );
 
 	if( -1 == bind( cfg->sock, ( struct sockaddr * )&( cfg->stSockAddr ), sizeof( SockAddr_T ) ) )
 		die( cfg->sock, "ERROR: bind() failed" );

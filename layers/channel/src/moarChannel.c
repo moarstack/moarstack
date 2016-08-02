@@ -94,17 +94,24 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	if(NULL == arg)
 		return NULL;
 	ChannelLayer_T channelLayer;
+	MoarLayerStartupParams_T* startupParams = (MoarLayerStartupParams_T*) arg;
+
+	if(startupParams->DownSocketHandler <=0)
+		return NULL;
+	if(startupParams->UpSocketHandler <=0)
+		return NULL;
+
+	channelLayer.UpSocket = startupParams->UpSocketHandler;
+	channelLayer.DownSocket = startupParams->DownSocketHandler;
+
 	int listRes = CreateList(&(channelLayer.Interfaces));
 	if(FUNC_RESULT_SUCCESS != listRes)
 		return NULL;
 
-	MoarLayerStartupParams_T* startupParams = (MoarLayerStartupParams_T*) arg;
-	channelLayer.UpSocket = startupParams->UpSocketHandler;
-	channelLayer.DownSocket = startupParams->DownSocketHandler;
 	// load configuration
 	//
 	// listen for interface connection
-	listen(channelLayer.DownSocket, LISTEN_COUNT);
+	//listen(channelLayer.DownSocket, LISTEN_COUNT);
 	int res = epollInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != res)
 		return NULL;

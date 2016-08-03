@@ -10,6 +10,7 @@
 #include <moarMessageId.h>
 
 #define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
+#define CRC_SIZE				sizeof( Crc_T )
 
 typedef char		SocketFilepath_T[ SOCKET_FILEPATH_SIZE ];
 typedef uint32_t	Crc_T; // type for values of CRC calculating result

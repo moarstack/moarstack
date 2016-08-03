@@ -92,7 +92,8 @@ typedef struct {
 	int				MockitSocket,
 					ChannelSocket,
 					NeighborsCount,
-					BeaconPayloadSize;
+					BeaconPayloadSize,
+					BeaconIntervalCurrent;
 	PowerFloat_T	CurrentSensitivity,
 					CurrentBeaconPower;
 } IfaceConfiguration_T;

@@ -91,6 +91,54 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+int writeUp( LayerCommandStruct_T * command ) {
+	int result;
+
+	if( NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
+		result = WriteCommand( state.Config.ChannelSocket, command );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
+	}
+
+	return FUNC_RESULT_FAILED_IO;
+}
+
+int readUp( LayerCommandStruct_T * command ) {
+	int result;
+
+	if( NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
+		result = ReadCommand( state.Config.ChannelSocket, command );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
+	}
+
+	return FUNC_RESULT_FAILED_IO;
+}
+
+int connectUp( SocketFilepath_T channelSocketFile ) {
+	int	result = FUNC_RESULT_FAILED;
+
+	if( NULL == channelSocketFile )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT && result != FUNC_RESULT_SUCCESS; attempt++ )
+		result = SocketOpenFile( channelSocketFile, false, &( state.Config.ChannelSocket ) );
+
+	return result;
+}
+
 IfaceNeighbor_T * neighborFind( IfaceAddr_T * address ) {
 	for( int i = 0; i < state.Config.NeighborsCount; i++ )
 		if( 0 == memcmp( address, &( state.Memory.Neighbors[ i ].Address ), IFACE_ADDR_SIZE ) )

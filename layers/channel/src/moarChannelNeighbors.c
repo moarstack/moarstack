@@ -10,7 +10,7 @@
 #include <moarCommons.h>
 #include <moarChannelRouting.h>
 
-int InitNeighbors(ChannelLayer_T* layer){
+int neighborsInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = CreateList(&(layer->Neighbors));

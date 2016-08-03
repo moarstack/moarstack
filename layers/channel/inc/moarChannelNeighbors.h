@@ -7,7 +7,7 @@
 
 #endif //MOARSTACK_MOARCHANNELNEIGHBORS_H
 
-int InitNeighbors(ChannelLayer_T* layer);
+int neighborsInit(ChannelLayer_T* layer);
 ChannelNeighbor_T* neighborFindByAddress(ChannelLayer_T* layer, ChannelAddr_T* address);
 RemoteInterface_T* neighborFindRemoteInterface(ChannelNeighbor_T* neighbor);
 int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* remoteAddress, int localSocket);

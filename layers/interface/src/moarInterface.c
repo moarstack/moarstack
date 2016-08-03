@@ -141,10 +141,44 @@ int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 
 
 int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
+	char	* end;
+
+	if( NULL == buffer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( NULL == value )
+		strtof( buffer, &end );
+	else
+		*value = strtof( buffer, &end );
+
+	if( NULL != bytesLeft && 0 < *bytesLeft )
+		*bytesLeft -= ( end - buffer );
+
+	if( 0 == end - buffer )
+		return FUNC_RESULT_FAILED;
+
 	return FUNC_RESULT_SUCCESS;
 }
 
 int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart, ssize_t * bytesLeft ) {
+	ssize_t	bytesDone = 0;
+
+	if( NULL == bufStart || NULL == *bufStart || NULL == bytesLeft )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( 0 < *bytesLeft ) {
+		bytesDone = ( *bytesLeft < expectedSize ? *bytesLeft : expectedSize );
+		memcpy( destination, *bufStart, bytesDone );
+		*bufStart += bytesDone;
+		*bytesLeft -= bytesDone;
+	}
+
+	if( bytesDone < expectedSize )
+		bytesDone += read( state.Config.MockitSocket, ( char * )destination + bytesDone, expectedSize - bytesDone );
+
+	if( bytesDone < expectedSize )
+		return FUNC_RESULT_FAILED_IO;
+
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -182,8 +216,64 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int transmitResponse( IfaceNeighbor_T * sender, Crc_T crcInHeader, Crc_T crcFull ) {
+int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
+	int		bytesWritten = 0,
+			bytesShouldWrite = 0,
+			currentLength;
+
+	if( ( NULL == data && 0 < size ) || ( NULL != data && 0 == size ) )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
+	bytesShouldWrite += currentLength;
+	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+
+	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d %n", size, &currentLength );
+	bytesShouldWrite += currentLength;
+	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+
+	bytesShouldWrite += size;
+	bytesWritten = write( state.Config.MockitSocket, data, size );
+
+	if( bytesWritten < bytesShouldWrite )
+		return FUNC_RESULT_FAILED_IO;
+
 	return FUNC_RESULT_SUCCESS;
+}
+
+int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {
+	void			* responsePacket,
+					* responsePayload;
+	int				result;
+	size_t			responseSize;
+	IfaceHeader_T	* responseHeader;
+
+	if( NULL == receiver )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	responseSize = IFACE_HEADER_SIZE + 2 * CRC_SIZE;
+	responsePacket = malloc( responseSize );
+
+	if( NULL == responsePacket )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	responseHeader = ( IfaceHeader_T * )responsePacket;
+	responsePayload = responsePacket + IFACE_HEADER_SIZE;
+
+	responseHeader->From = state.Config.Address;
+	responseHeader->To = receiver->Address;
+	responseHeader->Size = 2 * CRC_SIZE;
+	responseHeader->CRC = 0; // that`s not implemented yet TODO
+	responseHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
+	responseHeader->Type = IfacePackType_IsResponse;
+
+	memcpy( responsePayload, &crcInHeader, CRC_SIZE );
+	memcpy( responsePayload + CRC_SIZE, &crcFull, CRC_SIZE );
+
+	result = transmitAnyData( receiver->MinPower, responsePacket, responseSize );
+	free( responsePacket );
+
+	return result;
 }
 
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {

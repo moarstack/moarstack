@@ -160,6 +160,8 @@ int connectWithChannel( SocketFilepath_T filepath ) {
 		command.Command = LayerCommandType_RegisterInterface;
 		command.MetaSize = sizeof( IfaceAddrPlain_T );
 		command.MetaData = &plainAddr;
+		command.DataSize = 0;
+		command.Data = NULL;
 		result = writeUp( &command );
 
 		if( FUNC_RESULT_SUCCESS != result )

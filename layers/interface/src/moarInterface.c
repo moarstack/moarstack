@@ -91,6 +91,98 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+int writeUp( LayerCommandStruct_T * command ) {
+	int result;
+
+	if( NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
+		result = WriteCommand( state.Config.ChannelSocket, command );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
+	}
+
+	return FUNC_RESULT_FAILED_IO;
+}
+
+int readUp( LayerCommandStruct_T * command ) {
+	int result;
+
+	if( NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
+		result = ReadCommand( state.Config.ChannelSocket, command );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			return FUNC_RESULT_SUCCESS;
+		else
+			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
+	}
+
+	return FUNC_RESULT_FAILED_IO;
+}
+
+int connectUp( SocketFilepath_T channelSocketFile ) {
+	int	result = FUNC_RESULT_FAILED;
+
+	if( NULL == channelSocketFile )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT && result != FUNC_RESULT_SUCCESS; attempt++ )
+		result = SocketOpenFile( channelSocketFile, false, &( state.Config.ChannelSocket ) );
+
+	return result;
+}
+
+int connectWithChannel( SocketFilepath_T filepath ) {
+	LayerCommandStruct_T	command;
+	IfaceAddrPlain_T		plainAddr;
+	int						result;
+	bool					completed = false;
+
+	if( NULL == filepath )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = connectUp( filepath );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED;
+
+	plainAddr.Length = IFACE_ADDR_SIZE;
+	plainAddr.Value = state.Config.Address;
+
+	do {
+		command.Command = LayerCommandType_RegisterInterface;
+		command.MetaSize = sizeof( IfaceAddrPlain_T );
+		command.MetaData = &plainAddr;
+		command.DataSize = 0;
+		command.Data = NULL;
+		result = writeUp( &command );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return FUNC_RESULT_FAILED_IO;
+
+		result = readUp( &command );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return FUNC_RESULT_FAILED_IO;
+
+		if( LayerCommandType_RegisterInterfaceResult == command.Command )
+			completed = ( ( ChannelRegisterResultMetadata_T * ) command.MetaData )->Registred;
+
+	} while( !completed );
+
+	printf( "Interface registered in channel layer\n" );
+	fflush( stdout );
+
+	return FUNC_RESULT_SUCCESS;
+}
+
 IfaceNeighbor_T * neighborFind( IfaceAddr_T * address ) {
 	for( int i = 0; i < state.Config.NeighborsCount; i++ )
 		if( 0 == memcmp( address, &( state.Memory.Neighbors[ i ].Address ), IFACE_ADDR_SIZE ) )
@@ -360,10 +452,10 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 	oneSocketEvent.data.fd = state.Config.MockitSocket;
 	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.MockitSocket, &oneSocketEvent );
+	result = connectWithChannel( ( ( MoarIfaceStartupParams_T * )arg )->socketToChannel );
 
-    // connect to channel layer
-    // send connect command
-    // wait for connected answer
+	if( FUNC_RESULT_SUCCESS != result )
+		return NULL;
 
 	oneSocketEvent.data.fd = state.Config.ChannelSocket;
 	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.ChannelSocket, &oneSocketEvent );
@@ -376,9 +468,9 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		if( 0 == eventsCount ) {// timeout
 			// is timeout caused by no response during specified period?
 			// if yes
-			// send bad message state to channel
+				// send bad message state to channel
 			// else
-			// transmit beacon
+				// transmit beacon
 		} else
 			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )

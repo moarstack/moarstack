@@ -139,8 +139,68 @@ int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int processMockitReceive( void ) {
+int receiveAnyData( PowerFloat_T * finishPower ) {
 	return FUNC_RESULT_SUCCESS;
+}
+
+int transmitResponse( IfaceNeighbor_T * sender, Crc_T crcInHeader, Crc_T crcFull ) {
+	return FUNC_RESULT_SUCCESS;
+}
+
+PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
+	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
+
+	return ( IFACE_MAX_START_POWER < neededPower ? IFACE_MAX_START_POWER : neededPower );
+}
+
+int pushToChannel( void ) {
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processMockitReceive( void ) {
+	int				result;
+	IfaceNeighbor_T	* sender;
+	IfaceAddr_T		address;
+	PowerFloat_T	startPower,
+					finishPower;
+
+	result = receiveAnyData( &finishPower );
+	address = state.Memory.BufferHeader.From;
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	switch( state.Memory.BufferHeader.Type ) {
+		case IfacePackType_NeedResponse :
+			sender = neighborFind( &address );
+			result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
+			break;
+
+		case IfacePackType_IsResponse :
+			// update current message state TODO
+			// drop message - nothing to do here due to storing got response in preallocated memory
+			break;
+
+		case IfacePackType_Beacon :
+			sender = neighborFind( &address );
+			startPower = calcMinPower( state.Memory.BufferFooter.MinSensitivity, finishPower );
+
+			if( NULL != sender )
+				result = neighborUpdate( sender, startPower );
+			else {
+				result = neighborAdd( &address, startPower );
+				// send to channel new neighbor command TODO
+			}
+			break;
+
+		default :
+			result = FUNC_RESULT_FAILED_ARGUMENT;
+	}
+
+	if( FUNC_RESULT_SUCCESS == result && 0 < state.Memory.BufferHeader.Size ) // if contains payload
+		result = pushToChannel();
+
+	return result;
 }
 
 int processMockitEvent( uint32_t events ) {

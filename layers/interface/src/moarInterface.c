@@ -139,7 +139,46 @@ int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int receiveAnyData( PowerFloat_T * finishPower ) {
+
+int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
+	return FUNC_RESULT_SUCCESS;
+}
+
+int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart, ssize_t * bytesLeft ) {
+	return FUNC_RESULT_SUCCESS;
+}
+
+int receiveAnyData( PowerFloat_T * finishPower) {
+	ssize_t	bytesLeft,
+			result;
+	char	* buffer = state.Memory.Buffer;
+
+	if( NULL == finishPower )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	bytesLeft = read( state.Config.MockitSocket, buffer, IFACE_BUFFER_SIZE );
+
+	if( -1 == bytesLeft )
+		return FUNC_RESULT_FAILED_IO;
+
+	result = getFloat( finishPower, buffer, &bytesLeft ); // we assume that buffer is big enough to contain float
+
+	if( 0 == result )
+		return FUNC_RESULT_FAILED_IO; // the strange format is detected if no float value precedes the data, so reading is impossible
+
+	bytesLeft--; // extra byte is for space (aka delimiter) symbol
+	buffer++;
+	result = receiveDataPiece( &( state.Memory.BufferHeader ), IFACE_HEADER_SIZE, &buffer, &bytesLeft );
+
+	if( FUNC_RESULT_SUCCESS != result && 0 < state.Memory.BufferHeader.Size )
+		result = receiveDataPiece( state.Memory.Payload, state.Memory.BufferHeader.Size, &buffer, &bytesLeft );
+
+	if( FUNC_RESULT_SUCCESS != result && IfacePackType_Beacon == state.Memory.BufferHeader.Type )
+		result = receiveDataPiece( &( state.Memory.BufferFooter ), IFACE_FOOTER_SIZE, &buffer, &bytesLeft );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED_IO;
+
 	return FUNC_RESULT_SUCCESS;
 }
 

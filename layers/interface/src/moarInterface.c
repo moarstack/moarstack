@@ -139,11 +139,23 @@ int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+int processMockitReceive( void ) {
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processMockitEvent( uint32_t events ) {
+	if( events & EPOLLIN ) // if new data received
+		return processMockitReceive();
+	//other events
+	return FUNC_RESULT_FAILED_ARGUMENT;
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
 						oneSocketEvent;
 	int					result,
-						epollHandler;
+						epollHandler,
+						eventsCount;
 
 	if( NULL == arg )
 		return NULL;
@@ -163,42 +175,32 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
     // connect to channel layer
     // send connect command
     // wait for connected answer
-    // in poll
-        // if timeout
-            // if time to send beacon | interface ready
-                // send beacon
 
-        // if signal event
-            // ?????
+	oneSocketEvent.data.fd = state.Config.ChannelSocket;
+	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.ChannelSocket, &oneSocketEvent );
+	state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL; // for cases when beaconIntervalCurrent will change
 
-        // if transmission done
-            // switch interface to listen
-            // update current message state
+	while( true ) {
+		eventsCount = epoll_wait( epollHandler, events, IFACE_OPENING_SOCKETS, state.Config.BeaconIntervalCurrent );
+		result = FUNC_RESULT_SUCCESS;
 
-        // if new data received
-            // if correct crc
-                // if data need response
-                    // send response
-                // if data is response
-                    // update current message state
-                    // drop message
-                // if data is beacon
-                    // if neighbor found
-                        //update neighbor
-                    // else
-                        // add neighbor
-                        // send to channel new neighbor command
-                // if contains payload
+		if( 0 == eventsCount ) {// timeout
+			// is timeout caused by no response during specified period?
+			// if yes
+			// send bad message state to channel
+			// else
+			// transmit beacon
+		} else
+			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
+				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
+					result = processMockitEvent( events[ eventIndex ].events );
+				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket ) {
+					// process channel event
+				}
+				else
+					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
-        // socket have data
-            // if interface ready
-                //read command
-                //commands
-                    // send
-                        // if neighbor not found
-                            // send error
-                        // send message
-                        // update current message state
-                    // update beacon payload
-                        // update stored beacon payload
+		if( FUNC_RESULT_SUCCESS != result )
+			printf( "Error with %d code arised\n", result );
+	}
 }

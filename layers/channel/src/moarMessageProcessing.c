@@ -69,6 +69,10 @@ int processUnregisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//close connection
+	int res = processCloseConnection(layer,fd);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	// TODO update beacon data in all interfaces
 	return FUNC_RESULT_SUCCESS;
 }
 // processing received message

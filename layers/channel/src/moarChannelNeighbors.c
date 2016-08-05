@@ -86,14 +86,25 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	}
 	// add to list
 	int addRes = AddNext(&(neighbor->Interfaces),remoteInterface);
-	int addNeighborRes = FUNC_RESULT_SUCCESS;
-	if(!isNew)
-		addNeighborRes = AddNext(&(layer->Neighbors), neighbor);
-	if(FUNC_RESULT_SUCCESS != addRes || FUNC_RESULT_SUCCESS != addNeighborRes){
+	if(FUNC_RESULT_SUCCESS != addRes)
+	{
 		unAddressFree(&(remoteInterface->Address));
 		free(remoteInterface);
-		free(neighbor);
 		return addRes;
+	}
+	if(isNew) {
+		int addNeighborRes = AddNext(&(layer->Neighbors), neighbor);
+		if(FUNC_RESULT_SUCCESS != addNeighborRes)
+		{
+			//clean all
+			unAddressFree(&(remoteInterface->Address));
+			//should be only one item in list
+			LinkedListItem_T* item = NextElement(&(neighbor->Interfaces));
+			item = DeleteElement(item);
+			free(remoteInterface);
+			free(neighbor);
+			return addNeighborRes;
+		}
 	}
 
 	if(isNew){

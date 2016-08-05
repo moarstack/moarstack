@@ -25,6 +25,11 @@
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
 #define IFACE_NEIGHBOR_SIZE				sizeof( IfaceNeighbor_T )
+#define CHANNEL_SEND_METADATA_SIZE		sizeof( ChannelSendMetadata_T )
+#define IFACE_RECEIVE_METADATA_SIZE		sizeof( IfaceReceiveMetadata_T )
+#define IFACE_NEIGHBOR_METADATA_SIZE	sizeof( IfaceNeighborMetadata_T )
+#define IFACE_REGISTER_METADATA_SIZE	sizeof( IfaceRegisterMetadata_T )
+#define IFACE_UNREGISTER_METADATA_SIZE	sizeof( IfaceUnregisterMetadata_T )
 #define IFACE_MTU_SIZE					4096 // may be any, 4096 value is just for example
 #define IFACE_MAX_PAYLOAD_USUAL_SIZE	(IFACE_MTU_SIZE-IFACE_HEADER_SIZE)
 #define IFACE_MAX_PAYLOAD_BEACON_SIZE	(IFACE_MAX_PAYLOAD_USUAL_SIZE-IFACE_FOOTER_SIZE)
@@ -59,11 +64,6 @@ typedef enum {
 typedef struct {
 	uint8_t	Value[ IFACE_ADDR_SIZE ];
 } IfaceAddr_T;
-
-typedef struct {
-	UnIfaceAddrLen_T	Length;
-	IfaceAddr_T			Value;
-} IfaceAddrPlain_T;
 
 // type for usual iface header
 typedef struct {
@@ -116,13 +116,35 @@ typedef struct {
 	IfacePreallocated_T		Memory;
 } IfaceState_T;
 
-// commands (actually, they should be public, but it is impossible due to architectural reasons)
+// commands (actually, they should be public, but it is impossible due to architectural reasons (address length))
+
+typedef struct {
+	UnIfaceAddrLen_T	Length;
+	IfaceAddr_T			Value;
+} IfaceRegisterMetadata_T;
+
+// interface unregistration metadata
+typedef struct {
+
+} IfaceUnregisterMetadata_T;
 
 // channel send command metadata
 typedef struct {
-	size_t		MessageSize;
+	MessageId_T Id;
 	IfaceAddr_T	To;
 } ChannelSendMetadata_T;
+
+// interface receive command metadata
+typedef struct {
+	MessageId_T Id;
+	IfaceAddr_T	From;
+} IfaceReceiveMetadata_T;
+
+// interface neighbor info command
+typedef struct {
+	IfaceAddr_T	Neighbor;
+} IfaceNeighborMetadata_T;
+
 #pragma pack(pop)
 
 #endif //MOARSTACK_MOARINTERFACEPRIVATE_H

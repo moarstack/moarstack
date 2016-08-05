@@ -21,27 +21,30 @@
 #include <moarInterfaceChannel.h>
 #include <funcResults.h>
 
-#define IFACE_ADDR_SIZE					sizeof( int )
-#define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
-#define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
-#define IFACE_NEIGHBOR_SIZE				sizeof( IfaceNeighbor_T )
-#define IFACE_MTU_SIZE					4096 // may be any, 4096 value is just for example
-#define IFACE_MAX_PAYLOAD_USUAL_SIZE	(IFACE_MTU_SIZE-IFACE_HEADER_SIZE)
-#define IFACE_MAX_PAYLOAD_BEACON_SIZE	(IFACE_MAX_PAYLOAD_USUAL_SIZE-IFACE_FOOTER_SIZE)
-#define IFACE_MOCKIT_SOCKET_FILE		"/tmp/mockitSocket.file"
-#define IFACE_ADDRESS_LIMIT				10 // sync with the mockit config file
-#define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
-#define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
-#define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
-#define IFACE_BEACON_INTERVAL			120 // in seconds
-#define IFACE_MOCKIT_WAIT_INTERVAL		1 // in seconds
-#define IFACE_CHANNEL_WAIT_INTERVAL		1 // in seconds
-#define IFACE_MAX_NEIGHBOR_COUNT		10
-#define IFACE_SEND_ATTEMPTS_COUNT		3
-#define IFACE_PUSH_ATTEMPTS_COUNT		3
-#define IFACE_DEFAULT_LINK_QUALITY		0.5
-#define IFACE_MIN_FINISH_POWER			-70 // in dBm
-#define IFACE_MAX_START_POWER			16 // in dBm
+#define IFACE_ADDR_SIZE						sizeof( int )
+#define IFACE_HEADER_SIZE					sizeof( IfaceHeader_T )
+#define IFACE_FOOTER_SIZE					sizeof( IfaceFooter_T )
+#define IFACE_NEIGHBOR_SIZE					sizeof( IfaceNeighbor_T )
+#define CHANNEL_SEND_METADATA_SIZE			sizeof( ChannelSendMetadata_T )
+#define IFACE_RECEIVE_METADATA_SIZE			sizeof( IfaceReceiveMetadata_T )
+#define IFACE_NEIGHBOR_STATE_METADATA_SIZE	sizeof( IfaceNeighborStateMetadata_T )
+#define IFACE_MTU_SIZE						4096 // may be any, 4096 value is just for example
+#define IFACE_MAX_PAYLOAD_USUAL_SIZE		(IFACE_MTU_SIZE-IFACE_HEADER_SIZE)
+#define IFACE_MAX_PAYLOAD_BEACON_SIZE		(IFACE_MAX_PAYLOAD_USUAL_SIZE-IFACE_FOOTER_SIZE)
+#define IFACE_MOCKIT_SOCKET_FILE			"/tmp/mockitSocket.file"
+#define IFACE_ADDRESS_LIMIT					10 // sync with the mockit config file
+#define IFACE_REGISTRATION_OK				"Registration ok\n" // sync with mockit
+#define IFACE_BUFFER_SIZE					17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
+#define IFACE_OPENING_SOCKETS				2 // just count of simultaneously kept sockets
+#define IFACE_BEACON_INTERVAL				120 // in seconds
+#define IFACE_MOCKIT_WAIT_INTERVAL			1 // in seconds
+#define IFACE_CHANNEL_WAIT_INTERVAL			1 // in seconds
+#define IFACE_MAX_NEIGHBOR_COUNT			10
+#define IFACE_SEND_ATTEMPTS_COUNT			3
+#define IFACE_PUSH_ATTEMPTS_COUNT			3
+#define IFACE_DEFAULT_LINK_QUALITY			0.5
+#define IFACE_MIN_FINISH_POWER				-70 // in dBm
+#define IFACE_MAX_START_POWER				16 // in dBm
 
 typedef float	PowerFloat_T;
 typedef uint8_t PowerInt_T;
@@ -116,13 +119,24 @@ typedef struct {
 	IfacePreallocated_T		Memory;
 } IfaceState_T;
 
-// commands (actually, they should be public, but it is impossible due to architectural reasons)
+// commands (actually, they should be public, but it is impossible due to architectural reasons (address length))
 
 // channel send command metadata
 typedef struct {
-	size_t		MessageSize;
 	IfaceAddr_T	To;
 } ChannelSendMetadata_T;
+
+// interface receive command metadata
+typedef struct {
+	IfaceAddr_T	From;
+} IfaceReceiveMetadata_T;
+
+// interface
+typedef struct {
+	IfaceNeighborState_T	State;
+	IfaceAddr_T				Neighbor;
+} IfaceNeighborStateMetadata_T;
+
 #pragma pack(pop)
 
 #endif //MOARSTACK_MOARINTERFACEPRIVATE_H

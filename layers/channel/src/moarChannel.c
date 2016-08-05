@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <moarChannelInterfaces.h>
+#include <moarChannelNeighbors.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -84,7 +85,10 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 	int closeRes = close( fd );
 
 	// remove interface record from list
+	int neighborsRemoveRes = neighborsRemoveAssociated(layer, fd);
 	int removeRes = interfaceRemove(layer, fd);
+	if(FUNC_RESULT_SUCCESS != neighborsRemoveRes)
+		return neighborsRemoveRes;
 	if(FUNC_RESULT_SUCCESS != removeRes)
 		return removeRes;
 	return FUNC_RESULT_SUCCESS;
@@ -106,6 +110,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 
 	int listRes = CreateList(&(channelLayer.Interfaces));
 	if(FUNC_RESULT_SUCCESS != listRes)
+		return NULL;
+		
+	int neighborsRes = neighborsInit(&channelLayer);
+	if(FUNC_RESULT_SUCCESS != neighborsRes)
 		return NULL;
 
 	// load configuration

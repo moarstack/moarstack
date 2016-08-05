@@ -24,6 +24,40 @@ int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	InterfaceRegisterMetadata_T registerMetadata;
+	int res = readRegisterMetadata(fd,command, &registerMetadata); //allocate memory for address
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+
+	InterfaceDescriptor_T* ifaceDesc = (InterfaceDescriptor_T*)malloc(sizeof(InterfaceDescriptor_T));
+	if(NULL == ifaceDesc)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	ifaceDesc->Socket = fd;
+	ifaceDesc->Address = registerMetadata.IfaceAddress;
+	ifaceDesc->Neighbors = NULL;
+	ifaceDesc->Ready = true;
+
+	int addRes = interfaceAdd(layer, ifaceDesc);
+	if(FUNC_RESULT_SUCCESS != addRes){
+		unAddressFree(&(ifaceDesc->Address));
+		free(ifaceDesc);
+	}
+	// TODO if supported beacon payload
+	// TODO update beacon data
+	// TODO update beacon data in all interfaces
+	// write registration result to interface
+	ChannelRegisterResultMetadata_T resultMetadata;
+	//fill metadata
+	resultMetadata.Registred = (FUNC_RESULT_SUCCESS == addRes);
+	LayerCommandStruct_T resultCommand = {0};
+	resultCommand.Command = LayerCommandType_RegisterInterfaceResult;
+	resultCommand.MetaData = &resultMetadata;
+	resultCommand.MetaSize = CHANNEL_REGISTER_RESULT_METADATA_SIZE;
+	int writedRes = WriteCommand(fd, &resultCommand);
+	if(FUNC_RESULT_SUCCESS != writedRes)
+		return writedRes;
+	if(FUNC_RESULT_SUCCESS != addRes)
+		return addRes;
 	return FUNC_RESULT_SUCCESS;
 }
 // unregister interface

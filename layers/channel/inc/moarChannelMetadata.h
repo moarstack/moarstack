@@ -7,6 +7,7 @@
 
 #include <moarChannelPrivate.h>
 #include <moarCommons.h>
+#pragma(push 1)
 
 //in memory structures
 // metadata of packet moving from channel to interface
@@ -65,6 +66,8 @@ typedef struct {
 typedef struct {
 	//last n bytes of metadata is interface address
 } InterfaceNeighborMetadataPlain_T;
+
+#pragma(pop)
 
 #define	CHANNEL_SEND_METADATA_PLAIN_SIZE  			sizeof( ChannelSendMetadataPlain_T )
 #define	INTERFACE_RECEIVE_METADATA_PLAIN_SIZE  		sizeof( InterfaceReceiveMetadataPlain_T )

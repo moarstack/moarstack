@@ -41,13 +41,6 @@ typedef enum {
 	IfaceModeState_Ready		// interface is ready to send or receive
 } IfaceModeState_T;
 
-typedef enum {
-	IfaceNeigborState_None,		// undefined neighbor state
-	IfaceNeigborState_Added,	// neighbor was added into the list
-	IfaceNeigborState_Updated,	// neighbor record in the list was updated
-	IfaceNeigborState_Removed	// neighbor was removed from the list
-} IfaceNeighborState_T;
-
 #pragma pack(push, 1)
 
 // metadata of packet state command

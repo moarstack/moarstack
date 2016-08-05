@@ -33,12 +33,12 @@ typedef enum {
 } IfacePackState_T;
 
 typedef enum {
-	IfaceModeState_None,			// undefined interface state
+	IfaceModeState_None,		// undefined interface state
 	IfaceModeState_Sending,		// interface is sending something
 	IfaceModeState_Waiting,		// interface is waiting for response (if needed)
 	IfaceModeState_Receiving,	// interface is receiving something
 	IfaceModeState_Responsing,	// interface is sending response (if needed)
-	IfaceModeState_Ready			// interface is ready to send or receive
+	IfaceModeState_Ready		// interface is ready to send or receive
 } IfaceModeState_T;
 
 typedef enum {

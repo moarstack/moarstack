@@ -141,7 +141,7 @@ int connectUp( SocketFilepath_T channelSocketFile ) {
 
 int connectWithChannel( SocketFilepath_T filepath ) {
 	LayerCommandStruct_T	command;
-	IfaceAddrPlain_T		plainAddr;
+	IfaceRegisterMetadata_T	plainAddr;
 	int						result;
 	bool					completed = false;
 
@@ -158,7 +158,7 @@ int connectWithChannel( SocketFilepath_T filepath ) {
 
 	do {
 		command.Command = LayerCommandType_RegisterInterface;
-		command.MetaSize = sizeof( IfaceAddrPlain_T );
+		command.MetaSize = IFACE_REGISTER_METADATA_SIZE;
 		command.MetaData = &plainAddr;
 		command.DataSize = 0;
 		command.Data = NULL;

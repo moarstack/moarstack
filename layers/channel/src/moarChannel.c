@@ -131,7 +131,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 								  channelLayer.EpollCount, channelLayer.EpollTimeout);
 		// in poll
 		if(epollRes<0){
-			perror("Channel epoll_wait");
+			//perror("Channel epoll_wait");
 		}
 		for(int i=0; i<epollRes;i++) {
 			//interface descriptors

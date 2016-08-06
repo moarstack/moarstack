@@ -14,6 +14,7 @@
 #include <memory.h>
 #include <moarChannelPrivate.h>
 #include <moarChannelNeighbors.h>
+#include <moarChannel.h>
 
 // register interface
 int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -84,6 +85,54 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceReceiveMetadata_T receiveMetadata = {0};
+	int res = readReceiveMetadata(fd, command, interface->Address.Length, &receiveMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	// if contains payload
+	if(command->DataSize > 0) {
+		// extract header
+		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
+		// check payload size
+		if(header->PayloadSize+CHANNEL_LAYER_HEADER_SIZE != command->DataSize){
+			free(command->Data);
+			command->Data = NULL;
+			int addrRes = unAddressFree(&(receiveMetadata.From));
+			return FUNC_RESULT_FAILED;
+		}
+		//add neighbor
+		int addRes = neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
+
+		if(header->PayloadSize > 0) {
+			//create command
+			LayerCommandStruct_T channelReceiveCommand = {0};
+			channelReceiveCommand.Command = LayerCommandType_Receive;
+			channelReceiveCommand.Data = (command->Data + CHANNEL_LAYER_HEADER_SIZE);
+			channelReceiveCommand.DataSize = header->PayloadSize;
+			//fill metadata
+			ChannelReceiveMetadata_T channelReceiveMetadata = {0};
+			channelReceiveMetadata.From = header->From;
+			//add to command
+			channelReceiveCommand.MetaData = &channelReceiveMetadata;
+			channelReceiveCommand.MetaSize = sizeof(ChannelReceiveMetadata_T);
+			//write
+			int writedRes = WriteCommand(layer->UpSocket, &channelReceiveCommand);
+			if (FUNC_RESULT_SUCCESS != writedRes) {
+				free(command->Data);
+				command->Data = NULL;
+				int addrRes = unAddressFree(&(receiveMetadata.From));
+				return writedRes;
+			}
+		}
+	}
+	free(command->Data);
+	command->Data = NULL;
+	int addrRes = unAddressFree(&(receiveMetadata.From));
+	if(FUNC_RESULT_SUCCESS != addrRes)
+		return addrRes;
 	return FUNC_RESULT_SUCCESS;
 }
 //process interface state

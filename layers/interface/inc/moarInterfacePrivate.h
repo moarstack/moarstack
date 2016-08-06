@@ -98,6 +98,7 @@ typedef struct {
 					BeaconIntervalCurrent;
 	PowerFloat_T	CurrentSensitivity,
 					CurrentBeaconPower;
+	bool			IsWaitingForResponse;
 } IfaceConfiguration_T;
 
 // struct with preallocated memory for iface routines

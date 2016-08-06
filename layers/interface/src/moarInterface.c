@@ -362,6 +362,40 @@ int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFu
 	return result;
 }
 
+int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size ) {
+	void			* messagePacket,
+					* messagePayload;
+	int				result;
+	size_t			messageSize;
+	IfaceHeader_T	* messageHeader;
+
+	if( NULL == receiver )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	messageSize = IFACE_HEADER_SIZE + size;
+	messagePacket = malloc( messageSize );
+
+	if( NULL == messagePacket )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	messageHeader = ( IfaceHeader_T * )messagePacket;
+	messagePayload = messagePacket + IFACE_HEADER_SIZE;
+
+	messageHeader->From = state.Config.Address;
+	messageHeader->To = receiver->Address;
+	messageHeader->Size = size;
+	messageHeader->CRC = 0; // that`s not implemented yet TODO
+	messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
+	messageHeader->Type = IfacePackType_NeedResponse;
+
+	memcpy( messagePayload, data, size );
+
+	result = transmitAnyData( receiver->MinPower, messagePacket, messageSize );
+	free( messagePacket );
+
+	return result;
+}
+
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
 	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
 
@@ -425,6 +459,46 @@ int processMockitEvent( uint32_t events ) {
 	return FUNC_RESULT_FAILED_ARGUMENT;
 }
 
+int processCommandIfaceMessageState( MessageId_T * identifier, IfacePackState_T packState ) {
+	IfacePackStateMetadata_T	metadata;
+
+	if( IfacePackState_None == packState )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	metadata.Id = *identifier; // do it before changing state.Memory.Command.MetaData !
+	metadata.State = packState;
+	state.Memory.Command.Command = LayerCommandType_MessageState;
+	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
+	state.Memory.Command.MetaData = &metadata;
+	state.Memory.Command.DataSize = 0;
+	state.Memory.Command.Data = NULL;
+
+	return writeUp();
+}
+
+int processCommandChannelSend( void ) {
+	IfaceNeighbor_T			* neighbor;
+	ChannelSendMetadata_T	* metadata;
+	int						result;
+
+	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
+	neighbor = neighborFind( &( metadata->To ) );
+
+	if( NULL == neighbor )
+		result = processCommandIfaceMessageState( &( metadata->Id ), IfacePackState_UnknownDest );
+	else {
+		result = transmitMessage( neighbor, state.Memory.Command.Data, state.Memory.Command.DataSize );
+
+		if( FUNC_RESULT_SUCCESS == result ) {
+			state.Config.IsWaitingForResponse = true;
+			free( state.Memory.Command.Data );
+			state.Memory.Command.Data = NULL;
+		}
+	}
+
+	return result;
+}
+
 int processChannelCommand( void ) {
 	int	result;
 
@@ -435,14 +509,18 @@ int processChannelCommand( void ) {
 
 	switch( state.Memory.Command.Command ) {
 		case LayerCommandType_Send :
+			result = processCommandChannelSend();
 			break;
 
 		case LayerCommandType_UpdateBeaconPayload :
 			break;
 
 		default :
+			result = FUNC_RESULT_FAILED_ARGUMENT;
 			printf( "IFACE: unknown command %d from channel\n", state.Memory.Command.Command );
 	}
+
+	return result;
 }
 
 int processChannelEvent( uint32_t events ) {

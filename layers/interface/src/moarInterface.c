@@ -7,7 +7,7 @@
 static IfaceState_T	state = { 0 };
 
 int writeDown( void * buffer, size_t bytes ) {
-	ssize_t result = -1;
+	ssize_t result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
@@ -18,15 +18,15 @@ int writeDown( void * buffer, size_t bytes ) {
 
 		if( result == bytes )
 			return FUNC_RESULT_SUCCESS;
-		else
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
 			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
 	return FUNC_RESULT_FAILED_IO;
 }
 
-int readDown( void * buffer, size_t bytes ) {
-	ssize_t	result = -1;
+ssize_t readDown( void * buffer, size_t bytes ) {
+	ssize_t	result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
@@ -36,22 +36,25 @@ int readDown( void * buffer, size_t bytes ) {
 		result = read( state.Config.MockitSocket, buffer, bytes );
 
 		if( 0 < result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
 			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
 	return result;
 }
 
-int connectDown( int * sock ) {
-	int	result = FUNC_RESULT_FAILED;
+int connectDown( void ) {
+	int	result;
 
-	if( NULL == sock )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
+		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, &( state.Config.MockitSocket ) );
 
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT && result != FUNC_RESULT_SUCCESS; attempt++ )
-		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, sock );
+		if( FUNC_RESULT_SUCCESS == result )
+			break;
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
+			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
+	}
 
 	return result;
 }
@@ -62,7 +65,7 @@ int preparePhysically( void ) {
 					length,
 					address;
 
-	result = connectDown( &( state.Config.MockitSocket ) );
+	result = connectDown();
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
@@ -80,7 +83,7 @@ int preparePhysically( void ) {
 
 		result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
 
-		if( FUNC_RESULT_SUCCESS != result )
+		if( FUNC_RESULT_SUCCESS >= result )
 			return FUNC_RESULT_FAILED_IO;
 	} while( 0 != strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, strlen( IFACE_REGISTRATION_OK ) ) );
 
@@ -98,12 +101,12 @@ int writeUp( void ) {
 		result = WriteCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
 
-	return FUNC_RESULT_FAILED_IO;
+	return result;
 }
 
 int readUp( void ) {
@@ -113,12 +116,12 @@ int readUp( void ) {
 		result = ReadCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
 
-	return FUNC_RESULT_FAILED_IO;
+	return result;
 }
 
 int connectUp( SocketFilepath_T channelSocketFile ) {

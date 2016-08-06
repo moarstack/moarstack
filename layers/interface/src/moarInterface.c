@@ -499,6 +499,16 @@ int processCommandChannelSend( void ) {
 	return result;
 }
 
+int processCommandChannelUpdateBeacon( void ) {
+	if( ( NULL == state.Memory.Command.Data && 0 < state.Memory.Command.DataSize ) ||
+		( NULL != state.Memory.Command.Data && 0 == state.Memory.Command.DataSize ) ||
+		IFACE_MAX_PAYLOAD_BEACON_SIZE < state.Memory.Command.DataSize )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	memcpy( state.Memory.BeaconPayload, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	return FUNC_RESULT_SUCCESS;
+}
+
 int processChannelCommand( void ) {
 	int	result;
 
@@ -513,6 +523,7 @@ int processChannelCommand( void ) {
 			break;
 
 		case LayerCommandType_UpdateBeaconPayload :
+			result = processCommandChannelUpdateBeacon();
 			break;
 
 		default :

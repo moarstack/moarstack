@@ -431,6 +431,17 @@ int processMockitEvent( uint32_t events ) {
 	return FUNC_RESULT_FAILED_ARGUMENT;
 }
 
+int processChannelCommand( void ) {
+
+}
+
+int processChannelEvent( uint32_t events ) {
+	if( events & EPOLLIN ) // if new command from channel
+		return processChannelCommand();
+	//other events
+	return FUNC_RESULT_FAILED_ARGUMENT;
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
 						oneSocketEvent;
@@ -475,9 +486,8 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
 					result = processMockitEvent( events[ eventIndex ].events );
-				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket ) {
-					// process channel event
-				}
+				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
+					result = processChannelEvent( events[ eventIndex ].events );
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 

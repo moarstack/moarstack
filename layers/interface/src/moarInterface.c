@@ -262,7 +262,7 @@ int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart
 	}
 
 	if( bytesDone < expectedSize )
-		bytesDone += read( state.Config.MockitSocket, ( char * )destination + bytesDone, expectedSize - bytesDone );
+		bytesDone += readDown( ( char * )destination + bytesDone, expectedSize - bytesDone );
 
 	if( bytesDone < expectedSize )
 		return FUNC_RESULT_FAILED_IO;
@@ -278,7 +278,7 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 	if( NULL == finishPower )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	bytesLeft = read( state.Config.MockitSocket, buffer, IFACE_BUFFER_SIZE );
+	bytesLeft = readDown( buffer, IFACE_BUFFER_SIZE );
 
 	if( -1 == bytesLeft )
 		return FUNC_RESULT_FAILED_IO;
@@ -305,28 +305,26 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 }
 
 int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
-	int		bytesWritten = 0,
-			bytesShouldWrite = 0,
-			currentLength;
+	int		currentLength,
+			result;
 
 	if( ( NULL == data && 0 < size ) || ( NULL != data && 0 == size ) )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
-	bytesShouldWrite += currentLength;
-	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+	result = writeDown( state.Memory.Buffer, currentLength );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", size, &currentLength );
-	bytesShouldWrite += currentLength;
-	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+	result = writeDown( state.Memory.Buffer, currentLength );
 
-	bytesShouldWrite += size;
-	bytesWritten = write( state.Config.MockitSocket, data, size );
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
-	if( bytesWritten < bytesShouldWrite )
-		return FUNC_RESULT_FAILED_IO;
-
-	return FUNC_RESULT_SUCCESS;
+	result = writeDown( data, size );
+	return result;
 }
 
 int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {

@@ -527,8 +527,12 @@ int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	result = transmitMessage( receiver, state.Memory.Command.Data, state.Memory.Command.DataSize );
-	state.Config.IsWaitingForResponse = true;
-	clearCommand();
+
+	if( FUNC_RESULT_SUCCESS == result ) {
+		state.Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
+		state.Config.IsWaitingForResponse = true;
+		clearCommand();
+	}
 
 	return result;
 }

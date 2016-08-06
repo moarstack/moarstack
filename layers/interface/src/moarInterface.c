@@ -396,6 +396,41 @@ int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size ) {
 	return result;
 }
 
+int transmitBeacon( void ) {
+	void			* beaconPacket,
+					* beaconPayload;
+	int				result;
+	size_t			beaconSize;
+	IfaceHeader_T	* beaconHeader;
+	IfaceFooter_T	* beaconFooter;
+
+	beaconSize = IFACE_HEADER_SIZE + state.Config.BeaconPayloadSize + IFACE_FOOTER_SIZE;
+	beaconPacket = malloc( beaconSize );
+
+	if( NULL == beaconPacket )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	beaconHeader = ( IfaceHeader_T * )beaconPacket;
+	beaconPayload = beaconPacket + IFACE_HEADER_SIZE;
+	beaconFooter = ( IfaceFooter_T * )( beaconPayload + state.Config.BeaconPayloadSize );
+
+	beaconHeader->From = state.Config.Address;
+	memset( &( beaconHeader->To ), 0, IFACE_ADDR_SIZE );
+	beaconHeader->Size = state.Config.BeaconPayloadSize;
+	beaconHeader->CRC = 0; // that`s not implemented yet TODO
+	beaconHeader->TxPower = ( PowerInt_T )roundf( state.Config.CurrentBeaconPower );
+	beaconHeader->Type = IfacePackType_Beacon;
+
+	memcpy( beaconPayload, state.Memory.BeaconPayload, state.Config.BeaconPayloadSize );
+
+	beaconFooter->MinSensitivity = ( PowerInt_T )roundf( state.Config.CurrentSensitivity );
+
+	result = transmitAnyData( beaconHeader->TxPower, beaconPacket, beaconSize );
+	free( beaconPacket );
+
+	return result;
+}
+
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
 	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
 
@@ -597,7 +632,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			// if yes
 				// send bad message state to channel
 			// else
-				// transmit beacon
+			result = transmitBeacon();
 		} else
 			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )

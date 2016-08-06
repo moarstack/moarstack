@@ -16,6 +16,26 @@
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
 
+
+int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == metadata)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(layer->UpSocket <= 0)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//fill
+	ChannelMessageStateMetadata_T messageStateMetadata;
+	messageStateMetadata.State = state;
+	messageStateMetadata.Id = metadata->Id;
+	// create command
+	LayerCommandStruct_T stateCommand = {0};
+	stateCommand.MetaData = &messageStateMetadata;
+	stateCommand.MetaSize = sizeof(ChannelMessageStateMetadata_T);
+	int writeRes = WriteCommand(layer->UpSocket, &stateCommand);
+	return writeRes;
+}
+
 // register interface
 int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
 	if(NULL == layer)
@@ -143,8 +163,36 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	return FUNC_RESULT_SUCCESS;
+	//get interface
+	InterfaceDescriptor_T* ifaceDesc = interfaceFindBySocket(layer, fd);
+	if(NULL == ifaceDesc)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//set free
+	ifaceDesc->Ready = true;
+	//get metadata
+	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
+	//find entry in table
+	ChannelMessageEntry_T entry;
+	//
+	int res;
+	switch(metadata->State){
+		case IfacePackState_UnknownDest:
+		case IfacePackState_Timeouted:
+			// TODO reenqueue
+			res = FUNC_RESULT_SUCCESS;
+			break;
+		case IfacePackState_Sent:
+		case IfacePackState_Responsed:
+			//notify sent
+			res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
+			// drop message
+			// drop entry
+			break;
+		default:
+			res = FUNC_RESULT_FAILED_ARGUMENT;
+			break;
+	}
+	return res;
 }
 //process new neighbor
 int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -265,25 +313,6 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
 		return res;
 	}
 	return FUNC_RESULT_FAILED;
-}
-
-int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == metadata)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(layer->UpSocket <= 0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	//fill
-	ChannelMessageStateMetadata_T messageStateMetadata;
-	messageStateMetadata.State = state;
-	messageStateMetadata.Id = metadata->Id;
-	// create command
-	LayerCommandStruct_T stateCommand = {0};
-	stateCommand.MetaData = &messageStateMetadata;
-	stateCommand.MetaSize = sizeof(ChannelMessageStateMetadata_T);
-	int writeRes = WriteCommand(layer->UpSocket, &stateCommand);
-	return writeRes;
 }
 
 //process send message

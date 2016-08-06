@@ -521,6 +521,7 @@ int processCommandChannelUpdateBeacon( void ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	memcpy( state.Memory.BeaconPayload, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	state.Config.BeaconPayloadSize = state.Memory.Command.DataSize;
 	clearCommand();
 	return FUNC_RESULT_SUCCESS;
 }

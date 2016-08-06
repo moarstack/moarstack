@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <moarChannelInterfaces.h>
 #include <moarChannelNeighbors.h>
+#include <moarMessageProcessing.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -144,13 +145,13 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				}
 			} // if command from routing
 			else if(fd == channelLayer.UpSocket) {
-				int res = 0;
+				int res = processRoutingData(&channelLayer, fd, event);
 				if(FUNC_RESULT_SUCCESS != res){
 					//TODO write error message
 				}
 			} //data from interface
 			else {
-				int res = 0;
+				int res = processInterfaceData(&channelLayer, fd, event);
 				if(FUNC_RESULT_SUCCESS != res){
 					processCloseConnection(&channelLayer,fd);
 				}

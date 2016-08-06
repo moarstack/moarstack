@@ -15,6 +15,7 @@
 #include <moarChannelPrivate.h>
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
+#include <moarChannelMessageQueue.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -367,5 +368,27 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	if (NULL == entry)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processQueue(ChannelLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//get from queue top
+	ChannelMessageEntry_T * entry;
+	bool done = true;
+	while(done) {
+		int peekRes = peekMessage(layer, &entry);
+		//if no data in queue
+		if (FUNC_RESULT_SUCCESS != peekRes)
+			return FUNC_RESULT_SUCCESS;
+		//TODO check for processing condition
+		//if cannot process
+		//done = false
+		//process, who cares about result
+		int processRes = processQueueEntry(layer, entry);
+		//remove from queue
+		dequeueMessage(layer, NULL);
+	}
 	return FUNC_RESULT_SUCCESS;
 }

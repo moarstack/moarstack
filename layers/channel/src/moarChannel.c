@@ -162,12 +162,9 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				}
 			}
 		}
-		// TODO add queue processing
-		// timeout | end of commands processing
-		// if have messages in queue
-		// get message
-		// try to send
-
+		int queueRes = processQueue(&channelLayer);
+		//if(FUNC_RESULT_SUCCESS != queueRes)
 		// update interval
 	}
+
 }

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 int interfaceInit(ChannelLayer_T* layer){
-	if(NULL != layer)
+	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int initRes = CreateList(&(layer->Interfaces));
 	return initRes;

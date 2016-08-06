@@ -16,11 +16,11 @@ int queueInit(ChannelLayer_T* layer){
 int dequeueMessage(ChannelLayer_T* layer, ChannelMessageEntry_T* entry){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == entry)
-		return FUNC_RESULT_FAILED_ARGUMENT;
 	LinkedListItem_T* item = PrevElement(&(layer->MessageQueue));
-	if(NULL != item) {
-		*entry = *((ChannelMessageEntry_T *) item);
+	if(NULL != item && NULL != item->Data) {
+		if(NULL != entry)
+			*entry = *((ChannelMessageEntry_T *) item->Data);
+		free(item->Data);
 		item = DeleteElement(item);
 		return FUNC_RESULT_SUCCESS;
 	}

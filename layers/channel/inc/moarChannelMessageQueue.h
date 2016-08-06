@@ -8,6 +8,7 @@
 #include <moarChannelPrivate.h>
 
 int queueInit(ChannelLayer_T* layer);
+// if entry is null remove element without copy
 int dequeueMessage(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 int enqueueMessage(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 int peekMessage(ChannelLayer_T* layer, ChannelMessageEntry_T** entry);

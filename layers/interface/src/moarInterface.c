@@ -573,8 +573,8 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	oneSocketEvent.events = EPOLLIN | EPOLLET;
 	result = preparePhysically();
 
-//	if( FUNC_RESULT_SUCCESS != result )
-//		return NULL;
+	if( FUNC_RESULT_SUCCESS != result )
+		return NULL;
 
 	oneSocketEvent.data.fd = state.Config.MockitSocket;
 	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.MockitSocket, &oneSocketEvent );

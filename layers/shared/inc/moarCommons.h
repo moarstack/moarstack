@@ -12,6 +12,8 @@
 #define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
 #define CRC_SIZE				sizeof( Crc_T )
 
+#pragma pack(push, 1)
+
 typedef char		SocketFilepath_T[ SOCKET_FILEPATH_SIZE ];
 typedef uint32_t	Crc_T; // type for values of CRC calculating result
 
@@ -55,6 +57,8 @@ typedef struct {
 } LayerCommandStruct_T;
 
 typedef uint8_t NeighborsCount_T;   // type to describe nearmates count
+
+#pragma pack(pop)
 
 #ifdef __cplusplus
 extern "C" {

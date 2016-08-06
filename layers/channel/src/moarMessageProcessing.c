@@ -14,6 +14,27 @@
 #include <memory.h>
 #include <moarChannelPrivate.h>
 #include <moarChannelNeighbors.h>
+#include <moarChannel.h>
+
+
+int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == metadata)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(layer->UpSocket <= 0)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//fill
+	ChannelMessageStateMetadata_T messageStateMetadata;
+	messageStateMetadata.State = state;
+	messageStateMetadata.Id = metadata->Id;
+	// create command
+	LayerCommandStruct_T stateCommand = {0};
+	stateCommand.MetaData = &messageStateMetadata;
+	stateCommand.MetaSize = sizeof(ChannelMessageStateMetadata_T);
+	int writeRes = WriteCommand(layer->UpSocket, &stateCommand);
+	return writeRes;
+}
 
 // register interface
 int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -84,6 +105,54 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceReceiveMetadata_T receiveMetadata = {0};
+	int res = readReceiveMetadata(fd, command, interface->Address.Length, &receiveMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	// if contains payload
+	if(command->DataSize > 0) {
+		// extract header
+		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
+		// check payload size
+		if(header->PayloadSize+CHANNEL_LAYER_HEADER_SIZE != command->DataSize){
+			free(command->Data);
+			command->Data = NULL;
+			int addrRes = unAddressFree(&(receiveMetadata.From));
+			return FUNC_RESULT_FAILED;
+		}
+		//add neighbor
+		int addRes = neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
+
+		if(header->PayloadSize > 0) {
+			//create command
+			LayerCommandStruct_T channelReceiveCommand = {0};
+			channelReceiveCommand.Command = LayerCommandType_Receive;
+			channelReceiveCommand.Data = (command->Data + CHANNEL_LAYER_HEADER_SIZE);
+			channelReceiveCommand.DataSize = header->PayloadSize;
+			//fill metadata
+			ChannelReceiveMetadata_T channelReceiveMetadata = {0};
+			channelReceiveMetadata.From = header->From;
+			//add to command
+			channelReceiveCommand.MetaData = &channelReceiveMetadata;
+			channelReceiveCommand.MetaSize = sizeof(ChannelReceiveMetadata_T);
+			//write
+			int writedRes = WriteCommand(layer->UpSocket, &channelReceiveCommand);
+			if (FUNC_RESULT_SUCCESS != writedRes) {
+				free(command->Data);
+				command->Data = NULL;
+				int addrRes = unAddressFree(&(receiveMetadata.From));
+				return writedRes;
+			}
+		}
+	}
+	free(command->Data);
+	command->Data = NULL;
+	int addrRes = unAddressFree(&(receiveMetadata.From));
+	if(FUNC_RESULT_SUCCESS != addrRes)
+		return addrRes;
 	return FUNC_RESULT_SUCCESS;
 }
 //process interface state
@@ -94,8 +163,36 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	return FUNC_RESULT_SUCCESS;
+	//get interface
+	InterfaceDescriptor_T* ifaceDesc = interfaceFindBySocket(layer, fd);
+	if(NULL == ifaceDesc)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//set free
+	ifaceDesc->Ready = true;
+	//get metadata
+	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
+	//find entry in table
+	ChannelMessageEntry_T entry;
+	//
+	int res;
+	switch(metadata->State){
+		case IfacePackState_UnknownDest:
+		case IfacePackState_Timeouted:
+			// TODO reenqueue
+			res = FUNC_RESULT_SUCCESS;
+			break;
+		case IfacePackState_Sent:
+		case IfacePackState_Responsed:
+			//notify sent
+			res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
+			// drop message
+			// drop entry
+			break;
+		default:
+			res = FUNC_RESULT_FAILED_ARGUMENT;
+			break;
+	}
+	return res;
 }
 //process new neighbor
 int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -105,14 +202,29 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	// TODO if contains beacon payload
-	// TODO if found neighbor
-	// TODO update neighbor
-	// TODO else
-	// TODO add new neighbor
-	// TODO send to routing new neighbor command
-	// TODO else
-	// TODO add to queue hello message
+	//get
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceNeighborMetadata_T neighborMetadata = {0};
+	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	// if contains payload
+	if(command->DataSize > 0) {
+		// extract header
+		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
+		//add neighbor
+		int addRes = neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
+	}
+	else{
+		// TODO add not resolved processing
+	}
+	free(command->Data);
+	command->Data = NULL;
+	int addrRes = unAddressFree(&(neighborMetadata.Address));
+	if(FUNC_RESULT_SUCCESS != addrRes)
+		return addrRes;
 	return FUNC_RESULT_SUCCESS;
 }
 //process lost neighbor
@@ -123,11 +235,15 @@ int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *com
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	// TODO if found neighbor
-	// TODO remove interface info
-	// TODO if no interfaces
-	// TODO remove neighbor
-	// TODO send to routing lost neighbor command
+	//get
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceNeighborMetadata_T neighborMetadata = {0};
+	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	int removeRes = neighborRemove(layer, neighborMetadata.Address);
 	return FUNC_RESULT_SUCCESS;
 }
 //process update neighbor
@@ -197,25 +313,6 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
 		return res;
 	}
 	return FUNC_RESULT_FAILED;
-}
-
-int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == metadata)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(layer->UpSocket <= 0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	//fill
-	ChannelMessageStateMetadata_T messageStateMetadata;
-	messageStateMetadata.State = state;
-	messageStateMetadata.Id = metadata->Id;
-	// create command
-	LayerCommandStruct_T stateCommand = {0};
-	stateCommand.MetaData = &messageStateMetadata;
-	stateCommand.MetaSize = sizeof(ChannelMessageStateMetadata_T);
-	int writeRes = WriteCommand(layer->UpSocket, &stateCommand);
-	return writeRes;
 }
 
 //process send message

@@ -9,6 +9,8 @@
 
 #define CHANNEL_ADDR_SIZE	8
 
+#pragma pack(push, 1)
+
 typedef struct{
 	uint8_t			Address[ CHANNEL_ADDR_SIZE ];
 } ChannelAddr_T;
@@ -20,5 +22,7 @@ typedef struct{
 }ChannelLayerHeader_T;
 
 #define CHANNEL_LAYER_HEADER_SIZE sizeof(ChannelLayerHeader_T)
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARCHANNEL_H

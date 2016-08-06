@@ -38,7 +38,8 @@
 #define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
-#define IFACE_BEACON_INTERVAL			120 // in seconds
+#define IFACE_BEACON_INTERVAL			120000 // in milliseconds
+#define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
 #define IFACE_MOCKIT_WAIT_INTERVAL		1 // in seconds
 #define IFACE_CHANNEL_WAIT_INTERVAL		1 // in seconds
 #define IFACE_MAX_NEIGHBOR_COUNT		10

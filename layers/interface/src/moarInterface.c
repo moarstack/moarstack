@@ -520,6 +520,18 @@ int processCommandIfaceMessageState( IfacePackState_T packState ) {
 	return writeUp();
 }
 
+int processCommandIfaceTimeouted( void ) {
+	int result;
+
+	result = processCommandIfaceMessageState( IfacePackState_Timeouted );
+	state.Config.IsWaitingForResponse = false;
+
+	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
+		state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
+
+	return result;
+}
+
 int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
 	int	result;
 
@@ -633,11 +645,10 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		result = FUNC_RESULT_SUCCESS;
 
 		if( 0 == eventsCount ) {// timeout
-			// is timeout caused by no response during specified period?
-			// if yes
-				// send bad message state to channel
-			// else
-			result = transmitBeacon();
+			if( state.Config.IsWaitingForResponse )
+				result = processCommandIfaceTimeouted();
+			else
+				result = transmitBeacon();
 		} else
 			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )

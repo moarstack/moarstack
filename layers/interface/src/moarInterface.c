@@ -425,7 +425,23 @@ int processMockitEvent( uint32_t events ) {
 }
 
 int processChannelCommand( void ) {
+	int	result;
 
+	result = readUp();
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	switch( state.Memory.Command.Command ) {
+		case LayerCommandType_Send :
+			break;
+
+		case LayerCommandType_UpdateBeaconPayload :
+			break;
+
+		default :
+			printf( "IFACE: unknown command %d from channel\n", state.Memory.Command.Command );
+	}
 }
 
 int processChannelEvent( uint32_t events ) {
@@ -486,5 +502,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 		if( FUNC_RESULT_SUCCESS != result )
 			printf( "Error with %d code arised\n", result );
+
+		fflush( stdout );
 	}
 }

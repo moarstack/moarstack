@@ -503,13 +503,13 @@ int clearCommand( void ) {
 	state.Memory.Command.DataSize = 0;
 }
 
-int processCommandIfaceMessageState( MessageId_T * identifier, IfacePackState_T packState ) {
+int processCommandIfaceMessageState( IfacePackState_T packState ) {
 	IfacePackStateMetadata_T	metadata;
 
 	if( IfacePackState_None == packState )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	metadata.Id = *identifier; // do it before changing state.Memory.Command.MetaData !
+	metadata.Id = state.Memory.MessageId;
 	metadata.State = packState;
 
 	clearCommand();
@@ -540,9 +540,10 @@ int processCommandChannelSend( void ) {
 
 	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
 	neighbor = neighborFind( &( metadata->To ) );
+	state.Memory.MessageId = metadata->Id;
 
 	if( NULL == neighbor )
-		result = processCommandIfaceMessageState( &( metadata->Id ), IfacePackState_UnknownDest );
+		result = processCommandIfaceMessageState( IfacePackState_UnknownDest );
 	else
 		result = processIfaceTransmit( neighbor );
 

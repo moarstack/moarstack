@@ -110,6 +110,7 @@ typedef struct {
 	IfaceFooter_T			BufferFooter;
 	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
 	LayerCommandStruct_T	Command;
+	MessageId_T				MessageId;
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

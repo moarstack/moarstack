@@ -441,6 +441,46 @@ int pushToChannel( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+int clearCommand( void ) {
+	free( state.Memory.Command.MetaData );
+	state.Memory.Command.MetaData = NULL;
+	state.Memory.Command.MetaSize = 0;
+	free( state.Memory.Command.Data );
+	state.Memory.Command.Data = NULL;
+	state.Memory.Command.DataSize = 0;
+}
+
+int processCommandIfaceMessageState( IfacePackState_T packState ) {
+	IfacePackStateMetadata_T	metadata;
+
+	if( IfacePackState_None == packState )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	metadata.Id = state.Memory.MessageId;
+	metadata.State = packState;
+
+	clearCommand();
+	state.Memory.Command.Command = LayerCommandType_MessageState;
+	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
+	state.Memory.Command.MetaData = &metadata;
+
+	return writeUp();
+}
+
+int processCommandIfaceTimeoutFinished( bool gotResponse ) {
+	int result;
+	IfacePackState_T	packState;
+
+	packState = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
+	result = processCommandIfaceMessageState( packState );
+	state.Config.IsWaitingForResponse = false;
+
+	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
+		state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
+
+	return result;
+}
+
 int processMockitReceive( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
@@ -461,8 +501,8 @@ int processMockitReceive( void ) {
 			break;
 
 		case IfacePackType_IsResponse :
-			// update current message state TODO
-			// drop message - nothing to do here due to storing got response in preallocated memory
+			// check what message response is for TODO
+			result = processCommandIfaceTimeoutFinished( true );
 			break;
 
 		case IfacePackType_Beacon :
@@ -492,44 +532,6 @@ int processMockitEvent( uint32_t events ) {
 		return processMockitReceive();
 	//other events
 	return FUNC_RESULT_FAILED_ARGUMENT;
-}
-
-int clearCommand( void ) {
-	free( state.Memory.Command.MetaData );
-	state.Memory.Command.MetaData = NULL;
-	state.Memory.Command.MetaSize = 0;
-	free( state.Memory.Command.Data );
-	state.Memory.Command.Data = NULL;
-	state.Memory.Command.DataSize = 0;
-}
-
-int processCommandIfaceMessageState( IfacePackState_T packState ) {
-	IfacePackStateMetadata_T	metadata;
-
-	if( IfacePackState_None == packState )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	metadata.Id = state.Memory.MessageId;
-	metadata.State = packState;
-
-	clearCommand();
-	state.Memory.Command.Command = LayerCommandType_MessageState;
-	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
-	state.Memory.Command.MetaData = &metadata;
-
-	return writeUp();
-}
-
-int processCommandIfaceTimeouted( void ) {
-	int result;
-
-	result = processCommandIfaceMessageState( IfacePackState_Timeouted );
-	state.Config.IsWaitingForResponse = false;
-
-	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
-		state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
-
-	return result;
 }
 
 int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
@@ -646,7 +648,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 		if( 0 == eventsCount ) {// timeout
 			if( state.Config.IsWaitingForResponse )
-				result = processCommandIfaceTimeouted();
+				result = processCommandIfaceTimeoutFinished( false );
 			else
 				result = transmitBeacon();
 		} else

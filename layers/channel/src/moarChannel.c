@@ -13,6 +13,7 @@
 #include <moarChannelInterfaces.h>
 #include <moarChannelNeighbors.h>
 #include <moarMessageProcessing.h>
+#include <moarChannelMessageQueue.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -98,7 +99,7 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	if(NULL == arg)
 		return NULL;
-	ChannelLayer_T channelLayer;
+	ChannelLayer_T channelLayer = {0};
 	MoarLayerStartupParams_T* startupParams = (MoarLayerStartupParams_T*) arg;
 
 	if(startupParams->DownSocketHandler <=0)
@@ -108,8 +109,8 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 
 	channelLayer.UpSocket = startupParams->UpSocketHandler;
 	channelLayer.DownSocket = startupParams->DownSocketHandler;
-
-	int listRes = CreateList(&(channelLayer.Interfaces));
+	//
+	int listRes = interfaceInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != listRes)
 		return NULL;
 		
@@ -117,6 +118,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	if(FUNC_RESULT_SUCCESS != neighborsRes)
 		return NULL;
 
+	int messageInitRes = queueInit(&channelLayer);
+	if(FUNC_RESULT_SUCCESS != messageInitRes){
+		return NULL;
+	}
 	// load configuration
 	//
 	// listen for interface connection

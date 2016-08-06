@@ -7,7 +7,7 @@
 static IfaceState_T	state = { 0 };
 
 int writeDown( void * buffer, size_t bytes ) {
-	ssize_t result = -1;
+	ssize_t result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
@@ -18,15 +18,15 @@ int writeDown( void * buffer, size_t bytes ) {
 
 		if( result == bytes )
 			return FUNC_RESULT_SUCCESS;
-		else
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
 			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
 	return FUNC_RESULT_FAILED_IO;
 }
 
-int readDown( void * buffer, size_t bytes ) {
-	ssize_t	result = -1;
+ssize_t readDown( void * buffer, size_t bytes ) {
+	ssize_t	result;
 
 	if( ( NULL == buffer && 0 < bytes ) ||
 		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
@@ -36,22 +36,25 @@ int readDown( void * buffer, size_t bytes ) {
 		result = read( state.Config.MockitSocket, buffer, bytes );
 
 		if( 0 < result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
 			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 	}
 
 	return result;
 }
 
-int connectDown( int * sock ) {
-	int	result = FUNC_RESULT_FAILED;
+int connectDown( void ) {
+	int	result;
 
-	if( NULL == sock )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
+		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, &( state.Config.MockitSocket ) );
 
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT && result != FUNC_RESULT_SUCCESS; attempt++ )
-		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, sock );
+		if( FUNC_RESULT_SUCCESS == result )
+			break;
+		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
+			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
+	}
 
 	return result;
 }
@@ -62,7 +65,7 @@ int preparePhysically( void ) {
 					length,
 					address;
 
-	result = connectDown( &( state.Config.MockitSocket ) );
+	result = connectDown();
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
@@ -80,7 +83,7 @@ int preparePhysically( void ) {
 
 		result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
 
-		if( FUNC_RESULT_SUCCESS != result )
+		if( FUNC_RESULT_SUCCESS >= result )
 			return FUNC_RESULT_FAILED_IO;
 	} while( 0 != strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, strlen( IFACE_REGISTRATION_OK ) ) );
 
@@ -91,40 +94,34 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int writeUp( LayerCommandStruct_T * command ) {
+int writeUp( void ) {
 	int result;
 
-	if( NULL == command )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = WriteCommand( state.Config.ChannelSocket, command );
+		result = WriteCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
 
-	return FUNC_RESULT_FAILED_IO;
+	return result;
 }
 
-int readUp( LayerCommandStruct_T * command ) {
+int readUp( void ) {
 	int result;
 
-	if( NULL == command )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = ReadCommand( state.Config.ChannelSocket, command );
+		result = ReadCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			return FUNC_RESULT_SUCCESS;
-		else
+			break;
+		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
 
-	return FUNC_RESULT_FAILED_IO;
+	return result;
 }
 
 int connectUp( SocketFilepath_T channelSocketFile ) {
@@ -140,7 +137,6 @@ int connectUp( SocketFilepath_T channelSocketFile ) {
 }
 
 int connectWithChannel( SocketFilepath_T filepath ) {
-	LayerCommandStruct_T	command;
 	IfaceRegisterMetadata_T	plainAddr;
 	int						result;
 	bool					completed = false;
@@ -157,23 +153,23 @@ int connectWithChannel( SocketFilepath_T filepath ) {
 	plainAddr.Value = state.Config.Address;
 
 	do {
-		command.Command = LayerCommandType_RegisterInterface;
-		command.MetaSize = IFACE_REGISTER_METADATA_SIZE;
-		command.MetaData = &plainAddr;
-		command.DataSize = 0;
-		command.Data = NULL;
-		result = writeUp( &command );
+		state.Memory.Command.Command = LayerCommandType_RegisterInterface;
+		state.Memory.Command.MetaSize = IFACE_REGISTER_METADATA_SIZE;
+		state.Memory.Command.MetaData = &plainAddr;
+		state.Memory.Command.DataSize = 0;
+		state.Memory.Command.Data = NULL;
+		result = writeUp();
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
 
-		result = readUp( &command );
+		result = readUp();
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
 
-		if( LayerCommandType_RegisterInterfaceResult == command.Command )
-			completed = ( ( ChannelRegisterResultMetadata_T * ) command.MetaData )->Registred;
+		if( LayerCommandType_RegisterInterfaceResult == state.Memory.Command.Command )
+			completed = ( ( ChannelRegisterResultMetadata_T * ) state.Memory.Command.MetaData )->Registred;
 
 	} while( !completed );
 
@@ -266,7 +262,7 @@ int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart
 	}
 
 	if( bytesDone < expectedSize )
-		bytesDone += read( state.Config.MockitSocket, ( char * )destination + bytesDone, expectedSize - bytesDone );
+		bytesDone += readDown( ( char * )destination + bytesDone, expectedSize - bytesDone );
 
 	if( bytesDone < expectedSize )
 		return FUNC_RESULT_FAILED_IO;
@@ -282,7 +278,7 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 	if( NULL == finishPower )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	bytesLeft = read( state.Config.MockitSocket, buffer, IFACE_BUFFER_SIZE );
+	bytesLeft = readDown( buffer, IFACE_BUFFER_SIZE );
 
 	if( -1 == bytesLeft )
 		return FUNC_RESULT_FAILED_IO;
@@ -309,28 +305,26 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 }
 
 int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
-	int		bytesWritten = 0,
-			bytesShouldWrite = 0,
-			currentLength;
+	int		currentLength,
+			result;
 
 	if( ( NULL == data && 0 < size ) || ( NULL != data && 0 == size ) )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
-	bytesShouldWrite += currentLength;
-	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+	result = writeDown( state.Memory.Buffer, currentLength );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", size, &currentLength );
-	bytesShouldWrite += currentLength;
-	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
+	result = writeDown( state.Memory.Buffer, currentLength );
 
-	bytesShouldWrite += size;
-	bytesWritten = write( state.Config.MockitSocket, data, size );
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
-	if( bytesWritten < bytesShouldWrite )
-		return FUNC_RESULT_FAILED_IO;
-
-	return FUNC_RESULT_SUCCESS;
+	result = writeDown( data, size );
+	return result;
 }
 
 int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {
@@ -364,6 +358,40 @@ int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFu
 
 	result = transmitAnyData( receiver->MinPower, responsePacket, responseSize );
 	free( responsePacket );
+
+	return result;
+}
+
+int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size ) {
+	void			* messagePacket,
+					* messagePayload;
+	int				result;
+	size_t			messageSize;
+	IfaceHeader_T	* messageHeader;
+
+	if( NULL == receiver )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	messageSize = IFACE_HEADER_SIZE + size;
+	messagePacket = malloc( messageSize );
+
+	if( NULL == messagePacket )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	messageHeader = ( IfaceHeader_T * )messagePacket;
+	messagePayload = messagePacket + IFACE_HEADER_SIZE;
+
+	messageHeader->From = state.Config.Address;
+	messageHeader->To = receiver->Address;
+	messageHeader->Size = size;
+	messageHeader->CRC = 0; // that`s not implemented yet TODO
+	messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
+	messageHeader->Type = IfacePackType_NeedResponse;
+
+	memcpy( messagePayload, data, size );
+
+	result = transmitAnyData( receiver->MinPower, messagePacket, messageSize );
+	free( messagePacket );
 
 	return result;
 }
@@ -431,6 +459,104 @@ int processMockitEvent( uint32_t events ) {
 	return FUNC_RESULT_FAILED_ARGUMENT;
 }
 
+int clearCommand( void ) {
+	free( state.Memory.Command.MetaData );
+	state.Memory.Command.MetaData = NULL;
+	state.Memory.Command.MetaSize = 0;
+	free( state.Memory.Command.Data );
+	state.Memory.Command.Data = NULL;
+	state.Memory.Command.DataSize = 0;
+}
+
+int processCommandIfaceMessageState( MessageId_T * identifier, IfacePackState_T packState ) {
+	IfacePackStateMetadata_T	metadata;
+
+	if( IfacePackState_None == packState )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	metadata.Id = *identifier; // do it before changing state.Memory.Command.MetaData !
+	metadata.State = packState;
+
+	clearCommand();
+	state.Memory.Command.Command = LayerCommandType_MessageState;
+	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
+	state.Memory.Command.MetaData = &metadata;
+
+	return writeUp();
+}
+
+int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
+	int	result;
+
+	if( NULL == receiver )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = transmitMessage( receiver, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	state.Config.IsWaitingForResponse = true;
+	clearCommand();
+
+	return result;
+}
+
+int processCommandChannelSend( void ) {
+	IfaceNeighbor_T			* neighbor;
+	ChannelSendMetadata_T	* metadata;
+	int						result;
+
+	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
+	neighbor = neighborFind( &( metadata->To ) );
+
+	if( NULL == neighbor )
+		result = processCommandIfaceMessageState( &( metadata->Id ), IfacePackState_UnknownDest );
+	else
+		result = processIfaceTransmit( neighbor );
+
+	return result;
+}
+
+int processCommandChannelUpdateBeacon( void ) {
+	if( ( NULL == state.Memory.Command.Data && 0 < state.Memory.Command.DataSize ) ||
+		( NULL != state.Memory.Command.Data && 0 == state.Memory.Command.DataSize ) ||
+		IFACE_MAX_PAYLOAD_BEACON_SIZE < state.Memory.Command.DataSize )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	memcpy( state.Memory.BeaconPayload, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	clearCommand();
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processChannelCommand( void ) {
+	int	result;
+
+	result = readUp();
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	switch( state.Memory.Command.Command ) {
+		case LayerCommandType_Send :
+			result = processCommandChannelSend();
+			break;
+
+		case LayerCommandType_UpdateBeaconPayload :
+			result = processCommandChannelUpdateBeacon();
+			break;
+
+		default :
+			result = FUNC_RESULT_FAILED_ARGUMENT;
+			printf( "IFACE: unknown command %d from channel\n", state.Memory.Command.Command );
+	}
+
+	return result;
+}
+
+int processChannelEvent( uint32_t events ) {
+	if( events & EPOLLIN ) // if new command from channel
+		return processChannelCommand();
+	//other events
+	return FUNC_RESULT_FAILED_ARGUMENT;
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
 						oneSocketEvent;
@@ -475,13 +601,14 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
 					result = processMockitEvent( events[ eventIndex ].events );
-				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket ) {
-					// process channel event
-				}
+				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
+					result = processChannelEvent( events[ eventIndex ].events );
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
 		if( FUNC_RESULT_SUCCESS != result )
 			printf( "Error with %d code arised\n", result );
+
+		fflush( stdout );
 	}
 }

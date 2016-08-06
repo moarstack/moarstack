@@ -14,6 +14,16 @@ int queueInit(ChannelLayer_T* layer){
 	return res;
 }
 int dequeueMessage(ChannelLayer_T* layer, ChannelMessageEntry_T* entry){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == entry)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	LinkedListItem_T* item = PrevElement(&(layer->MessageQueue));
+	if(NULL != item) {
+		*entry = *((ChannelMessageEntry_T *) item);
+		item = DeleteElement(item);
+		return FUNC_RESULT_SUCCESS;
+	}
 	return FUNC_RESULT_FAILED;
 }
 int enqueueMessage(ChannelLayer_T* layer, ChannelMessageEntry_T* entry){

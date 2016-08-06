@@ -320,7 +320,7 @@ int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
 	bytesShouldWrite += currentLength;
 	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
 
-	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d %n", size, &currentLength );
+	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", size, &currentLength );
 	bytesShouldWrite += currentLength;
 	bytesWritten += write( state.Config.MockitSocket, state.Memory.Buffer, currentLength );
 

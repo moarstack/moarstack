@@ -102,12 +102,13 @@ typedef struct {
 
 // struct with preallocated memory for iface routines
 typedef struct {
-	char			Buffer[ IFACE_BUFFER_SIZE ],
-					Payload[ IFACE_MAX_PAYLOAD_USUAL_SIZE ],
-					BeaconPayload[ IFACE_MAX_PAYLOAD_BEACON_SIZE ];
-	IfaceHeader_T	BufferHeader;
-	IfaceFooter_T	BufferFooter;
-	IfaceNeighbor_T	Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
+	char					Buffer[ IFACE_BUFFER_SIZE ],
+							Payload[ IFACE_MAX_PAYLOAD_USUAL_SIZE ],
+							BeaconPayload[ IFACE_MAX_PAYLOAD_BEACON_SIZE ];
+	IfaceHeader_T			BufferHeader;
+	IfaceFooter_T			BufferFooter;
+	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
+	LayerCommandStruct_T	Command;
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

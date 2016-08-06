@@ -91,14 +91,11 @@ int preparePhysically( void ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int writeUp( LayerCommandStruct_T * command ) {
+int writeUp( void ) {
 	int result;
 
-	if( NULL == command )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = WriteCommand( state.Config.ChannelSocket, command );
+		result = WriteCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			return FUNC_RESULT_SUCCESS;
@@ -109,14 +106,11 @@ int writeUp( LayerCommandStruct_T * command ) {
 	return FUNC_RESULT_FAILED_IO;
 }
 
-int readUp( LayerCommandStruct_T * command ) {
+int readUp( void ) {
 	int result;
 
-	if( NULL == command )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = ReadCommand( state.Config.ChannelSocket, command );
+		result = ReadCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			return FUNC_RESULT_SUCCESS;
@@ -140,7 +134,6 @@ int connectUp( SocketFilepath_T channelSocketFile ) {
 }
 
 int connectWithChannel( SocketFilepath_T filepath ) {
-	LayerCommandStruct_T	command;
 	IfaceRegisterMetadata_T	plainAddr;
 	int						result;
 	bool					completed = false;
@@ -157,23 +150,23 @@ int connectWithChannel( SocketFilepath_T filepath ) {
 	plainAddr.Value = state.Config.Address;
 
 	do {
-		command.Command = LayerCommandType_RegisterInterface;
-		command.MetaSize = IFACE_REGISTER_METADATA_SIZE;
-		command.MetaData = &plainAddr;
-		command.DataSize = 0;
-		command.Data = NULL;
-		result = writeUp( &command );
+		state.Memory.Command.Command = LayerCommandType_RegisterInterface;
+		state.Memory.Command.MetaSize = IFACE_REGISTER_METADATA_SIZE;
+		state.Memory.Command.MetaData = &plainAddr;
+		state.Memory.Command.DataSize = 0;
+		state.Memory.Command.Data = NULL;
+		result = writeUp();
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
 
-		result = readUp( &command );
+		result = readUp();
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return FUNC_RESULT_FAILED_IO;
 
-		if( LayerCommandType_RegisterInterfaceResult == command.Command )
-			completed = ( ( ChannelRegisterResultMetadata_T * ) command.MetaData )->Registred;
+		if( LayerCommandType_RegisterInterfaceResult == state.Memory.Command.Command )
+			completed = ( ( ChannelRegisterResultMetadata_T * ) state.Memory.Command.MetaData )->Registred;
 
 	} while( !completed );
 

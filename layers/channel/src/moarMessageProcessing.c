@@ -154,14 +154,29 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	// TODO if contains beacon payload
-	// TODO if found neighbor
-	// TODO update neighbor
-	// TODO else
-	// TODO add new neighbor
-	// TODO send to routing new neighbor command
-	// TODO else
-	// TODO add to queue hello message
+	//get
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceNeighborMetadata_T neighborMetadata = {0};
+	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	// if contains payload
+	if(command->DataSize > 0) {
+		// extract header
+		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
+		//add neighbor
+		int addRes = neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
+	}
+	else{
+		// TODO add not resolved processing
+	}
+	free(command->Data);
+	command->Data = NULL;
+	int addrRes = unAddressFree(&(neighborMetadata.Address));
+	if(FUNC_RESULT_SUCCESS != addrRes)
+		return addrRes;
 	return FUNC_RESULT_SUCCESS;
 }
 //process lost neighbor
@@ -172,11 +187,15 @@ int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *com
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	// TODO if found neighbor
-	// TODO remove interface info
-	// TODO if no interfaces
-	// TODO remove neighbor
-	// TODO send to routing lost neighbor command
+	//get
+	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	if(NULL == interface)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	InterfaceNeighborMetadata_T neighborMetadata = {0};
+	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
+	if(FUNC_RESULT_SUCCESS != res)
+		return res;
+	int removeRes = neighborRemove(layer, neighborMetadata.Address);
 	return FUNC_RESULT_SUCCESS;
 }
 //process update neighbor

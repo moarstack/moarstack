@@ -459,6 +459,15 @@ int processMockitEvent( uint32_t events ) {
 	return FUNC_RESULT_FAILED_ARGUMENT;
 }
 
+int clearCommand( void ) {
+	free( state.Memory.Command.MetaData );
+	state.Memory.Command.MetaData = NULL;
+	state.Memory.Command.MetaSize = 0;
+	free( state.Memory.Command.Data );
+	state.Memory.Command.Data = NULL;
+	state.Memory.Command.DataSize = 0;
+}
+
 int processCommandIfaceMessageState( MessageId_T * identifier, IfacePackState_T packState ) {
 	IfacePackStateMetadata_T	metadata;
 
@@ -467,13 +476,26 @@ int processCommandIfaceMessageState( MessageId_T * identifier, IfacePackState_T 
 
 	metadata.Id = *identifier; // do it before changing state.Memory.Command.MetaData !
 	metadata.State = packState;
+
+	clearCommand();
 	state.Memory.Command.Command = LayerCommandType_MessageState;
 	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
 	state.Memory.Command.MetaData = &metadata;
-	state.Memory.Command.DataSize = 0;
-	state.Memory.Command.Data = NULL;
 
 	return writeUp();
+}
+
+int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
+	int	result;
+
+	if( NULL == receiver )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = transmitMessage( receiver, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	state.Config.IsWaitingForResponse = true;
+	clearCommand();
+
+	return result;
 }
 
 int processCommandChannelSend( void ) {
@@ -486,15 +508,8 @@ int processCommandChannelSend( void ) {
 
 	if( NULL == neighbor )
 		result = processCommandIfaceMessageState( &( metadata->Id ), IfacePackState_UnknownDest );
-	else {
-		result = transmitMessage( neighbor, state.Memory.Command.Data, state.Memory.Command.DataSize );
-
-		if( FUNC_RESULT_SUCCESS == result ) {
-			state.Config.IsWaitingForResponse = true;
-			free( state.Memory.Command.Data );
-			state.Memory.Command.Data = NULL;
-		}
-	}
+	else
+		result = processIfaceTransmit( neighbor );
 
 	return result;
 }
@@ -506,6 +521,7 @@ int processCommandChannelUpdateBeacon( void ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	memcpy( state.Memory.BeaconPayload, state.Memory.Command.Data, state.Memory.Command.DataSize );
+	clearCommand();
 	return FUNC_RESULT_SUCCESS;
 }
 

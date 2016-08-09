@@ -91,15 +91,18 @@ typedef struct {
 
 // struct for configuration variables
 typedef struct {
-	IfaceAddr_T		Address;
-	int				MockitSocket,
-					ChannelSocket,
-					NeighborsCount,
-					BeaconPayloadSize,
-					BeaconIntervalCurrent;
-	PowerFloat_T	CurrentSensitivity,
-					CurrentBeaconPower;
-	bool			IsWaitingForResponse;
+	IfaceAddr_T			Address;
+	int					MockitSocket,
+						ChannelSocket,
+						NeighborsCount,
+						BeaconPayloadSize,
+						BeaconIntervalCurrent;
+	PowerFloat_T		CurrentSensitivity,
+						CurrentBeaconPower;
+	bool				IsWaitingForResponse,
+						IsConnectedToChannel,
+						IsConnectedToMockit;
+	SocketFilepath_T	ChannelSocketFilepath;
 } IfaceConfiguration_T;
 
 // struct with preallocated memory for iface routines

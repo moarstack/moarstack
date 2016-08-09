@@ -125,6 +125,7 @@ int WriteCommand(int fd, LayerCommandStruct_T* command){
     LayerCommandPlain_T commandPlain = {0};
     commandPlain.Command = command->Command;
     commandPlain.MetaSize = command->MetaSize;
+	commandPlain.DataSize = command->DataSize;
     //write command
     ssize_t writedCommandPlain = write(fd, &commandPlain, LAYER_COMMAND_PLAIN_SIZE);
     //check

@@ -16,3 +16,4 @@ include_directories(inc)
 
 #add library
 add_library(moar_shared SHARED ${SRC_FILES})
+target_link_libraries(moar_shared rt)

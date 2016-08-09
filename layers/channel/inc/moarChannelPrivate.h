@@ -28,6 +28,14 @@ typedef struct {
 	time_t 			LastSeen;
 } InterfaceNeighbor_T;
 
+typedef struct{
+	//processing time
+	int8_t TrysLeft;
+	RouteSendMetadata_T Metadata;
+	PayloadSize_T  DataSize;
+	void* Data;
+} ChannelMessageEntry_T;
+
 typedef struct {
 	UnIfaceAddr_T Address;
 	bool Ready;
@@ -35,6 +43,7 @@ typedef struct {
 	int Socket;
 	InterfaceNeighbor_T* Neighbors;
 	// pointer to channel neighbor
+	ChannelMessageEntry_T CurrentMessage;
 } InterfaceDescriptor_T;
 
 typedef struct{
@@ -48,13 +57,6 @@ typedef struct{
 	LinkedListItem_T Interfaces;
 } ChannelNeighbor_T;
 
-typedef struct{
-	//processing time
-	int8_t TrysLeft;
-	RouteSendMetadata_T Metadata;
-	PayloadSize_T  DataSize;
-	void* Data;
-} ChannelMessageEntry_T;
 
 typedef struct {
 	ChannelAddr_T 			LocalAddress;

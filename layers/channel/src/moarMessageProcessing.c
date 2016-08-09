@@ -16,6 +16,7 @@
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
 #include <moarChannelMessageQueue.h>
+#include <moarMessageTable.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -174,26 +175,33 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
 	//find entry in table
 	ChannelMessageEntry_T entry;
-	// search...
-	int res;
-	switch(metadata->State){
-		case IfacePackState_UnknownDest:
-		case IfacePackState_Timeouted:
-			res = enqueueMessage(layer, &entry);
-			break;
-		case IfacePackState_Sent:
-		case IfacePackState_Responsed:
-			//notify sent
-			res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
-			// drop message
-			free(entry.Data);
-			// drop entry
-			break;
-		default:
-			res = FUNC_RESULT_FAILED_ARGUMENT;
-			break;
+	int findRes = tableFindEntryById(layer, ifaceDesc, &(metadata->Id), &entry);
+	if(FUNC_RESULT_SUCCESS == findRes) {
+		// drop entry from table
+		tableDeleteEntry(layer, ifaceDesc, &(metadata->Id));
+		//process
+		int res;
+		switch (metadata->State) {
+			case IfacePackState_UnknownDest:
+			case IfacePackState_Timeouted:
+				res = enqueueMessage(layer, &entry);
+				break;
+			case IfacePackState_Sent:
+			case IfacePackState_Responsed:
+				//notify sent
+				res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
+				// drop message
+				free(entry.Data);
+				entry.Data = NULL;
+				// drop entry
+				break;
+			default:
+				res = FUNC_RESULT_FAILED_ARGUMENT;
+				break;
+		}
+		return res;
 	}
-	return res;
+	return FUNC_RESULT_SUCCESS;
 }
 //process new neighbor
 int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -400,8 +408,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		//if pushed down
 		if (FUNC_RESULT_SUCCESS == pushRes) {
 			remoteInterface->BridgeInterface->Ready = false;
-			// TODO add to table here
-			int res;// = AddTableEntry(layer, entry); //add local iface here
+			int res = tableAddEntry(layer, remoteInterface->BridgeInterface, &(entry->Metadata.Id), entry);
 			return res;
 		}
 		else{

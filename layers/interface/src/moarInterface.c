@@ -317,7 +317,7 @@ int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
-	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", size, &currentLength );
+	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", (long long unsigned)size, &currentLength );
 	result = writeDown( state.Memory.Buffer, currentLength );
 
 	if( FUNC_RESULT_SUCCESS != result )

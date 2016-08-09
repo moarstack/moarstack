@@ -67,6 +67,8 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
     command->Command = commandPlain.Command;
     command->MetaSize = commandPlain.MetaSize;
     command->DataSize = commandPlain.DataSize;
+	command->Data = NULL;
+	command->MetaData = NULL;
     int res = FUNC_RESULT_SUCCESS;
     //if have metadata
     if(0 != commandPlain.MetaSize) {

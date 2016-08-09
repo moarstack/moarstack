@@ -5,6 +5,13 @@
 #include <funcResults.h>
 #include <stdlib.h>
 
+int interfaceInit(ChannelLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int initRes = CreateList(&(layer->Interfaces));
+	return initRes;
+}
+
 InterfaceDescriptor_T* interfaceFindBySocket(ChannelLayer_T *layer, int fd){
 	if(NULL == layer)
 		return NULL;

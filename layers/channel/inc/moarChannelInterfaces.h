@@ -8,6 +8,7 @@
 #include <moarChannelPrivate.h>
 
 // functions
+int interfaceInit(ChannelLayer_T* layer);
 // add interface
 int interfaceAdd(ChannelLayer_T* layer, InterfaceDescriptor_T* iface);
 // remove interface

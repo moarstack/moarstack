@@ -32,4 +32,5 @@ int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event);
 
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 
+int processQueue(ChannelLayer_T* layer);
 #endif //MOARSTACK_MOARMESSAGEPROCESSING_H

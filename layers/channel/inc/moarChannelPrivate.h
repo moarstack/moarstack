@@ -63,6 +63,7 @@ typedef struct {
 	uint8_t 				InterfacesCount;
 	LinkedListItem_T 		Interfaces;
 	LinkedListItem_T 		Neighbors;
+	LinkedListItem_T		MessageQueue;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
 	int 					EpollCount;

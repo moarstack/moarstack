@@ -15,6 +15,7 @@
 #include <moarChannelPrivate.h>
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
+#include <moarChannelMessageQueue.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -173,19 +174,19 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
 	//find entry in table
 	ChannelMessageEntry_T entry;
-	//
+	// search...
 	int res;
 	switch(metadata->State){
 		case IfacePackState_UnknownDest:
 		case IfacePackState_Timeouted:
-			// TODO reenqueue
-			res = FUNC_RESULT_SUCCESS;
+			res = enqueueMessage(layer, &entry);
 			break;
 		case IfacePackState_Sent:
 		case IfacePackState_Responsed:
 			//notify sent
 			res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
 			// drop message
+			free(entry.Data);
 			// drop entry
 			break;
 		default:
@@ -366,6 +367,76 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if (NULL == entry)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	// if not trys left
+	if(0 >= entry->TrysLeft){
+		int responseRes = sendResponseToRouting(layer, PackStateChannel_NotSent, &(entry->Metadata));
+		//free memory here
+		free(entry->Data);
+		entry->Data = NULL;
+		return responseRes;
+	}
+	// search neighbor
+	ChannelNeighbor_T *neighbor = neighborFindByAddress(layer, &(entry->Metadata.Bridge));
+	//be sure that find remote can handle null
+	if (NULL == neighbor) {
+		//no neighbor | interface found
+		int responseRes = sendResponseToRouting(layer, PackStateChannel_UnknownDest, &(entry->Metadata));
+		//free memory here
+		free(entry->Data);
+		entry->Data = NULL;
+		return responseRes;
+	}
+	//select interface
+	RemoteInterface_T *remoteInterface = neighborFindRemoteInterface(neighbor);
+	if(NULL != remoteInterface) {
+		// decrement
+		entry->TrysLeft--;
+		//if interface found
+		ChannelSendMetadata_T sendMetadata = {0};
+		sendMetadata.Id = entry->Metadata.Id;
+		sendMetadata.Bridge = remoteInterface->Address;
+		int pushRes = writeSendMetadata(remoteInterface->BridgeInterface->Socket, &sendMetadata, entry->DataSize,
+										entry->Data);
+		//if pushed down
+		if (FUNC_RESULT_SUCCESS == pushRes) {
+			remoteInterface->BridgeInterface->Ready = false;
+			// TODO add to table here
+			int res;// = AddTableEntry(layer, entry); //add local iface here
+			return res;
+		}
+		else{
+			// if can not push reenqueue
+			// TODO add timeout
+			int res = enqueueMessage(layer, entry);
+			return res;
+		}
+	}
+	else{
+		// if not found
+		// TODO add timeout
+		int res = enqueueMessage(layer, entry);
+		return res;
+	}
+}
 
+int processQueue(ChannelLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//get from queue top
+	ChannelMessageEntry_T * entry;
+	bool done = true;
+	while(done) {
+		int peekRes = peekMessage(layer, &entry);
+		//if no data in queue
+		if (FUNC_RESULT_SUCCESS != peekRes)
+			return FUNC_RESULT_SUCCESS;
+		//TODO check for processing condition
+		//if cannot process
+		//done = false
+		//process, who cares about result
+		int processRes = processQueueEntry(layer, entry);
+		//remove from queue
+		dequeueMessage(layer, NULL);
+	}
 	return FUNC_RESULT_SUCCESS;
 }

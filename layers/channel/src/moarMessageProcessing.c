@@ -370,6 +370,7 @@ int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event){
 	return FUNC_RESULT_FAILED;
 }
 
+// queue processing
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -425,7 +426,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		return res;
 	}
 }
-
+// process channel message queue
 int processQueue(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -442,6 +443,8 @@ int processQueue(ChannelLayer_T* layer){
 		//done = false
 		//process, who cares about result
 		int processRes = processQueueEntry(layer, entry);
+		if(FUNC_RESULT_SUCCESS != processRes)
+			done = false;
 		//remove from queue
 		dequeueMessage(layer, NULL);
 	}

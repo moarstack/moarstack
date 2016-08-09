@@ -518,6 +518,30 @@ int processCommandIfaceNeighborUpdate( IfaceAddr_T * address ) {
 	return processCommandIface( LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
 }
 
+int processReceivedBeacon( IfaceAddr_T * address ) {
+	int				result;
+	IfaceNeighbor_T	* sender;
+	PowerFloat_T	startPower;
+
+	sender = neighborFind( address );
+	startPower = calcMinPower( state.Memory.BufferFooter.MinSensitivity, finishPower );
+
+	if( NULL != sender ) {
+		result = neighborUpdate( sender, startPower );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			result = processCommandIfaceNeighborUpdate( &address );
+
+	} else {
+		result = neighborAdd( &address, startPower );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			result = processCommandIfaceNeighborNew( &address );
+	}
+
+	return result;
+}
+
 int processMockitReceive( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
@@ -543,21 +567,7 @@ int processMockitReceive( void ) {
 			break;
 
 		case IfacePackType_Beacon :
-			sender = neighborFind( &address );
-			startPower = calcMinPower( state.Memory.BufferFooter.MinSensitivity, finishPower );
-
-			if( NULL != sender ) {
-				result = neighborUpdate( sender, startPower );
-
-				if( FUNC_RESULT_SUCCESS == result )
-					result = processCommandIfaceNeighborUpdate( &address );
-
-			} else {
-				result = neighborAdd( &address, startPower );
-
-				if( FUNC_RESULT_SUCCESS == result )
-					result = processCommandIfaceNeighborNew( &address );
-			}
+			result = processReceivedBeacon( &address );
 			break;
 
 		default :

@@ -510,6 +510,14 @@ int processCommandIfaceNeighborNew( IfaceAddr_T * address ) {
 	return processCommandIface( LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
 }
 
+int processCommandIfaceNeighborUpdate( IfaceAddr_T * address ) {
+	IfaceNeighborMetadata_T	metadata;
+
+	metadata.Neighbor = *address;
+
+	return processCommandIface( LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
+}
+
 int processMockitReceive( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
@@ -538,9 +546,13 @@ int processMockitReceive( void ) {
 			sender = neighborFind( &address );
 			startPower = calcMinPower( state.Memory.BufferFooter.MinSensitivity, finishPower );
 
-			if( NULL != sender )
+			if( NULL != sender ) {
 				result = neighborUpdate( sender, startPower );
-			else {
+
+				if( FUNC_RESULT_SUCCESS == result )
+					result = processCommandIfaceNeighborUpdate( &address );
+
+			} else {
 				result = neighborAdd( &address, startPower );
 
 				if( FUNC_RESULT_SUCCESS == result )

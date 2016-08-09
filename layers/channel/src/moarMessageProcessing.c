@@ -17,6 +17,7 @@
 #include <moarChannel.h>
 #include <moarChannelMessageQueue.h>
 #include <moarMessageTable.h>
+#include <moarTime.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -414,14 +415,14 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		}
 		else{
 			// if can not push reenqueue
-			// TODO add timeout
+			entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
 			int res = enqueueMessage(layer, entry);
 			return res;
 		}
 	}
 	else{
 		// if not found
-		// TODO add timeout
+		entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
 		int res = enqueueMessage(layer, entry);
 		return res;
 	}
@@ -433,20 +434,24 @@ int processQueue(ChannelLayer_T* layer){
 	//get from queue top
 	ChannelMessageEntry_T * entry;
 	bool done = true;
+	moarTime_T currentTime = timeGetCurrent();
 	while(done) {
 		int peekRes = peekMessage(layer, &entry);
 		//if no data in queue
 		if (FUNC_RESULT_SUCCESS != peekRes)
 			return FUNC_RESULT_SUCCESS;
-		//TODO check for processing condition
-		//if cannot process
-		//done = false
-		//process, who cares about result
-		int processRes = processQueueEntry(layer, entry);
-		if(FUNC_RESULT_SUCCESS != processRes)
+		int compare = timeCompare(currentTime, entry->ProcessingTime);
+		if(compare > 0) {
+			//process, who cares about result
+			int processRes = processQueueEntry(layer, entry);
+			if (FUNC_RESULT_SUCCESS != processRes)
+				done = false;
+			//remove from queue
+			dequeueMessage(layer, NULL);
+		}
+		else{
 			done = false;
-		//remove from queue
-		dequeueMessage(layer, NULL);
+		}
 	}
 	return FUNC_RESULT_SUCCESS;
 }

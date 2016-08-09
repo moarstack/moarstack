@@ -35,6 +35,7 @@ typedef enum {
 	LayerCommandType_InterfaceState,
 	LayerCommandType_UpdateBeaconPayload,
 	// some other commands
+	LayerCommandType_TypesCount // should always be last
 } LayerCommandType_T;
 
 typedef size_t 	PayloadSize_T;

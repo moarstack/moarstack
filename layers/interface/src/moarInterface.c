@@ -450,29 +450,50 @@ int clearCommand( void ) {
 	state.Memory.Command.DataSize = 0;
 }
 
-int processCommandIfaceMessageState( IfacePackState_T packState ) {
-	IfacePackStateMetadata_T	metadata;
-
-	if( IfacePackState_None == packState )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	metadata.Id = state.Memory.MessageId;
-	metadata.State = packState;
+int processCommandIface( LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {
+	static size_t	sizes[ LayerCommandType_TypesCount ] = { 0,	// LayerCommandType_None
+																0,	// LayerCommandType_Send
+																IFACE_RECEIVE_METADATA_SIZE,	// LayerCommandType_Receive
+															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_NewNeighbor
+															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_LostNeighbor
+															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_UpdateNeighbor
+																IFACE_PACK_STATE_METADATA_SIZE,	// LayerCommandType_MessageState
+																IFACE_REGISTER_METADATA_SIZE,	// LayerCommandType_RegisterInterface
+															  	0,	// LayerCommandType_RegisterInterfaceResult
+																IFACE_UNREGISTER_METADATA_SIZE,	// LayerCommandType_UnregisterInterface
+																0,	// LayerCommandType_ConnectApplication
+																0,	// LayerCommandType_ConnectApplicationResult
+																0,	// LayerCommandType_DisconnectApplication
+																IFACE_MODE_STATE_METADATA_SIZE,	// LayerCommandType_InterfaceState
+																0	// LayerCommandType_UpdateBeaconPayload
+															};
 
 	clearCommand();
-	state.Memory.Command.Command = LayerCommandType_MessageState;
-	state.Memory.Command.MetaSize = IFACE_PACK_STATE_METADATA_SIZE;
-	state.Memory.Command.MetaData = &metadata;
+	state.Memory.Command.Command = commandType;
+	state.Memory.Command.MetaSize = sizes[ commandType ];
+	state.Memory.Command.MetaData = metaData;
+	state.Memory.Command.DataSize = dataSize;
+	state.Memory.Command.Data = data;
 
 	return writeUp();
 }
 
-int processCommandIfaceTimeoutFinished( bool gotResponse ) {
-	int result;
-	IfacePackState_T	packState;
+int processCommandIfaceUnknownDest( void ) {
+	IfacePackStateMetadata_T	metadata;
 
-	packState = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
-	result = processCommandIfaceMessageState( packState );
+	metadata.Id = state.Memory.ProcessingMessageId;
+	metadata.State = IfacePackState_UnknownDest;
+
+	return processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
+}
+
+int processCommandIfaceTimeoutFinished( bool gotResponse ) {
+	IfacePackStateMetadata_T	metadata;
+	int 						result;
+
+	metadata.Id = state.Memory.ProcessingMessageId;
+	metadata.State = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
+	result = processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
 	state.Config.IsWaitingForResponse = false;
 
 	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
@@ -481,17 +502,12 @@ int processCommandIfaceTimeoutFinished( bool gotResponse ) {
 	return result;
 }
 
-int processCommandIfaceNewNeighbor( IfaceAddr_T * address ) {
+int processCommandIfaceNeighborNew( IfaceAddr_T * address ) {
 	IfaceNeighborMetadata_T	metadata;
 
 	metadata.Neighbor = *address;
 
-	clearCommand();
-	state.Memory.Command.Command = LayerCommandType_NewNeighbor;
-	state.Memory.Command.MetaSize = IFACE_NEIGHBOR_METADATA_SIZE;
-	state.Memory.Command.MetaData = &metadata;
-
-	return writeUp();
+	return processCommandIface( LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
 }
 
 int processMockitReceive( void ) {
@@ -526,7 +542,9 @@ int processMockitReceive( void ) {
 				result = neighborUpdate( sender, startPower );
 			else {
 				result = neighborAdd( &address, startPower );
-				// send to channel new neighbor command TODO
+
+				if( FUNC_RESULT_SUCCESS == result )
+					result = processCommandIfaceNeighborNew( &address );
 			}
 			break;
 
@@ -571,10 +589,10 @@ int processCommandChannelSend( void ) {
 
 	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
 	neighbor = neighborFind( &( metadata->To ) );
-	state.Memory.MessageId = metadata->Id;
+	state.Memory.ProcessingMessageId = metadata->Id;
 
 	if( NULL == neighbor )
-		result = processCommandIfaceMessageState( IfacePackState_UnknownDest );
+		result = processCommandIfaceUnknownDest();
 	else
 		result = processIfaceTransmit( neighbor );
 

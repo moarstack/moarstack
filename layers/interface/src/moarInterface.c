@@ -481,6 +481,19 @@ int processCommandIfaceTimeoutFinished( bool gotResponse ) {
 	return result;
 }
 
+int processCommandIfaceNewNeighbor( IfaceAddr_T * address ) {
+	IfaceNeighborMetadata_T	metadata;
+
+	metadata.Neighbor = *address;
+
+	clearCommand();
+	state.Memory.Command.Command = LayerCommandType_NewNeighbor;
+	state.Memory.Command.MetaSize = IFACE_NEIGHBOR_METADATA_SIZE;
+	state.Memory.Command.MetaData = &metadata;
+
+	return writeUp();
+}
+
 int processMockitReceive( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;

@@ -299,7 +299,7 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
 			case LayerCommandType_UnregisterInterface:
 				res = processUnregisterInterface(layer, fd, &command);
 				break;
-			case LayerCommandType_InterfaceState:
+			case LayerCommandType_MessageState:
 				res = processInterfaceState(layer, fd, &command);
 				break;
 			case LayerCommandType_Receive:

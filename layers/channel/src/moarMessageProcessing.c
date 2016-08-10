@@ -18,6 +18,7 @@
 #include <moarChannelMessageQueue.h>
 #include <moarMessageTable.h>
 #include <moarTime.h>
+#include <moarChannelHello.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -66,9 +67,6 @@ int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T
 		unAddressFree(&(ifaceDesc->Address));
 		free(ifaceDesc);
 	}
-	// TODO if supported beacon payload
-	// TODO update beacon data
-	// TODO update beacon data in all interfaces
 	// write registration result to interface
 	ChannelRegisterResultMetadata_T resultMetadata;
 	//fill metadata
@@ -82,6 +80,15 @@ int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T
 		return writedRes;
 	if(FUNC_RESULT_SUCCESS != addRes)
 		return addRes;
+	// update hello packet
+	int helloRes = channelHelloFill(layer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return helloRes;
+	// spread hello to interfaces
+	int ifaceRes = channelHelloUpdateInterface(layer);
+	if(FUNC_RESULT_SUCCESS != ifaceRes)
+		return helloRes;
+
 	return FUNC_RESULT_SUCCESS;
 }
 // unregister interface
@@ -120,7 +127,7 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		// extract header
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		// check payload size
-		if(header->PayloadSize+CHANNEL_LAYER_HEADER_SIZE != command->DataSize){
+		if(header->PayloadSize + CHANNEL_LAYER_HEADER_SIZE != command->DataSize){
 			free(command->Data);
 			command->Data = NULL;
 			int addrRes = unAddressFree(&(receiveMetadata.From));
@@ -128,8 +135,18 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		}
 		//add neighbor
 		int addRes = neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
-
-		if(header->PayloadSize > 0) {
+		//check packet type
+		if(header->Hello){
+			int res = channelHelloProcess(layer, command->DataSize, command->Data);
+			if (FUNC_RESULT_SUCCESS != res) {
+				free(command->Data);
+				command->Data = NULL;
+				int addrRes = unAddressFree(&(receiveMetadata.From));
+				return res;
+			}
+		}
+		// normal data
+		else if(header->PayloadSize > 0) {
 			//create command
 			LayerCommandStruct_T channelReceiveCommand = {0};
 			channelReceiveCommand.Command = LayerCommandType_Receive;

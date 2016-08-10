@@ -94,6 +94,16 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 		return neighborsRemoveRes;
 	if(FUNC_RESULT_SUCCESS != removeRes)
 		return removeRes;
+
+	// update hello packet
+	int helloRes = channelHelloFill(layer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return helloRes;
+	// spread hello to interfaces
+	int ifaceRes = channelHelloUpdateInterface(layer);
+	if(FUNC_RESULT_SUCCESS != ifaceRes)
+		return helloRes;
+
 	return FUNC_RESULT_SUCCESS;
 }
 

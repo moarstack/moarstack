@@ -74,8 +74,8 @@ typedef struct {
 	int 					EpollCount;
 	bool 					Running;
 	int 					EpollTimeout;
-	//mesage state table
-	//some message queue
+	void *					HelloMessage;
+	PayloadSize_T			HelloMessageSize;
 } ChannelLayer_T;
 
 int processCloseConnection(ChannelLayer_T* layer, int fd);

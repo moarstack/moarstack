@@ -103,7 +103,7 @@ int processUnregisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct
 	int res = processCloseConnection(layer,fd);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
-	// TODO update beacon data in all interfaces
+
 	return FUNC_RESULT_SUCCESS;
 }
 // processing received message
@@ -127,7 +127,7 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		// extract header
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		// check payload size
-		if(header->PayloadSize + CHANNEL_LAYER_HEADER_SIZE != command->DataSize){
+		if(header->PayloadSize + CHANNEL_LAYER_HEADER_SIZE != command->DataSize) {
 			free(command->Data);
 			command->Data = NULL;
 			int addrRes = unAddressFree(&(receiveMetadata.From));
@@ -135,15 +135,16 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 		}
 		//add neighbor
 		int addRes = neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
+
 		//check packet type
 		if(header->Hello){
 			int res = channelHelloProcess(layer, command->DataSize, command->Data);
-			if (FUNC_RESULT_SUCCESS != res) {
-				free(command->Data);
-				command->Data = NULL;
-				int addrRes = unAddressFree(&(receiveMetadata.From));
-				return res;
-			}
+//			if (FUNC_RESULT_SUCCESS != res) {
+//				free(command->Data);
+//				command->Data = NULL;
+//				int addrRes = unAddressFree(&(receiveMetadata.From));
+//				return res;
+//			}
 		}
 		// normal data
 		else if(header->PayloadSize > 0) {
@@ -243,6 +244,16 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		//add neighbor
 		int addRes = neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
+		//check packet type
+		if(header->Hello){
+			int res = channelHelloProcess(layer, command->DataSize, command->Data);
+//			if (FUNC_RESULT_SUCCESS != res) {
+//				free(command->Data);
+//				command->Data = NULL;
+//				int addrRes = unAddressFree(&(neighborMetadata.Address));
+//				return res;
+//			}
+		}
 	}
 	else{
 		// TODO add not resolved processing

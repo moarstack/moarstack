@@ -6,6 +6,7 @@
 #define MOARSTACK_MOARCHANNEL_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define CHANNEL_ADDR_SIZE	8
 
@@ -18,7 +19,9 @@ typedef uint16_t	ChannelDataSize_T;
 
 typedef struct{
 	ChannelAddr_T 		From;
+	//TODO find references and check for data endian
 	ChannelDataSize_T 	PayloadSize;
+	bool 				Hello;
 }ChannelLayerHeader_T;
 
 #define CHANNEL_LAYER_HEADER_SIZE sizeof(ChannelLayerHeader_T)

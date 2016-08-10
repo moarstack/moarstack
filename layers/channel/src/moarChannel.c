@@ -14,6 +14,7 @@
 #include <moarChannelNeighbors.h>
 #include <moarMessageProcessing.h>
 #include <moarChannelMessageQueue.h>
+#include <moarChannelHello.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -125,6 +126,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	// load configuration
 	//
 	// listen for interface connection
+
+	int helloRes = channelHelloFill(&channelLayer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return NULL;
 	//listen(channelLayer.DownSocket, LISTEN_COUNT);
 	int res = epollInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != res)

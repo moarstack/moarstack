@@ -24,6 +24,7 @@
 #define EPOLL_EVENTS_COUNT					(MAX_INTERFACE_COUNT+2)
 #define SEND_TRYS							5
 #define PROCESSING_TIMEOUT					((moarTimeInterval_T)1000)
+#define PROCESSING_UNRESOLVED_TIMEOUT		((moarTimeInterval_T)10000)
 
 typedef struct {
 	UnIfaceAddr_T 	Address;
@@ -55,6 +56,12 @@ typedef struct{
 } RemoteInterface_T;
 
 typedef struct{
+	UnIfaceAddr_T 		Address;
+	moarTime_T 			NextProcessingTime;
+	int 				SendAttempts;
+} NonResolvedNeighbor_T;
+
+typedef struct{
 	ChannelAddr_T 	RemoteAddress;
 	time_t 			LastSeen;
 	LinkedListItem_T Interfaces;
@@ -68,6 +75,7 @@ typedef struct {
 	uint8_t 				InterfacesCount;
 	LinkedListItem_T 		Interfaces;
 	LinkedListItem_T 		Neighbors;
+	LinkedListItem_T 		NonResolvedNeighbors;
 	LinkedListItem_T		MessageQueue;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];

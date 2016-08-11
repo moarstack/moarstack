@@ -9,6 +9,7 @@
 #include <moarChannel.h>
 #include <moarCommons.h>
 #include <moarChannelNeighbors.h>
+#include <moarChannelMetadata.h>
 
 
 int channelHelloFill(ChannelLayer_T* layer){
@@ -70,4 +71,25 @@ int channelHelloProcess(ChannelLayer_T* layer, PayloadSize_T size, void* data){
 	//process
 
 	return FUNC_RESULT_SUCCESS;
+}
+
+int channelHelloSendToNeighbor(ChannelLayer_T* layer, UnIfaceAddr_T* address, InterfaceDescriptor_T* bridge){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == address)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == bridge)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == layer->HelloMessage){
+		int res = channelHelloFill(layer);
+		if(FUNC_RESULT_SUCCESS != res)
+			return res;
+	}
+	ChannelSendMetadata_T sendMetadata = {0};
+	int genRes = midGenerate(&(sendMetadata.Id),MoarLayer_Channel);
+	if(FUNC_RESULT_SUCCESS != genRes)
+		return genRes;
+	sendMetadata.Bridge = *address;
+	int sendRes = writeSendMetadata(bridge->Socket, &sendMetadata, layer->HelloMessageSize, layer->HelloMessage);
+	return sendRes;
 }

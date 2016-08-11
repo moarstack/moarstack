@@ -14,5 +14,6 @@ typedef struct{
 int channelHelloFill(ChannelLayer_T* layer);
 int channelHelloUpdateInterface(ChannelLayer_T* layer);
 int channelHelloProcess(ChannelLayer_T* layer, PayloadSize_T size, void* data);
+int channelHelloSendToNeighbor(ChannelLayer_T* layer, UnIfaceAddr_T* address, InterfaceDescriptor_T* bridge);
 
 #endif //MOARSTACK_MOARCHANNELHELLO_H

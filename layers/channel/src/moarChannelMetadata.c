@@ -136,8 +136,6 @@ int readNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 == addrSize)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(LayerCommandType_Receive != command->Command)
-		return FUNC_RESULT_FAILED_ARGUMENT;
 	// fill metadata from command
 	InterfaceNeighborMetadataPlain_T* metadataPlain = (InterfaceNeighborMetadataPlain_T*)command->MetaData;
 	if(NULL == metadataPlain)

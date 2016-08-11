@@ -15,5 +15,5 @@ int neighborRemove(ChannelLayer_T* layer, UnIfaceAddr_T remoteAddress);
 int neighborsRemoveAssociated(ChannelLayer_T* layer, int localSocket);
 //non resolved processing
 int neighborNonResolvedProcess(ChannelLayer_T* layer);
-int neighborNonResolvedRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address);
-NonResolvedNeighbor_T* neighborFindNonResolvedByAddress(ChannelLayer_T* layer, UnIfaceAddr_T* address);
+int neighborNonResolvedRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address); // may be unused
+NonResolvedNeighbor_T* neighborFindNonResolvedByAddress(ChannelLayer_T* layer, UnIfaceAddr_T* address); // may be unused

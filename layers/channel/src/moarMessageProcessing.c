@@ -16,6 +16,8 @@
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
 #include <moarChannelMessageQueue.h>
+#include <moarMessageTable.h>
+#include <moarTime.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
@@ -174,26 +176,33 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
 	//find entry in table
 	ChannelMessageEntry_T entry;
-	// search...
-	int res;
-	switch(metadata->State){
-		case IfacePackState_UnknownDest:
-		case IfacePackState_Timeouted:
-			res = enqueueMessage(layer, &entry);
-			break;
-		case IfacePackState_Sent:
-		case IfacePackState_Responsed:
-			//notify sent
-			res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
-			// drop message
-			free(entry.Data);
-			// drop entry
-			break;
-		default:
-			res = FUNC_RESULT_FAILED_ARGUMENT;
-			break;
+	int findRes = tableFindEntryById(layer, ifaceDesc, &(metadata->Id), &entry);
+	if(FUNC_RESULT_SUCCESS == findRes) {
+		// drop entry from table
+		tableDeleteEntry(layer, ifaceDesc, &(metadata->Id));
+		//process
+		int res;
+		switch (metadata->State) {
+			case IfacePackState_UnknownDest:
+			case IfacePackState_Timeouted:
+				res = enqueueMessage(layer, &entry);
+				break;
+			case IfacePackState_Sent:
+			case IfacePackState_Responsed:
+				//notify sent
+				res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
+				// drop message
+				free(entry.Data);
+				entry.Data = NULL;
+				// drop entry
+				break;
+			default:
+				res = FUNC_RESULT_FAILED_ARGUMENT;
+				break;
+		}
+		return res;
 	}
-	return res;
+	return FUNC_RESULT_SUCCESS;
 }
 //process new neighbor
 int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
@@ -362,6 +371,7 @@ int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event){
 	return FUNC_RESULT_FAILED;
 }
 
+// queue processing
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -400,43 +410,48 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		//if pushed down
 		if (FUNC_RESULT_SUCCESS == pushRes) {
 			remoteInterface->BridgeInterface->Ready = false;
-			// TODO add to table here
-			int res;// = AddTableEntry(layer, entry); //add local iface here
+			int res = tableAddEntry(layer, remoteInterface->BridgeInterface, &(entry->Metadata.Id), entry);
 			return res;
 		}
 		else{
 			// if can not push reenqueue
-			// TODO add timeout
+			entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
 			int res = enqueueMessage(layer, entry);
 			return res;
 		}
 	}
 	else{
 		// if not found
-		// TODO add timeout
+		entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
 		int res = enqueueMessage(layer, entry);
 		return res;
 	}
 }
-
+// process channel message queue
 int processQueue(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//get from queue top
 	ChannelMessageEntry_T * entry;
 	bool done = true;
+	moarTime_T currentTime = timeGetCurrent();
 	while(done) {
 		int peekRes = peekMessage(layer, &entry);
 		//if no data in queue
 		if (FUNC_RESULT_SUCCESS != peekRes)
 			return FUNC_RESULT_SUCCESS;
-		//TODO check for processing condition
-		//if cannot process
-		//done = false
-		//process, who cares about result
-		int processRes = processQueueEntry(layer, entry);
-		//remove from queue
-		dequeueMessage(layer, NULL);
+		int compare = timeCompare(currentTime, entry->ProcessingTime);
+		if(compare > 0) {
+			//process, who cares about result
+			int processRes = processQueueEntry(layer, entry);
+			if (FUNC_RESULT_SUCCESS != processRes)
+				done = false;
+			//remove from queue
+			dequeueMessage(layer, NULL);
+		}
+		else{
+			done = false;
+		}
 	}
 	return FUNC_RESULT_SUCCESS;
 }

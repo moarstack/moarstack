@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <linkedList.h>
 #include <moarChannelRouting.h>
+#include <moarTime.h>
 
 #define LISTEN_COUNT						10
 #define EPOLL_INTERFACE_SOCKET_EVENTS 		EPOLLIN
@@ -22,11 +23,21 @@
 #define MAX_INTERFACE_COUNT					255
 #define EPOLL_EVENTS_COUNT					(MAX_INTERFACE_COUNT+2)
 #define SEND_TRYS							5
+#define PROCESSING_TIMEOUT					((moarTimeInterval_T)1000)
 
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
 } InterfaceNeighbor_T;
+
+typedef struct{
+	//processing time
+	int8_t 				TrysLeft;
+	RouteSendMetadata_T Metadata;
+	PayloadSize_T  		DataSize;
+	void* 				Data;
+	moarTime_T 			ProcessingTime;
+} ChannelMessageEntry_T;
 
 typedef struct {
 	UnIfaceAddr_T Address;
@@ -35,6 +46,7 @@ typedef struct {
 	int Socket;
 	InterfaceNeighbor_T* Neighbors;
 	// pointer to channel neighbor
+	ChannelMessageEntry_T CurrentMessage;
 } InterfaceDescriptor_T;
 
 typedef struct{
@@ -48,13 +60,6 @@ typedef struct{
 	LinkedListItem_T Interfaces;
 } ChannelNeighbor_T;
 
-typedef struct{
-	//processing time
-	int8_t TrysLeft;
-	RouteSendMetadata_T Metadata;
-	PayloadSize_T  DataSize;
-	void* Data;
-} ChannelMessageEntry_T;
 
 typedef struct {
 	ChannelAddr_T 			LocalAddress;

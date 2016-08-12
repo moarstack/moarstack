@@ -436,23 +436,29 @@ int processCommandIface( LayerCommandType_T commandType, void * metaData, void *
 
 int processCommandIfaceRegister( void ) {
 	IfaceRegisterMetadata_T	metadata;
+	int						result;
 
 	metadata.Length = IFACE_ADDR_SIZE;
 	metadata.Value = state.Config.Address;
+	result = processCommandIface( LayerCommandType_RegisterInterface, &metadata, NULL, 0 );
 
-	return processCommandIface( LayerCommandType_RegisterInterface, &metadata, NULL, 0 );
+	return result;
 }
 
 int processCommandChannelRegisterResult( void ) {
+	int result;
+
 	state.Config.IsConnectedToChannel = ( ( ChannelRegisterResultMetadata_T * ) state.Memory.Command.MetaData )->Registred;
 	clearCommand();
 
 	if( state.Config.IsConnectedToChannel ) {
 		printf( "Interface registered in channel layer\n" );
 		fflush( stdout );
-		return FUNC_RESULT_SUCCESS;
+		result = FUNC_RESULT_SUCCESS;
 	} else
-		return processCommandIfaceRegister();
+		result = processCommandIfaceRegister();
+
+	return result;
 }
 
 int processCommandIfaceUnknownDest( void ) {
@@ -519,7 +525,7 @@ int processReceivedBeacon( IfaceAddr_T * address, PowerFloat_T finishPower ) {
 	return result;
 }
 
-int processMockitReceive( void ) {
+int processReceived( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
 	IfaceAddr_T		address;
@@ -557,10 +563,14 @@ int processMockitReceive( void ) {
 }
 
 int processMockitEvent( uint32_t events ) {
+	int result;
+
 	if( events & EPOLLIN ) // if new data received
-		return processMockitReceive();
-	//other events TODO process lost connection
-	return FUNC_RESULT_FAILED_ARGUMENT;
+		result = processReceived();
+	else
+		result = connectWithMockitAgain();
+
+	return result;
 }
 
 int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
@@ -702,7 +712,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			else
 				result = transmitBeacon();
 		} else
-			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex )
+			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex ) {
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
 					result = processMockitEvent( events[ eventIndex ].events );
 				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
@@ -710,8 +720,9 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
-		if( FUNC_RESULT_SUCCESS != result )
-			printf( "Error with %d code arised\n", result );
+				if( FUNC_RESULT_SUCCESS != result )
+					printf( "IFACE: Error with %d code arised\n", result );
+			}
 
 		fflush( stdout );
 	}

@@ -299,7 +299,7 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
 			case LayerCommandType_UnregisterInterface:
 				res = processUnregisterInterface(layer, fd, &command);
 				break;
-			case LayerCommandType_InterfaceState:
+			case LayerCommandType_MessageState:
 				res = processInterfaceState(layer, fd, &command);
 				break;
 			case LayerCommandType_Receive:
@@ -340,7 +340,40 @@ int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 	if(NULL == command->MetaData)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	return FUNC_RESULT_SUCCESS;
+	int res;
+	//check for data and data size
+	if(0 != command->DataSize && NULL != command->Data) {
+		// build message
+		PayloadSize_T newSize = command->DataSize + CHANNEL_LAYER_HEADER_SIZE;
+		void *newMessage = malloc(newSize);
+		if (NULL != newMessage) {
+			//fill header
+			ChannelLayerHeader_T *header = newMessage;
+			header->From = layer->LocalAddress;
+			header->PayloadSize = command->DataSize;
+			//copy data
+			memcpy(newMessage + CHANNEL_LAYER_HEADER_SIZE, command->Data, command->DataSize);
+			// add message to queue
+			ChannelMessageEntry_T entry = {0};
+			entry.DataSize = newSize;
+			entry.Data = newMessage;
+			entry.TrysLeft = SEND_TRYS;
+			entry.ProcessingTime = timeGetCurrent();
+			entry.Metadata = *((RouteSendMetadata_T *) command->MetaData);
+			res = enqueueMessage(layer, &entry);
+		}
+		else {
+			res = FUNC_RESULT_FAILED_MEM_ALLOCATION;
+		}
+	}
+	else{
+		res = sendResponseToRouting(layer, PackStateChannel_NotSent, (RouteSendMetadata_T *) command->MetaData);
+	}
+	// free old
+	free(command->Data);
+	command->Data = NULL;
+	command->DataSize = 0;
+	return res;
 }
 //process message from routing
 int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event){

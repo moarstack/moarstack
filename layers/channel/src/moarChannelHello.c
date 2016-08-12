@@ -20,6 +20,7 @@ int channelHelloFill(ChannelLayer_T* layer){
 		layer->HelloMessageSize = 0;
 	}
 	layer->HelloMessage = malloc(CHANNEL_LAYER_HEADER_SIZE + sizeof(ChannelHelloMessagePayload_T));
+	layer->HelloMessageSize = CHANNEL_LAYER_HEADER_SIZE + sizeof(ChannelHelloMessagePayload_T);
 	if(NULL == layer->HelloMessage)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)layer->HelloMessage;

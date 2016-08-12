@@ -21,7 +21,7 @@
 #include <moarInterfaceChannel.h>
 #include <funcResults.h>
 
-#define IFACE_ADDR_SIZE					sizeof( int )
+#define IFACE_ADDR_SIZE					sizeof( unsigned int )
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
 #define IFACE_NEIGHBOR_SIZE				sizeof( IfaceNeighbor_T )
@@ -36,6 +36,7 @@
 #define IFACE_MOCKIT_SOCKET_FILE		"/tmp/mockitSocket.file"
 #define IFACE_ADDRESS_LIMIT				10 // sync with the mockit config file
 #define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
+#define IFACE_REGISTRATION_OK_SIZE		strlen( IFACE_REGISTRATION_OK )
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_BEACON_INTERVAL			120000 // in milliseconds

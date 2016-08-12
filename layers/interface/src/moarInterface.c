@@ -525,6 +525,39 @@ int processReceivedBeacon( IfaceAddr_T * address, PowerFloat_T finishPower ) {
 	return result;
 }
 
+int processMockitRegister( void ) {
+	struct timeval	moment;
+	int				result,
+					length,
+					address;
+
+	gettimeofday( &moment, NULL );
+	srand( ( unsigned int )( moment.tv_usec ) );
+	address = 1 + rand() % IFACE_ADDRESS_LIMIT;
+	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
+	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );
+
+	return writeDown( state.Memory.Buffer, length );
+}
+
+int processMockitRegisterResult( void ) {
+	int	result;
+
+	result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
+
+	if( 0 >= result )
+		return FUNC_RESULT_FAILED_IO;
+
+	state.Config.IsConnectedToMockit = ( 0 == strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, IFACE_REGISTRATION_OK_SIZE ) );
+
+	if( state.Config.IsConnectedToMockit ) {
+		printf( "Interface registered in MockIT with address %08X\n", *( unsigned int * )&( state.Config.Address ) );
+		fflush( stdout );
+		return FUNC_RESULT_SUCCESS;
+	} else
+		return processMockitRegister();
+}
+
 int processReceived( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;

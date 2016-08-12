@@ -501,8 +501,9 @@ int processMockitRegister( void ) {
 	address = 1 + rand() % IFACE_ADDRESS_LIMIT;
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );
+	result = writeDown( state.Memory.Buffer, length );
 
-	return writeDown( state.Memory.Buffer, length );
+	return result;
 }
 
 int processMockitRegisterResult( void ) {
@@ -731,7 +732,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			else
 				result = transmitBeacon();
 		} else
-			for( int eventIndex = 0; FUNC_RESULT_SUCCESS == result && eventIndex < eventsCount; eventIndex ) {
+			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
 					result = processMockitEvent( events[ eventIndex ].events );
 				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
@@ -739,10 +740,11 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
-				if( FUNC_RESULT_SUCCESS != result )
+				if( FUNC_RESULT_SUCCESS != result ) {
 					printf( "IFACE: Error with %d code arised\n", result );
+					fflush( stdout );
+				}
 			}
 
-		fflush( stdout );
 	}
 }

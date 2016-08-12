@@ -59,41 +59,6 @@ int connectDown( void ) {
 	return result;
 }
 
-int preparePhysically( void ) {
-	struct timeval	moment;
-	int				result,
-					length,
-					address;
-
-	result = connectDown();
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	gettimeofday( &moment, NULL );
-	srand( ( unsigned int )( moment.tv_usec ) );
-
-	do {
-		address = 1 + rand() % IFACE_ADDRESS_LIMIT;
-		snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
-		result = writeDown( state.Memory.Buffer, length );
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return FUNC_RESULT_FAILED_IO;
-
-		result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
-
-		if( FUNC_RESULT_SUCCESS >= result )
-			return FUNC_RESULT_FAILED_IO;
-	} while( 0 != strncmp( IFACE_REGISTRATION_OK, state.Memory.Buffer, strlen( IFACE_REGISTRATION_OK ) ) );
-
-	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );
-	printf( "Interface registered in MockIT with address %d\n", address );
-	fflush( stdout );
-
-	return FUNC_RESULT_SUCCESS;
-}
-
 int writeUp( void ) {
 	int result;
 
@@ -564,35 +529,56 @@ int processReceived( void ) {
 	IfaceAddr_T		address;
 	PowerFloat_T	power;
 
-	result = receiveAnyData( &power );
-	address = state.Memory.BufferHeader.From;
+	if( state.Config.IsConnectedToMockit ) {
+		result = receiveAnyData( &power );
+		address = state.Memory.BufferHeader.From;
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
 
-	switch( state.Memory.BufferHeader.Type ) {
-		case IfacePackType_NeedResponse :
-			sender = neighborFind( &address );
-			result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
-			break;
+		switch( state.Memory.BufferHeader.Type ) {
+			case IfacePackType_NeedResponse :
+				sender = neighborFind( &address );
+				result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
+				break;
 
-		case IfacePackType_IsResponse :
-			// check what message response is for TODO
-			result = processCommandIfaceTimeoutFinished( true );
-			break;
+			case IfacePackType_IsResponse :
+				// check what message response is for TODO
+				result = processCommandIfaceTimeoutFinished( true );
+				break;
 
-		case IfacePackType_Beacon :
-			result = processReceivedBeacon( &address, power );
-			break;
+			case IfacePackType_Beacon :
+				result = processReceivedBeacon( &address, power );
+				break;
 
-		default :
-			result = FUNC_RESULT_FAILED_ARGUMENT;
-	}
+			default :
+				result = FUNC_RESULT_FAILED_ARGUMENT;
+		}
 
 //	if( FUNC_RESULT_SUCCESS == result && 0 < state.Memory.BufferHeader.Size ) // if contains payload
 //		result = pushToChannel(); TODO push up received data ( processCommandIfaceReceived() or something similiar )
 
+		return result;
+	} else
+		return processMockitRegisterResult();
+}
+
+int connectWithMockit( void ) {
+	int	result;
+
+	result = connectDown();
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = processMockitRegister();
+
 	return result;
+}
+
+int connectWithMockitAgain( void ) {
+	shutdown( state.Config.MockitSocket, SHUT_RDWR );
+	close( state.Config.MockitSocket );
+	state.Config.IsConnectedToMockit = false;
+	return connectDown();
 }
 
 int processMockitEvent( uint32_t events ) {
@@ -719,7 +705,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 	epollHandler = epoll_create( IFACE_OPENING_SOCKETS );
 	oneSocketEvent.events = EPOLLIN | EPOLLET;
-	result = preparePhysically();
+	result = connectWithMockit();
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return NULL;

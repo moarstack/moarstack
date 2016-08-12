@@ -59,6 +59,7 @@ typedef struct{
 	UnIfaceAddr_T 		Address;
 	moarTime_T 			NextProcessingTime;
 	int 				SendAttempts;
+	int 				LocalInterfaceSocket;
 } NonResolvedNeighbor_T;
 
 typedef struct{

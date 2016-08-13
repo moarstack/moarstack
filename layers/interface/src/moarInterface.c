@@ -7,6 +7,7 @@
 #include <moarIfaceChannelRoutine.h>
 #include <moarIfaceNeighborsRoutine.h>
 #include <moarIfaceTransmitReceive.h>
+#include <moarIfaceCommands.h>
 
 static IfaceState_T	state = { 0 };
 
@@ -14,116 +15,6 @@ PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
 	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
 
 	return ( IFACE_MAX_START_POWER < neededPower ? IFACE_MAX_START_POWER : neededPower );
-}
-
-static inline int clearCommand( void ) {
-	return FreeCommand( &( state.Memory.Command ) );
-}
-
-int processCommandIface( LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {
-	static size_t	sizes[ LayerCommandType_TypesCount ] = { 0,	// LayerCommandType_None
-																0,	// LayerCommandType_Send
-																IFACE_RECEIVE_METADATA_SIZE,	// LayerCommandType_Receive
-															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_NewNeighbor
-															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_LostNeighbor
-															  	IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_UpdateNeighbor
-																IFACE_PACK_STATE_METADATA_SIZE,	// LayerCommandType_MessageState
-																IFACE_REGISTER_METADATA_SIZE,	// LayerCommandType_RegisterInterface
-															  	0,	// LayerCommandType_RegisterInterfaceResult
-																IFACE_UNREGISTER_METADATA_SIZE,	// LayerCommandType_UnregisterInterface
-																0,	// LayerCommandType_ConnectApplication
-																0,	// LayerCommandType_ConnectApplicationResult
-																0,	// LayerCommandType_DisconnectApplication
-																IFACE_MODE_STATE_METADATA_SIZE,	// LayerCommandType_InterfaceState
-																0	// LayerCommandType_UpdateBeaconPayload
-															};
-
-	clearCommand();
-	state.Memory.Command.Command = commandType;
-	state.Memory.Command.MetaSize = sizes[ commandType ];
-	state.Memory.Command.MetaData = metaData;
-	state.Memory.Command.DataSize = dataSize;
-	state.Memory.Command.Data = data;
-
-	return writeUp( &state );
-}
-
-int processCommandIfaceRegister( void ) {
-	IfaceRegisterMetadata_T	metadata;
-	int						result;
-
-	metadata.Length = IFACE_ADDR_SIZE;
-	metadata.Value = state.Config.Address;
-	result = processCommandIface( LayerCommandType_RegisterInterface, &metadata, NULL, 0 );
-
-	return result;
-}
-
-int processCommandChannelRegisterResult( void ) {
-	int result;
-
-	state.Config.IsConnectedToChannel = ( ( ChannelRegisterResultMetadata_T * ) state.Memory.Command.MetaData )->Registred;
-	clearCommand();
-
-	if( state.Config.IsConnectedToChannel ) {
-		printf( "Interface registered in channel layer\n" );
-		fflush( stdout );
-		result = FUNC_RESULT_SUCCESS;
-	} else
-		result = processCommandIfaceRegister();
-
-	return result;
-}
-
-int processCommandIfaceUnknownDest( void ) {
-	IfacePackStateMetadata_T	metadata;
-
-	metadata.Id = state.Memory.ProcessingMessageId;
-	metadata.State = IfacePackState_UnknownDest;
-
-	return processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
-}
-
-int processCommandIfaceTimeoutFinished( bool gotResponse ) {
-	IfacePackStateMetadata_T	metadata;
-	int 						result;
-
-	metadata.Id = state.Memory.ProcessingMessageId;
-	metadata.State = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
-	result = processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
-	state.Config.IsWaitingForResponse = false;
-
-	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
-		state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
-
-	return result;
-}
-
-int processCommandIfaceMessageSent( void ) {
-	int							result;
-	IfacePackStateMetadata_T	metadata;
-
-	metadata.Id = state.Memory.ProcessingMessageId;
-	metadata.State = IfacePackState_Sent;
-	result = processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
-
-	return result;
-}
-
-int processCommandIfaceNeighborNew( IfaceAddr_T * address ) {
-	IfaceNeighborMetadata_T	metadata;
-
-	metadata.Neighbor = *address;
-
-	return processCommandIface( LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
-}
-
-int processCommandIfaceNeighborUpdate( IfaceAddr_T * address ) {
-	IfaceNeighborMetadata_T	metadata;
-
-	metadata.Neighbor = *address;
-
-	return processCommandIface( LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
 }
 
 int processReceivedBeacon( IfaceAddr_T * address, PowerFloat_T finishPower ) {
@@ -138,13 +29,13 @@ int processReceivedBeacon( IfaceAddr_T * address, PowerFloat_T finishPower ) {
 		result = neighborUpdate( &state, sender, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			result = processCommandIfaceNeighborUpdate( address );
+			result = processCommandIfaceNeighborUpdate( &state, address );
 
 	} else {
 		result = neighborAdd( &state, address, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
-			result = processCommandIfaceNeighborNew( address );
+			result = processCommandIfaceNeighborNew( &state, address );
 	}
 
 	return result;
@@ -184,21 +75,6 @@ int processMockitRegisterResult( void ) {
 		return processMockitRegister();
 }
 
-int processCommandIfaceReceived( void ) {
-	int						result;
-	IfaceReceiveMetadata_T	metadata;
-
-	result = midGenerate( &( metadata.Id ), MoarLayer_Interface );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	metadata.From = state.Memory.BufferHeader.From;
-	result = processCommandIface( LayerCommandType_Receive, &metadata, state.Memory.Buffer, state.Memory.BufferHeader.Size );
-
-	return result;
-}
-
 int processReceived( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
@@ -221,7 +97,7 @@ int processReceived( void ) {
 
 				case IfacePackType_IsResponse :
 					// check what message response is for TODO
-					result = processCommandIfaceTimeoutFinished( true );
+					result = processCommandIfaceTimeoutFinished( &state, true );
 					break;
 
 				case IfacePackType_Beacon :
@@ -235,7 +111,7 @@ int processReceived( void ) {
 		if( FUNC_RESULT_SUCCESS == result &&
 			IfacePackType_IsResponse != state.Memory.BufferHeader.Type &&
 			0 < state.Memory.BufferHeader.Size ) // if contains payload
-			result = processCommandIfaceReceived();
+			result = processCommandIfaceReceived( &state );
 
 	} else
 		result = processMockitRegisterResult();
@@ -272,98 +148,15 @@ int processMockitEvent( uint32_t events ) {
 	return result;
 }
 
-int processCommandChannelSend( void ) {
-	IfaceNeighbor_T			* neighbor;
-	ChannelSendMetadata_T	* metadata;
-	int						result;
-
-	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
-	neighbor = neighborFind( &state, &( metadata->To ) );
-	state.Memory.ProcessingMessageId = metadata->Id;
-
-	if( NULL == neighbor )
-		result = processCommandIfaceUnknownDest();
-	else {
-		result = transmitMessage( &state, neighbor, metadata->NeedResponse );
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
-
-		if( metadata->NeedResponse ) {
-			state.Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
-			state.Config.IsWaitingForResponse = true;
-		} else
-			result = processCommandIfaceMessageSent();
-
-		clearCommand();
-	}
-
-	return result;
-}
-
-int processCommandChannelUpdateBeacon( void ) {
-	if( ( NULL == state.Memory.Command.Data && 0 < state.Memory.Command.DataSize ) ||
-		( NULL != state.Memory.Command.Data && 0 == state.Memory.Command.DataSize ) ||
-		IFACE_MAX_PAYLOAD_BEACON_SIZE < state.Memory.Command.DataSize )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	memcpy( state.Memory.BeaconPayload, state.Memory.Command.Data, state.Memory.Command.DataSize );
-	state.Config.BeaconPayloadSize = state.Memory.Command.DataSize;
-	clearCommand();
-	return FUNC_RESULT_SUCCESS;
-}
-
-int processChannelCommand( void ) {
-	int	result;
-
-	result = readUp( &state );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	if( state.Config.IsConnectedToChannel )
-		switch( state.Memory.Command.Command ) {
-			case LayerCommandType_Send :
-				result = processCommandChannelSend();
-				break;
-
-			case LayerCommandType_UpdateBeaconPayload :
-				result = processCommandChannelUpdateBeacon();
-				break;
-
-			default :
-				result = FUNC_RESULT_FAILED_ARGUMENT;
-				printf( "IFACE: unknown command %d from channel\n", state.Memory.Command.Command );
-		}
-	else if( LayerCommandType_RegisterInterfaceResult == state.Memory.Command.Command )
-		result = processCommandChannelRegisterResult();
-
-	return result;
-}
-
-int connectWithChannel( void ) {
-	int	result;
-
-	result = connectUp( &state );
-
-	if( FUNC_RESULT_SUCCESS == result )
-		result = processCommandIfaceRegister();
-
-	return result;
-}
-
-int connectWithChannelAgain( void ) {
-	shutdown( state.Config.ChannelSocket, SHUT_RDWR );
-	close( state.Config.ChannelSocket );
-	state.Config.IsConnectedToChannel = false;
-	return connectUp( &state );
-}
-
 int processChannelEvent( uint32_t events ) {
+	int	result;
+
 	if( events & EPOLLIN ) // if new command from channel
-		return processChannelCommand();
+		result = processCommandChannel( &state );
 	else
-		return connectWithChannelAgain();
+		result = processChannelReconnection( &state );
+
+	return result;
 }
 
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
@@ -387,7 +180,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 	oneSocketEvent.data.fd = state.Config.MockitSocket;
 	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.MockitSocket, &oneSocketEvent );
-	result = connectWithChannel();
+	result = processChannelConnection( &state );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return NULL;
@@ -402,7 +195,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 
 		if( 0 == eventsCount ) {// timeout
 			if( state.Config.IsWaitingForResponse )
-				result = processCommandIfaceTimeoutFinished( false );
+				result = processCommandIfaceTimeoutFinished( &state, false );
 			else
 				result = transmitBeacon( &state );
 		} else

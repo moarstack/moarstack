@@ -256,7 +256,7 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 		}
 	}
 	else{
-		// TODO add not resolved processing
+		int addRes = neighborAdd(layer, NULL, &(neighborMetadata.Address), fd);
 	}
 	free(command->Data);
 	command->Data = NULL;

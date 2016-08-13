@@ -4,16 +4,11 @@
 
 #include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
-#include "moarRouting.h"
-#include "moarChannelRouting.h"
-#include "moarRoutingPresentation.h"
 #include <moarRoutingPrivate.h>
 #include <funcResults.h>
-#include <moarLayerEntryPoint.h>
-#include <sys/epoll.h>
 #include <memory.h>
 #include <moarRouitngCommandProcessing.h>
-#include <moarCommons.h>
+
 
 int initEpoll(RoutingLayer_T* layer){
 	if(NULL == layer)
@@ -81,8 +76,8 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	}
 	// load configuration
 	// init epoll
-	int epollRes = initEpoll(&layer);
-	if(FUNC_RESULT_SUCCESS != epollRes)
+	int epollInitRes = initEpoll(&layer);
+	if(FUNC_RESULT_SUCCESS != epollInitRes)
 		return NULL;
 	// enable process
 	layer.Running = true;
@@ -119,5 +114,5 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		// calculate optimal sleep time
 		// change pool timeout
 	}
-
+	return NULL;
 }

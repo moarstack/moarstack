@@ -445,6 +445,17 @@ int processCommandIfaceTimeoutFinished( bool gotResponse ) {
 	return result;
 }
 
+int processCommandIfaceMessageSent( void ) {
+	int							result;
+	IfacePackStateMetadata_T	metadata;
+
+	metadata.Id = state.Memory.ProcessingMessageId;
+	metadata.State = IfacePackState_Sent;
+	result = processCommandIface( LayerCommandType_MessageState, &metadata, NULL, 0 );
+
+	return result;
+}
+
 int processCommandIfaceNeighborNew( IfaceAddr_T * address ) {
 	IfaceNeighborMetadata_T	metadata;
 

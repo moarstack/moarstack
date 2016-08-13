@@ -519,6 +519,21 @@ int processMockitRegisterResult( void ) {
 		return processMockitRegister();
 }
 
+int processCommandIfaceReceived( void ) {
+	int						result;
+	IfaceReceiveMetadata_T	metadata;
+
+	result = midGenerate( &( metadata.Id ), MoarLayer_Interface );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	metadata.From = state.Memory.BufferHeader.From;
+	result = processCommandIface( LayerCommandType_Receive, &metadata, state.Memory.Buffer, state.Memory.BufferHeader.Size );
+
+	return result;
+}
+
 int processReceived( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;

@@ -26,6 +26,7 @@
 #define PROCESSING_TIMEOUT					((moarTimeInterval_T)1000)
 #define PROCESSING_UNRESOLVED_TIMEOUT		((moarTimeInterval_T)10000)
 
+
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;

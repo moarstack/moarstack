@@ -13,6 +13,7 @@
 // metadata of packet moving from channel to interface
 typedef struct {
 	MessageId_T Id;
+	bool 		NeedResponse;
 	UnIfaceAddr_T	Bridge;
 } ChannelSendMetadata_T;
 
@@ -42,6 +43,7 @@ typedef struct {
 // metadata of packet moving from channel to interface
 typedef struct {
 	MessageId_T Id;
+	bool 		NeedResponse;
 	//last n bytes of metadata is interface address
 } ChannelSendMetadataPlain_T;
 

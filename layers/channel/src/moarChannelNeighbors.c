@@ -46,6 +46,20 @@ RemoteInterface_T* neighborFindRemoteInterface(ChannelNeighbor_T* neighbor){
 	}
 	return NULL;
 }
+RemoteInterface_T* neighborFindRemoteInterfaceByAddress(ChannelNeighbor_T* neighbor, UnIfaceAddr_T* remoteAddress){
+	if(NULL == neighbor)
+		return NULL;
+
+	LinkedListItem_T* iterator = NextElement(&(neighbor->Interfaces));
+	while(NULL != iterator){
+		RemoteInterface_T* interface = (RemoteInterface_T*)iterator->Data;
+		if(unAddressCompare(remoteAddress, &(interface->Address)))
+			return interface;
+		iterator = NextElement(iterator);
+	}
+	return NULL;
+}
+
 int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* remoteAddress, int localSocket){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -73,51 +87,54 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 		neighbor->RemoteAddress = *address;
 		isNew = true;
 	}
-	// add interface here
-	RemoteInterface_T* remoteInterface = malloc(sizeof(RemoteInterface_T));
-	if(NULL == remoteInterface)
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-	remoteInterface->BridgeInterface = interfaceFindBySocket(layer, localSocket);
-	//copy address
-	int cloneRes = unAddressClone(remoteAddress, &(remoteInterface->Address));
-	if(FUNC_RESULT_SUCCESS != cloneRes){
-		free(remoteInterface);
-		return cloneRes;
-	}
-	// add to list
-	int addRes = AddNext(&(neighbor->Interfaces),remoteInterface);
-	if(FUNC_RESULT_SUCCESS != addRes)
-	{
-		unAddressFree(&(remoteInterface->Address));
-		free(remoteInterface);
-		return addRes;
-	}
-	if(isNew) {
-		int addNeighborRes = AddNext(&(layer->Neighbors), neighbor);
-		if(FUNC_RESULT_SUCCESS != addNeighborRes)
-		{
-			//clean all
-			unAddressFree(&(remoteInterface->Address));
-			//should be only one item in list
-			LinkedListItem_T* item = NextElement(&(neighbor->Interfaces));
-			item = DeleteElement(item);
+	//search interface in neighbor interfaces table
+	RemoteInterface_T* remoteInterface = neighborFindRemoteInterfaceByAddress(neighbor, remoteAddress);
+	//if not found
+	if(NULL == remoteInterface) {
+		// add interface here
+		remoteInterface = malloc(sizeof(RemoteInterface_T));
+		if (NULL == remoteInterface)
+			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+		remoteInterface->BridgeInterface = interfaceFindBySocket(layer, localSocket);
+		//copy address
+		int cloneRes = unAddressClone(remoteAddress, &(remoteInterface->Address));
+		if (FUNC_RESULT_SUCCESS != cloneRes) {
 			free(remoteInterface);
-			free(neighbor);
-			return addNeighborRes;
+			return cloneRes;
 		}
-	}
+		// add to list
+		int addRes = AddNext(&(neighbor->Interfaces), remoteInterface);
+		if (FUNC_RESULT_SUCCESS != addRes) {
+			unAddressFree(&(remoteInterface->Address));
+			free(remoteInterface);
+			return addRes;
+		}
+		if (isNew) {
+			int addNeighborRes = AddNext(&(layer->Neighbors), neighbor);
+			if (FUNC_RESULT_SUCCESS != addNeighborRes) {
+				//clean all
+				unAddressFree(&(remoteInterface->Address));
+				//should be only one item in list
+				LinkedListItem_T *item = NextElement(&(neighbor->Interfaces));
+				item = DeleteElement(item);
+				free(remoteInterface);
+				free(neighbor);
+				return addNeighborRes;
+			}
+		}
 
-	if(isNew){
-		// inform routing
-		//metadata
-		ChannelNeighborMetadata_T neighborMetadata = {0};
-		neighborMetadata.Address = *address;
-		//commnad
-		LayerCommandStruct_T neighborCommand = {0};
-		neighborCommand.Command = LayerCommandType_NewNeighbor;
-		neighborCommand.MetaData = &neighborMetadata;
-		neighborCommand.MetaSize = sizeof(ChannelNeighborMetadata_T);
-		int commandRes = WriteCommand(layer->UpSocket, &neighborCommand);
+		if (isNew) {
+			// inform routing
+			//metadata
+			ChannelNeighborMetadata_T neighborMetadata = {0};
+			neighborMetadata.Address = *address;
+			//commnad
+			LayerCommandStruct_T neighborCommand = {0};
+			neighborCommand.Command = LayerCommandType_NewNeighbor;
+			neighborCommand.MetaData = &neighborMetadata;
+			neighborCommand.MetaSize = sizeof(ChannelNeighborMetadata_T);
+			int commandRes = WriteCommand(layer->UpSocket, &neighborCommand);
+		}
 	}
 	return FUNC_RESULT_SUCCESS;
 }

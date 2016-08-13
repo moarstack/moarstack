@@ -14,6 +14,7 @@
 #include <moarChannelNeighbors.h>
 #include <moarMessageProcessing.h>
 #include <moarChannelMessageQueue.h>
+#include <moarChannelHello.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -93,6 +94,16 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 		return neighborsRemoveRes;
 	if(FUNC_RESULT_SUCCESS != removeRes)
 		return removeRes;
+
+	// update hello packet
+	int helloRes = channelHelloFill(layer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return helloRes;
+	// spread hello to interfaces
+	int ifaceRes = channelHelloUpdateInterface(layer);
+	if(FUNC_RESULT_SUCCESS != ifaceRes)
+		return helloRes;
+
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -125,6 +136,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	// load configuration
 	//
 	// listen for interface connection
+
+	int helloRes = channelHelloFill(&channelLayer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return NULL;
 	//listen(channelLayer.DownSocket, LISTEN_COUNT);
 	int res = epollInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != res)

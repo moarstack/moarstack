@@ -199,3 +199,18 @@ int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer, 
 	memcpy( sockResult, &socketValue, sizeof( int ) );
 	return FUNC_RESULT_SUCCESS;
 }
+
+int FreeCommand( LayerCommandStruct_T * command ) {
+	if( NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	free( command->MetaData );
+	command->MetaData = NULL;
+	command->MetaSize = 0;
+
+	free( command->Data );
+	command->Data = NULL;
+	command->DataSize = 0;
+
+	return FUNC_RESULT_SUCCESS;
+}

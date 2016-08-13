@@ -287,7 +287,7 @@ int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFu
 	return result;
 }
 
-int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size ) {
+int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size, bool needResponse ) {
 	void			* messagePacket,
 					* messagePayload;
 	int				result;
@@ -311,7 +311,7 @@ int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size ) {
 	messageHeader->Size = size;
 	messageHeader->CRC = 0; // that`s not implemented yet TODO
 	messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
-	messageHeader->Type = IfacePackType_NeedResponse;
+	messageHeader->Type = ( needResponse ? IfacePackType_NeedResponse : IfacePackType_NeedNoResponse );
 
 	memcpy( messagePayload, data, size );
 
@@ -618,23 +618,6 @@ int processMockitEvent( uint32_t events ) {
 	return result;
 }
 
-int processIfaceTransmit( IfaceNeighbor_T * receiver ) {
-	int	result;
-
-	if( NULL == receiver )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	result = transmitMessage( receiver, state.Memory.Command.Data, state.Memory.Command.DataSize );
-
-	if( FUNC_RESULT_SUCCESS == result ) {
-		state.Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
-		state.Config.IsWaitingForResponse = true;
-		clearCommand();
-	}
-
-	return result;
-}
-
 int processCommandChannelSend( void ) {
 	IfaceNeighbor_T			* neighbor;
 	ChannelSendMetadata_T	* metadata;
@@ -646,8 +629,9 @@ int processCommandChannelSend( void ) {
 
 	if( NULL == neighbor )
 		result = processCommandIfaceUnknownDest();
-	else
-		result = processIfaceTransmit( neighbor );
+	else {
+		result = transmitMessage( neighbor, state.Memory.Command.Data, state.Memory.Command.DataSize, metadata->NeedResponse );
+	}
 
 	return result;
 }

@@ -32,15 +32,8 @@
 #define IFACE_MTU_SIZE					4096 // may be any, 4096 value is just for example
 #define IFACE_MAX_PAYLOAD_USUAL_SIZE	(IFACE_MTU_SIZE-IFACE_HEADER_SIZE)
 #define IFACE_MAX_PAYLOAD_BEACON_SIZE	(IFACE_MAX_PAYLOAD_USUAL_SIZE-IFACE_FOOTER_SIZE)
-#define IFACE_ADDRESS_LIMIT				10 // sync with the mockit config file
-#define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
-#define IFACE_REGISTRATION_OK_SIZE		strlen( IFACE_REGISTRATION_OK )
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
-#define IFACE_BEACON_INTERVAL			120000 // in milliseconds
-#define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
-#define IFACE_MIN_FINISH_POWER			-70 // in dBm
-#define IFACE_MAX_START_POWER			16 // in dBm
 #define IFACE_MAX_NEIGHBOR_COUNT		10
 
 typedef float	PowerFloat_T;

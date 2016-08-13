@@ -10,31 +10,30 @@
 #include <moarIfaceCommands.h>
 #include <moarIfaceMockitActions.h>
 
-static IfaceState_T	state = { 0 };
-
-int actMockitEvent( uint32_t events ) {
+int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
 
 	if( events & EPOLLIN ) // if new data received
-		result = actMockitReceived( &state );
+		result = actMockitReceived( layer );
 	else
-		result = actMockitReconnection( &state );
+		result = actMockitReconnection( layer );
 
 	return result;
 }
 
-int processChannelEvent( uint32_t events ) {
+int processChannelEvent( IfaceState_T * layer, uint32_t events ) {
 	int	result;
 
 	if( events & EPOLLIN ) // if new command from channel
-		result = processCommandChannel( &state );
+		result = processCommandChannel( layer );
 	else
-		result = processChannelReconnection( &state );
+		result = processChannelReconnection( layer );
 
 	return result;
 }
 
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
+	IfaceState_T		state = { 0 };
 	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
 						oneSocketEvent;
 	int					result,
@@ -76,9 +75,9 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
-					result = actMockitEvent( events[ eventIndex ].events );
+					result = actMockitEvent( &state, events[ eventIndex ].events );
 				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
-					result = processChannelEvent( events[ eventIndex ].events );
+					result = processChannelEvent( &state, events[ eventIndex ].events );
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 

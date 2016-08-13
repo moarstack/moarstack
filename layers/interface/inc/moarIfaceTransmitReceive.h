@@ -6,7 +6,7 @@
 #define MOARSTACK_MOARIFACETRANSMITRECEIVE_H
 
 #include <moarInterfacePrivate.h>
-#include <moarIfacePhysicsRoutine.h>
+#include <moarIfacePhysicsRoutine.h>	// writeDown(), readDown()
 
 // receive any kind of data from physical layer
 int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower );

@@ -10,6 +10,9 @@
 #include <moarIfaceTransmitReceive.h>	// transmitMessage()
 #include <moarIfaceNeighborsRoutine.h>	// neighborFind()
 
+#define IFACE_BEACON_INTERVAL			120000 // in milliseconds
+#define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
+
 // clear inner preallocated command
 int clearCommand( IfaceState_T * layer );
 

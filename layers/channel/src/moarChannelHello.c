@@ -90,6 +90,7 @@ int channelHelloSendToNeighbor(ChannelLayer_T* layer, UnIfaceAddr_T* address, In
 	int genRes = midGenerate(&(sendMetadata.Id),MoarLayer_Channel);
 	if(FUNC_RESULT_SUCCESS != genRes)
 		return genRes;
+	sendMetadata.NeedResponse = HELLO_NEED_RESPONSE;
 	sendMetadata.Bridge = *address;
 	int sendRes = writeSendMetadata(bridge->Socket, &sendMetadata, layer->HelloMessageSize, layer->HelloMessage);
 	return sendRes;

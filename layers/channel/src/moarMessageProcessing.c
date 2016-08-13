@@ -467,6 +467,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		ChannelSendMetadata_T sendMetadata = {0};
 		sendMetadata.Id = entry->Metadata.Id;
 		sendMetadata.Bridge = remoteInterface->Address;
+		sendMetadata.NeedResponse = DATA_NEED_RESPONSE;
 		int pushRes = writeSendMetadata(remoteInterface->BridgeInterface->Socket, &sendMetadata, entry->DataSize,
 										entry->Data);
 		//if pushed down

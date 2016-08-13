@@ -5,7 +5,12 @@
 #ifndef MOARSTACK_MOARROUITNGCOMMANDPROCESSING_H
 #define MOARSTACK_MOARROUITNGCOMMANDPROCESSING_H
 
-int processChannelEvent(RoutingLayer_T* layer, int fd, uint32_t event);
-int processPresentationEvent(RoutingLayer_T* layer, int fd, uint32_t event);
+
+int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
+int processMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
+int processNewNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
+int processLostNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
+int processUpdateNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
+int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command);
 
 #endif //MOARSTACK_MOARROUITNGCOMMANDPROCESSING_H

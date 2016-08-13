@@ -89,7 +89,7 @@ extern int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isS
 extern int FreeCommand( LayerCommandStruct_T * command );
 
 extern int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, CommandProcessingRule_T* rules);
-
+extern CommandProcessingRule_T MakeProcessingRule(LayerCommandType_T type, CommandProcessor_T rule);
 #ifdef __cplusplus
 }
 #endif

@@ -243,3 +243,10 @@ int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, Comm
 	}
 	return FUNC_RESULT_FAILED;
 }
+
+CommandProcessingRule_T MakeProcessingRule(LayerCommandType_T type, CommandProcessor_T rule){
+	CommandProcessingRule_T processingRule = {0};
+	processingRule.ProcessingRule = rule;
+	processingRule.CommandType = type;
+	return processingRule;
+}

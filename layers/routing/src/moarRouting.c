@@ -13,6 +13,7 @@
 #include <sys/epoll.h>
 #include <memory.h>
 #include <moarRouitngCommandProcessing.h>
+#include <moarCommons.h>
 
 int initEpoll(RoutingLayer_T* layer){
 	if(NULL == layer)
@@ -59,6 +60,16 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	if(params->UpSocketHandler <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	layer->PresentationSocket = params->UpSocketHandler;
+	//fill processing pointers
+	layer->ChannelProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
+	layer->ChannelProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMessageStateCommand);
+	layer->ChannelProcessingRules[2] = MakeProcessingRule(LayerCommandType_NewNeighbor, processNewNeighborCommand);
+	layer->ChannelProcessingRules[3] = MakeProcessingRule(LayerCommandType_LostNeighbor, processLostNeighborCommand);
+	layer->ChannelProcessingRules[4] = MakeProcessingRule(LayerCommandType_UpdateNeighbor, processUpdateNeighborCommand);
+	layer->ChannelProcessingRules[5] = MakeProcessingRule(LayerCommandType_None, NULL);
+	//again
+	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
+	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -88,10 +99,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			int fd = layer.EpollEvent[i].data.fd;
 			int processRes = FUNC_RESULT_FAILED;
 			if(fd == layer.ChannelSocket){
-				processRes = processChannelEvent(&layer, fd,event);
+				processRes = ProcessCommand(&layer, fd, event, EPOLL_CHANNEL_EVENTS, layer.ChannelProcessingRules);
 			}
 			else if(fd == layer.PresentationSocket){
-				processRes = processPresentationEvent(&layer, fd,event);
+				processRes = ProcessCommand(&layer, fd, event, EPOLL_PRESENTATION_EVENTS, layer.PresentationProcessingRules);
 			}else{
 				// wtf? i don`t add another sockets
 			}

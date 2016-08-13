@@ -15,16 +15,21 @@
 #define EPOLL_PRESENTATION_EVENTS 			EPOLLIN
 #define EPOLL_TIMEOUT						1000
 #define EPOLL_EVENTS_COUNT					EPOLL_SOCKETS_COUNT
-
+#define CHANNEL_PROCESSING_RULES_COUNT		6
+#define PRESENTATION_PROCESSING_RULES_COUNT	2
 
 typedef struct{
-	int ChannelSocket;
-	int PresentationSocket;
+	int 					ChannelSocket;
+	int 					PresentationSocket;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
 	int 					EpollCount;
 	bool 					Running;
 	int 					EpollTimeout;
+	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
+	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
 } RoutingLayer_T;
+
+
 
 #endif //MOARSTACK_MOARROUTINGPRIVATE_H

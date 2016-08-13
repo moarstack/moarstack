@@ -220,7 +220,7 @@ int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, Comm
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if (fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL != rules)
+	if(NULL == rules)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	if ((event & eventMask) != 0) {
@@ -236,6 +236,7 @@ int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, Comm
 					 && (NULL != rules[i].ProcessingRule); i++){
 			if(command.Command == rules[i].CommandType){
 				res = rules[i].ProcessingRule(layer,fd, &command);
+				break;
 			}
 		}
 		FreeCommand(&command);

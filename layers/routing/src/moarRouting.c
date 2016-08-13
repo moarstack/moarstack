@@ -76,7 +76,7 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	RoutingLayer_T layer = {0};
 	int initRes = routingInit(&layer, arg);
-	if(FUNC_RESULT_SUCCESS == initRes){
+	if(FUNC_RESULT_SUCCESS != initRes){
 		return NULL;
 	}
 	// load configuration

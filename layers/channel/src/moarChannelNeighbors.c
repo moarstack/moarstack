@@ -92,7 +92,7 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	//if not found
 	if(NULL == remoteInterface) {
 		// add interface here
-		RemoteInterface_T *remoteInterface = malloc(sizeof(RemoteInterface_T));
+		remoteInterface = malloc(sizeof(RemoteInterface_T));
 		if (NULL == remoteInterface)
 			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 		remoteInterface->BridgeInterface = interfaceFindBySocket(layer, localSocket);

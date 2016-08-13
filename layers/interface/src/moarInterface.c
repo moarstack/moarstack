@@ -519,6 +519,21 @@ int processMockitRegisterResult( void ) {
 		return processMockitRegister();
 }
 
+int processCommandIfaceReceived( void ) {
+	int						result;
+	IfaceReceiveMetadata_T	metadata;
+
+	result = midGenerate( &( metadata.Id ), MoarLayer_Interface );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	metadata.From = state.Memory.BufferHeader.From;
+	result = processCommandIface( LayerCommandType_Receive, &metadata, state.Memory.Buffer, state.Memory.BufferHeader.Size );
+
+	return result;
+}
+
 int processReceived( void ) {
 	int				result;
 	IfaceNeighbor_T	* sender;
@@ -529,34 +544,35 @@ int processReceived( void ) {
 		result = receiveAnyData( &power );
 		address = state.Memory.BufferHeader.From;
 
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
+		if( FUNC_RESULT_SUCCESS == result )
+			switch( state.Memory.BufferHeader.Type ) {
+				case IfacePackType_NeedResponse :
+					sender = neighborFind( &address );
+					result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
+					break;
 
-		switch( state.Memory.BufferHeader.Type ) {
-			case IfacePackType_NeedResponse :
-				sender = neighborFind( &address );
-				result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
-				break;
+				case IfacePackType_IsResponse :
+					// check what message response is for TODO
+					result = processCommandIfaceTimeoutFinished( true );
+					break;
 
-			case IfacePackType_IsResponse :
-				// check what message response is for TODO
-				result = processCommandIfaceTimeoutFinished( true );
-				break;
+				case IfacePackType_Beacon :
+					result = processReceivedBeacon( &address, power );
+					break;
 
-			case IfacePackType_Beacon :
-				result = processReceivedBeacon( &address, power );
-				break;
+				default :
+					result = FUNC_RESULT_FAILED_ARGUMENT;
+			}
 
-			default :
-				result = FUNC_RESULT_FAILED_ARGUMENT;
-		}
+		if( FUNC_RESULT_SUCCESS == result &&
+			IfacePackType_IsResponse != state.Memory.BufferHeader.Type &&
+			0 < state.Memory.BufferHeader.Size ) // if contains payload
+			result = processCommandIfaceReceived();
 
-//	if( FUNC_RESULT_SUCCESS == result && 0 < state.Memory.BufferHeader.Size ) // if contains payload
-//		result = pushToChannel(); TODO push up received data ( processCommandIfaceReceived() or something similiar )
-
-		return result;
 	} else
-		return processMockitRegisterResult();
+		result = processMockitRegisterResult();
+
+	return result;
 }
 
 int connectWithMockit( void ) {

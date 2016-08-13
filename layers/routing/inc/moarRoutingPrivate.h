@@ -8,6 +8,7 @@
 #include <moarRouting.h>
 #include <moarChannelRouting.h>
 #include <moarRoutingPresentation.h>
+#include <sys/epoll.h>
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN

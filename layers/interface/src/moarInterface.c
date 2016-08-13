@@ -6,211 +6,9 @@
 #include <moarIfacePhysicsRoutine.h>
 #include <moarIfaceChannelRoutine.h>
 #include <moarIfaceNeighborsRoutine.h>
+#include <moarIfaceTransmitReceive.h>
 
 static IfaceState_T	state = { 0 };
-
-int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
-	char	* end;
-
-	if( NULL == buffer )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if( NULL == value )
-		strtof( buffer, &end );
-	else
-		*value = strtof( buffer, &end );
-
-	if( NULL != bytesLeft && 0 < *bytesLeft )
-		*bytesLeft -= ( end - buffer );
-
-	if( 0 == end - buffer )
-		return FUNC_RESULT_FAILED;
-
-	return FUNC_RESULT_SUCCESS;
-}
-
-int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart, ssize_t * bytesLeft ) {
-	ssize_t	bytesDone = 0;
-
-	if( NULL == bufStart || NULL == *bufStart || NULL == bytesLeft )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if( 0 < *bytesLeft ) {
-		bytesDone = ( *bytesLeft < expectedSize ? *bytesLeft : expectedSize );
-		memcpy( destination, *bufStart, bytesDone );
-		*bufStart += bytesDone;
-		*bytesLeft -= bytesDone;
-	}
-
-	if( bytesDone < expectedSize )
-		bytesDone += readDown( &state, ( char * )destination + bytesDone, expectedSize - bytesDone );
-
-	if( bytesDone < expectedSize )
-		return FUNC_RESULT_FAILED_IO;
-
-	return FUNC_RESULT_SUCCESS;
-}
-
-int receiveAnyData( PowerFloat_T * finishPower) {
-	ssize_t	bytesLeft,
-			result;
-	char	* buffer = state.Memory.Buffer;
-
-	if( NULL == finishPower )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	bytesLeft = readDown( &state, buffer, IFACE_BUFFER_SIZE );
-
-	if( -1 == bytesLeft )
-		return FUNC_RESULT_FAILED_IO;
-
-	result = getFloat( finishPower, buffer, &bytesLeft ); // we assume that buffer is big enough to contain float
-
-	if( 0 == result )
-		return FUNC_RESULT_FAILED_IO; // the strange format is detected if no float value precedes the data, so reading is impossible
-
-	bytesLeft--; // extra byte is for space (aka delimiter) symbol
-	buffer++;
-	result = receiveDataPiece( &( state.Memory.BufferHeader ), IFACE_HEADER_SIZE, &buffer, &bytesLeft );
-
-	if( FUNC_RESULT_SUCCESS != result && 0 < state.Memory.BufferHeader.Size )
-		result = receiveDataPiece( state.Memory.Payload, state.Memory.BufferHeader.Size, &buffer, &bytesLeft );
-
-	if( FUNC_RESULT_SUCCESS != result && IfacePackType_Beacon == state.Memory.BufferHeader.Type )
-		result = receiveDataPiece( &( state.Memory.BufferFooter ), IFACE_FOOTER_SIZE, &buffer, &bytesLeft );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED_IO;
-
-	return FUNC_RESULT_SUCCESS;
-}
-
-int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
-	int		currentLength,
-			result;
-
-	if( ( NULL == data && 0 < size ) || ( NULL != data && 0 == size ) )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
-	result = writeDown( &state, state.Memory.Buffer, currentLength );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", (long long unsigned)size, &currentLength );
-	result = writeDown( &state, state.Memory.Buffer, currentLength );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	result = writeDown( &state, data, size );
-	return result;
-}
-
-int transmitResponse( IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {
-	void			* responsePacket,
-					* responsePayload;
-	int				result;
-	size_t			responseSize;
-	IfaceHeader_T	* responseHeader;
-
-	if( NULL == receiver )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	responseSize = IFACE_HEADER_SIZE + 2 * CRC_SIZE;
-	responsePacket = malloc( responseSize );
-
-	if( NULL == responsePacket )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
-	responseHeader = ( IfaceHeader_T * )responsePacket;
-	responsePayload = responsePacket + IFACE_HEADER_SIZE;
-
-	responseHeader->From = state.Config.Address;
-	responseHeader->To = receiver->Address;
-	responseHeader->Size = 2 * CRC_SIZE;
-	responseHeader->CRC = 0; // that`s not implemented yet TODO
-	responseHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
-	responseHeader->Type = IfacePackType_IsResponse;
-
-	memcpy( responsePayload, &crcInHeader, CRC_SIZE );
-	memcpy( responsePayload + CRC_SIZE, &crcFull, CRC_SIZE );
-
-	result = transmitAnyData( receiver->MinPower, responsePacket, responseSize );
-	free( responsePacket );
-
-	return result;
-}
-
-int transmitMessage( IfaceNeighbor_T * receiver, void * data, size_t size, bool needResponse ) {
-	void			* messagePacket,
-					* messagePayload;
-	int				result;
-	size_t			messageSize;
-	IfaceHeader_T	* messageHeader;
-
-	if( NULL == receiver )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	messageSize = IFACE_HEADER_SIZE + size;
-	messagePacket = malloc( messageSize );
-
-	if( NULL == messagePacket )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
-	messageHeader = ( IfaceHeader_T * )messagePacket;
-	messagePayload = messagePacket + IFACE_HEADER_SIZE;
-
-	messageHeader->From = state.Config.Address;
-	messageHeader->To = receiver->Address;
-	messageHeader->Size = size;
-	messageHeader->CRC = 0; // that`s not implemented yet TODO
-	messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
-	messageHeader->Type = ( needResponse ? IfacePackType_NeedResponse : IfacePackType_NeedNoResponse );
-
-	memcpy( messagePayload, data, size );
-
-	result = transmitAnyData( receiver->MinPower, messagePacket, messageSize );
-	free( messagePacket );
-
-	return result;
-}
-
-int transmitBeacon( void ) {
-	void			* beaconPacket,
-					* beaconPayload;
-	int				result;
-	size_t			beaconSize;
-	IfaceHeader_T	* beaconHeader;
-	IfaceFooter_T	* beaconFooter;
-
-	beaconSize = IFACE_HEADER_SIZE + state.Config.BeaconPayloadSize + IFACE_FOOTER_SIZE;
-	beaconPacket = malloc( beaconSize );
-
-	if( NULL == beaconPacket )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
-	beaconHeader = ( IfaceHeader_T * )beaconPacket;
-	beaconPayload = beaconPacket + IFACE_HEADER_SIZE;
-	beaconFooter = ( IfaceFooter_T * )( beaconPayload + state.Config.BeaconPayloadSize );
-
-	beaconHeader->From = state.Config.Address;
-	memset( &( beaconHeader->To ), 0, IFACE_ADDR_SIZE );
-	beaconHeader->Size = state.Config.BeaconPayloadSize;
-	beaconHeader->CRC = 0; // that`s not implemented yet TODO
-	beaconHeader->TxPower = ( PowerInt_T )roundf( state.Config.CurrentBeaconPower );
-	beaconHeader->Type = IfacePackType_Beacon;
-
-	memcpy( beaconPayload, state.Memory.BeaconPayload, state.Config.BeaconPayloadSize );
-
-	beaconFooter->MinSensitivity = ( PowerInt_T )roundf( state.Config.CurrentSensitivity );
-
-	result = transmitAnyData( beaconHeader->TxPower, beaconPacket, beaconSize );
-	free( beaconPacket );
-
-	return result;
-}
 
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
 	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
@@ -408,7 +206,7 @@ int processReceived( void ) {
 	PowerFloat_T	power;
 
 	if( state.Config.IsConnectedToMockit ) {
-		result = receiveAnyData( &power );
+		result = receiveAnyData( &state, &power );
 		address = state.Memory.BufferHeader.From;
 
 		if( FUNC_RESULT_SUCCESS == result )
@@ -418,7 +216,7 @@ int processReceived( void ) {
 
 				case IfacePackType_NeedResponse :
 					sender = neighborFind( &state, &address );
-					result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
+					result = transmitResponse( &state, sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
 					break;
 
 				case IfacePackType_IsResponse :
@@ -486,7 +284,7 @@ int processCommandChannelSend( void ) {
 	if( NULL == neighbor )
 		result = processCommandIfaceUnknownDest();
 	else {
-		result = transmitMessage( neighbor, state.Memory.Command.Data, state.Memory.Command.DataSize, metadata->NeedResponse );
+		result = transmitMessage( &state, neighbor, metadata->NeedResponse );
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return result;
@@ -606,7 +404,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 			if( state.Config.IsWaitingForResponse )
 				result = processCommandIfaceTimeoutFinished( false );
 			else
-				result = transmitBeacon();
+				result = transmitBeacon( &state );
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )

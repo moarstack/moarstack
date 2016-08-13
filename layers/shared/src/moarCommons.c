@@ -214,3 +214,32 @@ int FreeCommand( LayerCommandStruct_T * command ) {
 
 	return FUNC_RESULT_SUCCESS;
 }
+
+int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, CommandProcessingRule_T* rules) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (fd <= 0)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL != rules)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if ((event & eventMask) != 0) {
+		// get command
+		LayerCommandStruct_T command = {0};
+		int commandRes = ReadCommand(fd, &command);
+		if (FUNC_RESULT_SUCCESS != commandRes) {
+			return commandRes;
+		}
+		int res = FUNC_RESULT_FAILED;
+		for(int i=0; (i<LayerCommandType_TypesCount)
+					 && (LayerCommandType_None != rules[i].CommandType)
+					 && (NULL != rules[i].ProcessingRule); i++){
+			if(command.Command == rules[i].CommandType){
+				res = rules[i].ProcessingRule(layer,fd, &command);
+			}
+		}
+		FreeCommand(&command);
+		return res;
+	}
+	return FUNC_RESULT_FAILED;
+}

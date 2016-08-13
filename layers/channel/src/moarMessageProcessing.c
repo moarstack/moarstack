@@ -430,7 +430,7 @@ int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event){
 		free(command.MetaData);
 		return res;
 	}
-	return FUNC_RESULT_FAILED;
+	return FUNC_RESULT_SUCCESS;
 }
 
 // queue processing

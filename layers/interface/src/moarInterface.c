@@ -631,6 +631,17 @@ int processCommandChannelSend( void ) {
 		result = processCommandIfaceUnknownDest();
 	else {
 		result = transmitMessage( neighbor, state.Memory.Command.Data, state.Memory.Command.DataSize, metadata->NeedResponse );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		if( metadata->NeedResponse ) {
+			state.Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
+			state.Config.IsWaitingForResponse = true;
+		} else
+			result = processCommandIfaceMessageSent();
+
+		clearCommand();
 	}
 
 	return result;

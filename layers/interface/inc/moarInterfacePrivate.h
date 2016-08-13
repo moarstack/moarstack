@@ -140,6 +140,7 @@ typedef struct {
 // channel send command metadata
 typedef struct {
 	MessageId_T Id;
+	bool 		NeedResponse;
 	IfaceAddr_T	To;
 } ChannelSendMetadata_T;
 

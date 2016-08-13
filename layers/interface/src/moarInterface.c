@@ -4,53 +4,9 @@
 
 #include <moarInterfacePrivate.h>
 #include <moarIfacePhysicsRoutine.h>
+#include <moarIfaceChannelRoutine.h>
 
 static IfaceState_T	state = { 0 };
-
-int writeUp( void ) {
-	int result;
-
-	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = WriteCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			break;
-		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
-			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
-	}
-
-	return result;
-}
-
-int readUp( void ) {
-	int result;
-
-	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = ReadCommand( state.Config.ChannelSocket, &( state.Memory.Command ) );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			break;
-		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
-			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
-	}
-
-	return result;
-}
-
-int connectUp( void ) {
-	int	result = FUNC_RESULT_FAILED;
-
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-		result = SocketOpenFile( state.Config.ChannelSocketFilepath, false, &( state.Config.ChannelSocket ) );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			break;
-		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
-			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
-	}
-
-	return result;
-}
 
 IfaceNeighbor_T * neighborFind( IfaceAddr_T * address ) {
 	for( int i = 0; i < state.Config.NeighborsCount; i++ )
@@ -339,7 +295,7 @@ int processCommandIface( LayerCommandType_T commandType, void * metaData, void *
 	state.Memory.Command.DataSize = dataSize;
 	state.Memory.Command.Data = data;
 
-	return writeUp();
+	return writeUp( &state );
 }
 
 int processCommandIfaceRegister( void ) {
@@ -610,7 +566,7 @@ int processCommandChannelUpdateBeacon( void ) {
 int processChannelCommand( void ) {
 	int	result;
 
-	result = readUp();
+	result = readUp( &state );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
@@ -638,7 +594,7 @@ int processChannelCommand( void ) {
 int connectWithChannel( void ) {
 	int	result;
 
-	result = connectUp();
+	result = connectUp( &state );
 
 	if( FUNC_RESULT_SUCCESS == result )
 		result = processCommandIfaceRegister();
@@ -650,7 +606,7 @@ int connectWithChannelAgain( void ) {
 	shutdown( state.Config.ChannelSocket, SHUT_RDWR );
 	close( state.Config.ChannelSocket );
 	state.Config.IsConnectedToChannel = false;
-	return connectUp();
+	return connectUp( &state );
 }
 
 int processChannelEvent( uint32_t events ) {

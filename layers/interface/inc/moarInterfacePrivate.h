@@ -40,9 +40,7 @@
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_BEACON_INTERVAL			120000 // in milliseconds
 #define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
-#define IFACE_CHANNEL_WAIT_INTERVAL	1 // in seconds
 #define IFACE_MAX_NEIGHBOR_COUNT		10
-#define IFACE_PUSH_ATTEMPTS_COUNT		3
 #define IFACE_DEFAULT_LINK_QUALITY		0.5
 #define IFACE_MIN_FINISH_POWER			-70 // in dBm
 #define IFACE_MAX_START_POWER			16 // in dBm

@@ -43,7 +43,6 @@ int initEpoll(RoutingLayer_T* layer){
 	//return
 	return FUNC_RESULT_SUCCESS;
 }
-
 int routingInit(RoutingLayer_T* layer, void* arg){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -59,12 +58,6 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	if(params->UpSocketHandler <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	layer->PresentationSocket = params->UpSocketHandler;
-	//init epoll
-	int epollRes = initEpoll(layer);
-	if(FUNC_RESULT_SUCCESS != epollRes)
-		return epollRes;
-	//enable process
-	layer->Running = true;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -74,32 +67,48 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	if(FUNC_RESULT_SUCCESS == initRes){
 		return NULL;
 	}
-    // load configuration
-    // in poll
-        // commands
-            // send
-                // read message and store in queue
-            // message state
-                // if message sended
-                    // send message state update to presentation
-                    // drop message
-                // if not sended
-                    // if no trys
-                        // send message state update to presentation
-                    // else
-                        // add to routing queue
+	// load configuration
+	// init epoll
+	int epollRes = initEpoll(&layer);
+	if(FUNC_RESULT_SUCCESS != epollRes)
+		return NULL;
+	// enable process
+	layer.Running = true;
+	while(layer.Running) {
+		// in poll
+		int epollRes = epoll_wait(layer.EpollHandler, layer.EpollEvent,
+								  layer.EpollCount, layer.EpollTimeout);
+		// in poll
+		if(epollRes<0){
+			//perror("Routing epoll_wait");
+		}
+		for(int i=0; i<epollRes;i++) {
+			// commands
+			// send
+			// read message and store in queue
+			// message state
+			// if message sended
+			// send message state update to presentation
+			// drop message
+			// if not sended
+			// if no trys
+			// send message state update to presentation
+			// else
+			// add to routing queue
 
-            // new neighbor
-                // add channel layer neighbor to routing
-            // lost neighbor
-                // remove channel layer neighbor to routing
-            // update neighbor
-                // ?????
-        //timeout | end of command processing
-            // if need to send probes
-                // add probe to queue | send probe to channel layer
-            // try to process message queue
-            // calculate optimal sleep time
-            // change pool timeout
+			// new neighbor
+			// add channel layer neighbor to routing
+			// lost neighbor
+			// remove channel layer neighbor to routing
+			// update neighbor
+			// ?????
+		}
+		//timeout | end of command processing
+		// if need to send probes
+		// add probe to queue | send probe to channel layer
+		// try to process message queue
+		// calculate optimal sleep time
+		// change pool timeout
+	}
 
 }

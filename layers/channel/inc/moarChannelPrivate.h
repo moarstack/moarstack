@@ -26,7 +26,7 @@
 #define PROCESSING_TIMEOUT					((moarTimeInterval_T)1000)
 #define PROCESSING_UNRESOLVED_TIMEOUT		((moarTimeInterval_T)10000)
 #define DATA_NEED_RESPONSE					true
-#define HELLO_NEED_RESPONSE					true
+#define HELLO_NEED_RESPONSE					false
 
 typedef struct {
 	UnIfaceAddr_T 	Address;

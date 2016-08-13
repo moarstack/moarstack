@@ -59,6 +59,13 @@ typedef struct {
 
 typedef uint8_t NeighborsCount_T;   // type to describe nearmates count
 
+typedef int (*CommandProcessor_T)(void *, int, LayerCommandStruct_T*);
+
+typedef struct{
+	LayerCommandType_T CommandType;
+	CommandProcessor_T ProcessingRule;
+} CommandProcessingRule_T;
+
 #pragma pack(pop)
 
 #ifdef __cplusplus
@@ -80,6 +87,8 @@ extern int WriteCommand(int fd, LayerCommandStruct_T* command);
 extern int SocketOpenFile( const SocketFilepath_T socketFilePath, const bool isServer, int * sockResult );
 
 extern int FreeCommand( LayerCommandStruct_T * command );
+
+extern int ProcessCommnad(void* layer, int fd, LayerCommandStruct_T* command);
 
 #ifdef __cplusplus
 }

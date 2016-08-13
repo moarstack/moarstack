@@ -232,10 +232,10 @@ int neighborNonResolvedAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, 
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	NonResolvedNeighbor_T* nonresolvedNeighbor = neighborNonResolvedFindByAddress(layer, remoteAddress);
-	if(NULL == nonresolvedNeighbor){
+	NonResolvedNeighbor_T* neighbor = neighborNonResolvedFindByAddress(layer, remoteAddress);
+	if(NULL == neighbor){
 		//add here
-		NonResolvedNeighbor_T* neighbor = malloc(sizeof(NonResolvedNeighbor_T));
+		neighbor = malloc(sizeof(NonResolvedNeighbor_T));
 		if(NULL == neighbor)
 			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 		int addrRes = unAddressClone(remoteAddress, &(neighbor->Address));

@@ -5,57 +5,9 @@
 #include <moarInterfacePrivate.h>
 #include <moarIfacePhysicsRoutine.h>
 #include <moarIfaceChannelRoutine.h>
+#include <moarIfaceNeighborsRoutine.h>
 
 static IfaceState_T	state = { 0 };
-
-IfaceNeighbor_T * neighborFind( IfaceAddr_T * address ) {
-	for( int i = 0; i < state.Config.NeighborsCount; i++ )
-		if( 0 == memcmp( address, &( state.Memory.Neighbors[ i ].Address ), IFACE_ADDR_SIZE ) )
-			return state.Memory.Neighbors + i;
-
-	return NULL;
-}
-
-int neighborAdd( IfaceAddr_T * address, PowerFloat_T minPower ) {
-	if( NULL == address )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if( IFACE_MAX_NEIGHBOR_COUNT == state.Config.NeighborsCount )
-		return FUNC_RESULT_FAILED;
-
-	state.Memory.Neighbors[ state.Config.NeighborsCount ].Address = *address;
-	state.Memory.Neighbors[ state.Config.NeighborsCount ].MinPower = minPower;
-	state.Memory.Neighbors[ state.Config.NeighborsCount ].AttemptsLeft = IFACE_SEND_ATTEMPTS_COUNT;
-	state.Memory.Neighbors[ state.Config.NeighborsCount ].LinkQuality = IFACE_DEFAULT_LINK_QUALITY;
-
-	return FUNC_RESULT_SUCCESS;
-}
-
-int neighborRemove( IfaceNeighbor_T * neighbor ) {
-	ptrdiff_t	toPreserve;
-
-	if( NULL == neighbor )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if( 0 == state.Config.NeighborsCount )
-		return FUNC_RESULT_FAILED;
-
-	toPreserve = ( state.Memory.Neighbors + state.Config.NeighborsCount ) - ( neighbor + 1 );
-	memmove( neighbor, neighbor + 1, toPreserve * IFACE_NEIGHBOR_SIZE );
-	state.Config.NeighborsCount--;
-	memset( state.Memory.Neighbors + state.Config.NeighborsCount, 0, IFACE_NEIGHBOR_SIZE );
-
-	return FUNC_RESULT_SUCCESS;
-}
-
-int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
-	if( newMinPower < neighbor->MinPower && neighbor->AttemptsLeft < IFACE_SEND_ATTEMPTS_COUNT )
-		neighbor->AttemptsLeft++; // neighbor became closer
-
-	neighbor->MinPower = newMinPower;
-	return FUNC_RESULT_SUCCESS;
-}
-
 
 int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
 	char	* end;
@@ -381,17 +333,17 @@ int processReceivedBeacon( IfaceAddr_T * address, PowerFloat_T finishPower ) {
 	IfaceNeighbor_T	* sender;
 	PowerFloat_T	startPower;
 
-	sender = neighborFind( address );
+	sender = neighborFind( &state, address );
 	startPower = calcMinPower( state.Memory.BufferFooter.MinSensitivity, finishPower );
 
 	if( NULL != sender ) {
-		result = neighborUpdate( sender, startPower );
+		result = neighborUpdate( &state, sender, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			result = processCommandIfaceNeighborUpdate( address );
 
 	} else {
-		result = neighborAdd( address, startPower );
+		result = neighborAdd( &state, address, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			result = processCommandIfaceNeighborNew( address );
@@ -465,7 +417,7 @@ int processReceived( void ) {
 					break;
 
 				case IfacePackType_NeedResponse :
-					sender = neighborFind( &address );
+					sender = neighborFind( &state, &address );
 					result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
 					break;
 
@@ -528,7 +480,7 @@ int processCommandChannelSend( void ) {
 	int						result;
 
 	metadata = ( ChannelSendMetadata_T * ) state.Memory.Command.MetaData;
-	neighbor = neighborFind( &( metadata->To ) );
+	neighbor = neighborFind( &state, &( metadata->To ) );
 	state.Memory.ProcessingMessageId = metadata->Id;
 
 	if( NULL == neighbor )

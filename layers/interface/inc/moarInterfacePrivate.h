@@ -24,7 +24,6 @@
 #define IFACE_ADDR_SIZE					sizeof( unsigned int )
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
-#define IFACE_NEIGHBOR_SIZE				sizeof( IfaceNeighbor_T )
 #define CHANNEL_SEND_METADATA_SIZE		sizeof( ChannelSendMetadata_T )
 #define IFACE_RECEIVE_METADATA_SIZE		sizeof( IfaceReceiveMetadata_T )
 #define IFACE_NEIGHBOR_METADATA_SIZE	sizeof( IfaceNeighborMetadata_T )
@@ -40,10 +39,9 @@
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_BEACON_INTERVAL			120000 // in milliseconds
 #define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
-#define IFACE_MAX_NEIGHBOR_COUNT		10
-#define IFACE_DEFAULT_LINK_QUALITY		0.5
 #define IFACE_MIN_FINISH_POWER			-70 // in dBm
 #define IFACE_MAX_START_POWER			16 // in dBm
+#define IFACE_MAX_NEIGHBOR_COUNT		10
 
 typedef float	PowerFloat_T;
 typedef uint8_t PowerInt_T;

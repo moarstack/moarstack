@@ -21,7 +21,7 @@
 #include <moarChannelHello.h>
 
 
-int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata){
+int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata, SendTrys_T sendTrys){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)
@@ -31,6 +31,7 @@ int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, Route
 	//fill
 	ChannelMessageStateMetadata_T messageStateMetadata;
 	messageStateMetadata.State = state;
+	messageStateMetadata.SentTrys = sendTrys;
 	messageStateMetadata.Id = metadata->Id;
 	// create command
 	LayerCommandStruct_T stateCommand = {0};
@@ -208,7 +209,7 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 			case IfacePackState_Sent:
 			case IfacePackState_Responsed:
 				//notify sent
-				res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata));
+				res = sendResponseToRouting(layer, PackStateChannel_Sent, &(entry.Metadata), entry.SendTrys);
 				// drop message
 				free(entry.Data);
 				entry.Data = NULL;
@@ -385,7 +386,7 @@ int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 			ChannelMessageEntry_T entry = {0};
 			entry.DataSize = newSize;
 			entry.Data = newMessage;
-			entry.TrysLeft = SEND_TRYS;
+			entry.SendTrys = 0;
 			entry.ProcessingTime = timeGetCurrent();
 			entry.Metadata = *((RouteSendMetadata_T *) command->MetaData);
 			res = enqueueMessage(layer, &entry);
@@ -395,7 +396,7 @@ int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 		}
 	}
 	else{
-		res = sendResponseToRouting(layer, PackStateChannel_NotSent, (RouteSendMetadata_T *) command->MetaData);
+		res = sendResponseToRouting(layer, PackStateChannel_NotSent, (RouteSendMetadata_T *) command->MetaData, 0);
 	}
 	// free old
 	free(command->Data);
@@ -439,8 +440,8 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	if (NULL == entry)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	// if not trys left
-	if(0 >= entry->TrysLeft){
-		int responseRes = sendResponseToRouting(layer, PackStateChannel_NotSent, &(entry->Metadata));
+	if(entry->SendTrys > SEND_TRYS){
+		int responseRes = sendResponseToRouting(layer, PackStateChannel_NotSent, &(entry->Metadata), entry->SendTrys);
 		//free memory here
 		free(entry->Data);
 		entry->Data = NULL;
@@ -451,7 +452,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	//be sure that find remote can handle null
 	if (NULL == neighbor) {
 		//no neighbor | interface found
-		int responseRes = sendResponseToRouting(layer, PackStateChannel_UnknownDest, &(entry->Metadata));
+		int responseRes = sendResponseToRouting(layer, PackStateChannel_UnknownDest, &(entry->Metadata), entry->SendTrys);
 		//free memory here
 		free(entry->Data);
 		entry->Data = NULL;
@@ -461,7 +462,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	RemoteInterface_T *remoteInterface = neighborFindRemoteInterface(neighbor);
 	if(NULL != remoteInterface) {
 		// decrement
-		entry->TrysLeft--;
+		entry->SendTrys++;
 		//if interface found
 		ChannelSendMetadata_T sendMetadata = {0};
 		sendMetadata.Id = entry->Metadata.Id;

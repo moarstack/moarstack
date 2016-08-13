@@ -11,6 +11,8 @@
 #include "moarRouting.h"
 #include <moarMessageId.h>
 
+typedef uint8_t SendTrys_T;
+
 // possible states of packet when it is moving from channel to routing
 typedef enum {
 	PackStateChannel_None, 			// not defined state of enum
@@ -35,6 +37,7 @@ typedef struct {
 typedef struct {
 	MessageId_T Id;
 	PackStateChannel_T State;
+	SendTrys_T SentTrys;
 } ChannelMessageStateMetadata_T;
 
 typedef struct {

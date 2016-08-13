@@ -33,7 +33,7 @@ typedef struct {
 
 typedef struct{
 	//processing time
-	int8_t 				TrysLeft;
+	SendTrys_T 			SendTrys;
 	RouteSendMetadata_T Metadata;
 	PayloadSize_T  		DataSize;
 	void* 				Data;

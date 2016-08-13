@@ -7,8 +7,15 @@
 #include "moarRouting.h"
 #include "moarChannelRouting.h"
 #include "moarRoutingPresentation.h"
+#include <moarRoutingPrivate.h>
+
+
+int routingInit(RoutingLayer_T layer, void* arg){
+	//epoll init here
+}
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
+	RoutingLayer_T layer = {0};
     // load configuration
     // in poll
         // commands

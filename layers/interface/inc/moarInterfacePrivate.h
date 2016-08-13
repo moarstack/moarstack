@@ -21,7 +21,7 @@
 #include <moarInterfaceChannel.h>
 #include <funcResults.h>
 
-#define IFACE_ADDR_SIZE					sizeof( int )
+#define IFACE_ADDR_SIZE					sizeof( unsigned int )
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
 #define IFACE_NEIGHBOR_SIZE				sizeof( IfaceNeighbor_T )
@@ -36,9 +36,11 @@
 #define IFACE_MOCKIT_SOCKET_FILE		"/tmp/mockitSocket.file"
 #define IFACE_ADDRESS_LIMIT				10 // sync with the mockit config file
 #define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
+#define IFACE_REGISTRATION_OK_SIZE		strlen( IFACE_REGISTRATION_OK )
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
-#define IFACE_BEACON_INTERVAL			120 // in seconds
+#define IFACE_BEACON_INTERVAL			120000 // in milliseconds
+#define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
 #define IFACE_MOCKIT_WAIT_INTERVAL		1 // in seconds
 #define IFACE_CHANNEL_WAIT_INTERVAL		1 // in seconds
 #define IFACE_MAX_NEIGHBOR_COUNT		10
@@ -90,15 +92,18 @@ typedef struct {
 
 // struct for configuration variables
 typedef struct {
-	IfaceAddr_T		Address;
-	int				MockitSocket,
-					ChannelSocket,
-					NeighborsCount,
-					BeaconPayloadSize,
-					BeaconIntervalCurrent;
-	PowerFloat_T	CurrentSensitivity,
-					CurrentBeaconPower;
-	bool			IsWaitingForResponse;
+	IfaceAddr_T			Address;
+	int					MockitSocket,
+						ChannelSocket,
+						NeighborsCount,
+						BeaconPayloadSize,
+						BeaconIntervalCurrent;
+	PowerFloat_T		CurrentSensitivity,
+						CurrentBeaconPower;
+	bool				IsWaitingForResponse,
+						IsConnectedToChannel,
+						IsConnectedToMockit;
+	SocketFilepath_T	ChannelSocketFilepath;
 } IfaceConfiguration_T;
 
 // struct with preallocated memory for iface routines
@@ -110,6 +115,7 @@ typedef struct {
 	IfaceFooter_T			BufferFooter;
 	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
 	LayerCommandStruct_T	Command;
+	MessageId_T				ProcessingMessageId;
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

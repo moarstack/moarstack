@@ -3,61 +3,9 @@
 //
 
 #include <moarInterfacePrivate.h>
+#include <moarIfacePhysicsRoutine.h>
 
 static IfaceState_T	state = { 0 };
-
-int writeDown( void * buffer, size_t bytes ) {
-	ssize_t result;
-
-	if( ( NULL == buffer && 0 < bytes ) ||
-		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-		result = write( state.Config.MockitSocket, buffer, bytes );
-
-		if( result == bytes )
-			return FUNC_RESULT_SUCCESS;
-		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
-			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
-	}
-
-	return FUNC_RESULT_FAILED_IO;
-}
-
-ssize_t readDown( void * buffer, size_t bytes ) {
-	ssize_t	result;
-
-	if( ( NULL == buffer && 0 < bytes ) ||
-		FUNC_RESULT_SUCCESS >= state.Config.MockitSocket )
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-		result = read( state.Config.MockitSocket, buffer, bytes );
-
-		if( 0 < result )
-			break;
-		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
-			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
-	}
-
-	return result;
-}
-
-int connectDown( void ) {
-	int	result;
-
-	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, &( state.Config.MockitSocket ) );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			break;
-		else if( 1 < IFACE_SEND_ATTEMPTS_COUNT )
-			sleep( IFACE_MOCKIT_WAIT_INTERVAL );
-	}
-
-	return result;
-}
 
 int writeUp( void ) {
 	int result;
@@ -187,7 +135,7 @@ int receiveDataPiece( void * destination, ssize_t expectedSize, char ** bufStart
 	}
 
 	if( bytesDone < expectedSize )
-		bytesDone += readDown( ( char * )destination + bytesDone, expectedSize - bytesDone );
+		bytesDone += readDown( &state, ( char * )destination + bytesDone, expectedSize - bytesDone );
 
 	if( bytesDone < expectedSize )
 		return FUNC_RESULT_FAILED_IO;
@@ -203,7 +151,7 @@ int receiveAnyData( PowerFloat_T * finishPower) {
 	if( NULL == finishPower )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	bytesLeft = readDown( buffer, IFACE_BUFFER_SIZE );
+	bytesLeft = readDown( &state, buffer, IFACE_BUFFER_SIZE );
 
 	if( -1 == bytesLeft )
 		return FUNC_RESULT_FAILED_IO;
@@ -237,18 +185,18 @@ int transmitAnyData( PowerFloat_T power, void * data, size_t size ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
-	result = writeDown( state.Memory.Buffer, currentLength );
+	result = writeDown( &state, state.Memory.Buffer, currentLength );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%llu %n", (long long unsigned)size, &currentLength );
-	result = writeDown( state.Memory.Buffer, currentLength );
+	result = writeDown( &state, state.Memory.Buffer, currentLength );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
-	result = writeDown( data, size );
+	result = writeDown( &state, data, size );
 	return result;
 }
 
@@ -507,7 +455,7 @@ int processMockitRegister( void ) {
 	address = 1 + rand() % IFACE_ADDRESS_LIMIT;
 	snprintf( state.Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 	memcpy( &( state.Config.Address ), &address, IFACE_ADDR_SIZE );
-	result = writeDown( state.Memory.Buffer, length );
+	result = writeDown( &state, state.Memory.Buffer, length );
 
 	return result;
 }
@@ -515,7 +463,7 @@ int processMockitRegister( void ) {
 int processMockitRegisterResult( void ) {
 	int	result;
 
-	result = readDown( state.Memory.Buffer, IFACE_BUFFER_SIZE );
+	result = readDown( &state, state.Memory.Buffer, IFACE_BUFFER_SIZE );
 
 	if( 0 >= result )
 		return FUNC_RESULT_FAILED_IO;
@@ -592,7 +540,7 @@ int processReceived( void ) {
 int connectWithMockit( void ) {
 	int	result;
 
-	result = connectDown();
+	result = connectDown( &state );
 
 	if( FUNC_RESULT_SUCCESS == result )
 		result = processMockitRegister();
@@ -604,7 +552,7 @@ int connectWithMockitAgain( void ) {
 	shutdown( state.Config.MockitSocket, SHUT_RDWR );
 	close( state.Config.MockitSocket );
 	state.Config.IsConnectedToMockit = false;
-	return connectDown();
+	return connectDown( &state );
 }
 
 int processMockitEvent( uint32_t events ) {

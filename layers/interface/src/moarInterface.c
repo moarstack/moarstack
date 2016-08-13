@@ -557,6 +557,9 @@ int processReceived( void ) {
 
 		if( FUNC_RESULT_SUCCESS == result )
 			switch( state.Memory.BufferHeader.Type ) {
+				case IfacePackType_NeedNoResponse:
+					break;
+
 				case IfacePackType_NeedResponse :
 					sender = neighborFind( &address );
 					result = transmitResponse( sender, state.Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO

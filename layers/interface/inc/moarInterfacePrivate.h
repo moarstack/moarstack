@@ -57,6 +57,7 @@ typedef uint8_t LinkAttempts_T;
 
 typedef enum {
 	IfacePackType_NeedResponse,
+	IfacePackType_NeedNoResponse,
 	IfacePackType_IsResponse,
 	IfacePackType_Beacon
 } IfacePackType_T;

@@ -12,6 +12,7 @@
 #include <moarLayerEntryPoint.h>
 #include <sys/epoll.h>
 #include <memory.h>
+#include <moarRouitngCommandProcessing.h>
 
 int initEpoll(RoutingLayer_T* layer){
 	if(NULL == layer)
@@ -83,6 +84,22 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			//perror("Routing epoll_wait");
 		}
 		for(int i=0; i<epollRes;i++) {
+			uint32_t event = layer.EpollEvent[i].events;
+			int fd = layer.EpollEvent[i].data.fd;
+			int processRes = FUNC_RESULT_FAILED;
+			if(fd == layer.ChannelSocket){
+				processRes = processChannelEvent(&layer, fd,event);
+			}
+			else if(fd == layer.PresentationSocket){
+				processRes = processPresentationEvent(&layer, fd,event);
+			}else{
+				// wtf? i don`t add another sockets
+			}
+			if(FUNC_RESULT_SUCCESS != processRes){
+				// we have problems
+				// return NULL;
+			}
+			//
 			// commands
 			// send
 			// read message and store in queue

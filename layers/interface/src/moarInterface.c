@@ -362,13 +362,8 @@ PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
 	return ( IFACE_MAX_START_POWER < neededPower ? IFACE_MAX_START_POWER : neededPower );
 }
 
-int clearCommand( void ) {
-	free( state.Memory.Command.MetaData );
-	state.Memory.Command.MetaData = NULL;
-	state.Memory.Command.MetaSize = 0;
-	free( state.Memory.Command.Data );
-	state.Memory.Command.Data = NULL;
-	state.Memory.Command.DataSize = 0;
+static inline int clearCommand( void ) {
+	return FreeCommand( &( state.Memory.Command ) );
 }
 
 int processCommandIface( LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {

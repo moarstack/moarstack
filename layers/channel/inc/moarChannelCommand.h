@@ -27,8 +27,6 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event);
 
 //process send message
 int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
-//process message from routing
-int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event);
 
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 

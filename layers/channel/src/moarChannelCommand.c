@@ -304,14 +304,7 @@ int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	// if interface disconnected
-	if((event & EPOLL_INTERFACE_DISCONNECT_EVENTS) != 0) {
-		// remove from poll list
-		int res = processCloseConnection(layer,fd);
-		if(FUNC_RESULT_SUCCESS != res)
-			return res;
-		return FUNC_RESULT_SUCCESS;
-	}
+
 		// if command from interface
 	else if((event & EPOLL_INTERFACE_EVENTS) !=0) {
 		// get command
@@ -403,34 +396,6 @@ int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 	command->Data = NULL;
 	command->DataSize = 0;
 	return res;
-}
-//process message from routing
-int processRoutingData(ChannelLayer_T* layer, int fd, uint32_t event){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(fd <= 0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	if((event & EPOLL_ROUNTING_EVENTS) !=0) {
-		// send
-		LayerCommandStruct_T command = {0};
-		int commandRes = ReadCommand(fd, &command);
-		if (FUNC_RESULT_SUCCESS != commandRes) {
-			return commandRes;
-		}
-		int res;
-		switch (command.Command) {
-			case LayerCommandType_Send:
-				res = processSendMessage(layer, fd, &command);
-				break;
-			default:
-				res = FUNC_RESULT_FAILED_ARGUMENT;
-				break;
-		}
-		free(command.MetaData);
-		return res;
-	}
-	return FUNC_RESULT_FAILED;
 }
 
 // queue processing

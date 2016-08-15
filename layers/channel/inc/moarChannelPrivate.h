@@ -27,7 +27,7 @@
 #define PROCESSING_UNRESOLVED_TIMEOUT		((moarTimeInterval_T)10000)
 #define DATA_NEED_RESPONSE					true
 #define HELLO_NEED_RESPONSE					false
-#define INTERFACE_PROCESSING_RULES_COUNT	9
+#define INTERFACE_PROCESSING_RULES_COUNT	8
 #define ROUTING_PROCESSING_RULES_COUNT		2
 typedef struct {
 	UnIfaceAddr_T 	Address;

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <moarChannelInterfaces.h>
 #include <moarChannelNeighbors.h>
-#include <moarChannelCommandProcessing.h>
+#include <moarChannelCommand.h>
 #include <moarChannelMessageQueue.h>
 #include <moarChannelHello.h>
 

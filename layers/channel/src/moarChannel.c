@@ -150,8 +150,8 @@ int channelInit(ChannelLayer_T* layer, void* arg){
 	layer->InterfaceProcessingRules[6] = MakeProcessingRule(LayerCommandType_UpdateNeighbor, processUpdateNeighbor);
 	layer->InterfaceProcessingRules[7] = MakeProcessingRule(LayerCommandType_None, NULL);
 
-	layer->InterfaceProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendMessage);
-	layer->InterfaceProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
+	layer->RoutingProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendMessage);
+	layer->RoutingProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 

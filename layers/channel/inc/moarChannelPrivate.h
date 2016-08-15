@@ -27,7 +27,8 @@
 #define PROCESSING_UNRESOLVED_TIMEOUT		((moarTimeInterval_T)10000)
 #define DATA_NEED_RESPONSE					true
 #define HELLO_NEED_RESPONSE					false
-
+#define INTERFACE_PROCESSING_RULES_COUNT	9
+#define ROUTING_PROCESSING_RULES_COUNT		2
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
@@ -87,6 +88,8 @@ typedef struct {
 	int 					EpollTimeout;
 	void *					HelloMessage;
 	PayloadSize_T			HelloMessageSize;
+	CommandProcessingRule_T InterfaceProcessingRules[INTERFACE_PROCESSING_RULES_COUNT];
+	CommandProcessingRule_T RoutingProcessingRules[ROUTING_PROCESSING_RULES_COUNT];
 } ChannelLayer_T;
 
 int processCloseConnection(ChannelLayer_T* layer, int fd);

@@ -141,8 +141,17 @@ int channelInit(ChannelLayer_T* layer, void* arg){
 		return helloRes;
 
 	//init function pointers
+	layer->InterfaceProcessingRules[0] = MakeProcessingRule(LayerCommandType_MessageState, processInterfaceState);
+	layer->InterfaceProcessingRules[1] = MakeProcessingRule(LayerCommandType_Receive, processReceiveMessage);
+	layer->InterfaceProcessingRules[2] = MakeProcessingRule(LayerCommandType_RegisterInterface, processRegisterInterface);
+	layer->InterfaceProcessingRules[3] = MakeProcessingRule(LayerCommandType_UnregisterInterface, processUnregisterInterface);
+	layer->InterfaceProcessingRules[4] = MakeProcessingRule(LayerCommandType_NewNeighbor, processNewNeighbor);
+	layer->InterfaceProcessingRules[5] = MakeProcessingRule(LayerCommandType_LostNeighbor, processLostNeighbor);
+	layer->InterfaceProcessingRules[6] = MakeProcessingRule(LayerCommandType_UpdateNeighbor, processUpdateNeighbor);
+	layer->InterfaceProcessingRules[7] = MakeProcessingRule(LayerCommandType_None, NULL);
 
-
+	layer->InterfaceProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendMessage);
+	layer->InterfaceProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 

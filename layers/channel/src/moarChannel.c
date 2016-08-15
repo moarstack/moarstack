@@ -107,39 +107,54 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 	return FUNC_RESULT_SUCCESS;
 }
 
-void * MOAR_LAYER_ENTRY_POINT(void* arg){
+int channelInit(ChannelLayer_T* layer, void* arg){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == arg)
-		return NULL;
-	ChannelLayer_T channelLayer = {0};
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	MoarLayerStartupParams_T* startupParams = (MoarLayerStartupParams_T*) arg;
 
 	if(startupParams->DownSocketHandler <=0)
-		return NULL;
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(startupParams->UpSocketHandler <=0)
-		return NULL;
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	channelLayer.UpSocket = startupParams->UpSocketHandler;
-	channelLayer.DownSocket = startupParams->DownSocketHandler;
+	layer->UpSocket = startupParams->UpSocketHandler;
+	layer->DownSocket = startupParams->DownSocketHandler;
 	//
-	int listRes = interfaceInit(&channelLayer);
+	int listRes = interfaceInit(layer);
 	if(FUNC_RESULT_SUCCESS != listRes)
-		return NULL;
-		
-	int neighborsRes = neighborsInit(&channelLayer);
+		return listRes;
+
+	int neighborsRes = neighborsInit(layer);
 	if(FUNC_RESULT_SUCCESS != neighborsRes)
+		return neighborsRes;
+
+	int messageInitRes = queueInit(layer);
+	if(FUNC_RESULT_SUCCESS != messageInitRes){
+		return messageInitRes;
+	}
+
+	int helloRes = channelHelloFill(layer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return helloRes;
+
+	//init function pointers
+
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+void * MOAR_LAYER_ENTRY_POINT(void* arg){
+	ChannelLayer_T channelLayer = {0};
+	int initRes = channelInit(&channelLayer, arg);
+	if(FUNC_RESULT_SUCCESS != initRes)
 		return NULL;
 
-	int messageInitRes = queueInit(&channelLayer);
-	if(FUNC_RESULT_SUCCESS != messageInitRes){
-		return NULL;
-	}
 	// load configuration
 	//
 	// listen for interface connection
-
-	int helloRes = channelHelloFill(&channelLayer);
-	if(FUNC_RESULT_SUCCESS != helloRes)
-		return NULL;
 	//listen(channelLayer.DownSocket, LISTEN_COUNT);
 	int res = epollInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != res)

@@ -131,8 +131,6 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		// check payload size
 		if(header->PayloadSize + CHANNEL_LAYER_HEADER_SIZE != command->DataSize) {
-			free(command->Data);
-			command->Data = NULL;
 			int addrRes = unAddressFree(&(receiveMetadata.From));
 			return FUNC_RESULT_FAILED;
 		}
@@ -143,8 +141,6 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 		if(header->Hello){
 			int res = channelHelloProcess(layer, command->DataSize, command->Data);
 //			if (FUNC_RESULT_SUCCESS != res) {
-//				free(command->Data);
-//				command->Data = NULL;
 //				int addrRes = unAddressFree(&(receiveMetadata.From));
 //				return res;
 //			}
@@ -165,15 +161,11 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 			//write
 			int writedRes = WriteCommand(layer->UpSocket, &channelReceiveCommand);
 			if (FUNC_RESULT_SUCCESS != writedRes) {
-				free(command->Data);
-				command->Data = NULL;
 				int addrRes = unAddressFree(&(receiveMetadata.From));
 				return writedRes;
 			}
 		}
 	}
-	free(command->Data);
-	command->Data = NULL;
 	int addrRes = unAddressFree(&(receiveMetadata.From));
 	if(FUNC_RESULT_SUCCESS != addrRes)
 		return addrRes;
@@ -253,8 +245,6 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 		if(header->Hello){
 			int res = channelHelloProcess(layer, command->DataSize, command->Data);
 //			if (FUNC_RESULT_SUCCESS != res) {
-//				free(command->Data);
-//				command->Data = NULL;
 //				int addrRes = unAddressFree(&(neighborMetadata.Address));
 //				return res;
 //			}
@@ -263,8 +253,6 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 	else{
 		int addRes = neighborAdd(layer, NULL, &(neighborMetadata.Address), fd);
 	}
-	free(command->Data);
-	command->Data = NULL;
 	int addrRes = unAddressFree(&(neighborMetadata.Address));
 	if(FUNC_RESULT_SUCCESS != addrRes)
 		return addrRes;
@@ -348,10 +336,6 @@ int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
 	else{
 		res = sendResponseToRouting(layer, PackStateChannel_NotSent, (RouteSendMetadata_T *) command->MetaData, 0);
 	}
-	// free old
-	free(command->Data);
-	command->Data = NULL;
-	command->DataSize = 0;
 	return res;
 }
 

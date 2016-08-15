@@ -22,13 +22,10 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
 //process update neighbor
 int processUpdateNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
-//process message from interface
-int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event);
-
 //process send message
 int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
-
+//process queue entry
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
-
+//process all queue
 int processQueue(ChannelLayer_T* layer);
 #endif //MOARSTACK_MOARMESSAGEPROCESSING_H

@@ -183,23 +183,22 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			int fd = channelLayer.EpollEvent[i].data.fd;
 			// if new interface connected
 			int res = FUNC_RESULT_FAILED;
-			if(fd == channelLayer.DownSocket) {
+			if (fd == channelLayer.DownSocket) {
 				res = processNewConnection(&channelLayer, fd);
 			} // if command from routing
-			else if(fd == channelLayer.UpSocket) {
-				res = ProcessCommand(&channelLayer, fd, event, EPOLL_ROUNTING_EVENTS, channelLayer.RoutingProcessingRules);
+			else if (fd == channelLayer.UpSocket) {
+				res = ProcessCommand(&channelLayer, fd, event, EPOLL_ROUNTING_EVENTS,
+									 channelLayer.RoutingProcessingRules);
 			} //data from interface
 			else {
 				//process disconnected event
 				// if interface disconnected
-				if((event & EPOLL_INTERFACE_DISCONNECT_EVENTS) != 0) {
-					// remove from poll list
-					res = processCloseConnection(&channelLayer,fd);
-				} else {
-					res = processInterfaceData(&channelLayer, fd, event);
-					if (FUNC_RESULT_SUCCESS != res) {
-						processCloseConnection(&channelLayer, fd);
-					}
+				if ((event & EPOLL_INTERFACE_DISCONNECT_EVENTS) == 0) {
+					res = ProcessCommand(&channelLayer, fd, event, EPOLL_INTERFACE_EVENTS,
+										 channelLayer.InterfaceProcessingRules);
+				}
+				if (FUNC_RESULT_SUCCESS != res) {
+					processCloseConnection(&channelLayer, fd);
 				}
 			}
 		}

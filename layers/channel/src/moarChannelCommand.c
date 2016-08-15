@@ -297,55 +297,6 @@ int processUpdateNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	// TODO PROFIT
 	return FUNC_RESULT_SUCCESS;
 }
-//process message from interface
-int processInterfaceData(ChannelLayer_T* layer, int fd, uint32_t event){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(fd <= 0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-
-		// if command from interface
-	else if((event & EPOLL_INTERFACE_EVENTS) !=0) {
-		// get command
-		LayerCommandStruct_T command = {0};
-		int commandRes = ReadCommand(fd, &command);
-		if(FUNC_RESULT_SUCCESS != commandRes){
-			return commandRes;
-		}
-		int res;
-		switch(command.Command){
-			case LayerCommandType_RegisterInterface:
-				res = processRegisterInterface(layer, fd, &command);
-				break;
-			case LayerCommandType_UnregisterInterface:
-				res = processUnregisterInterface(layer, fd, &command);
-				break;
-			case LayerCommandType_MessageState:
-				res = processInterfaceState(layer, fd, &command);
-				break;
-			case LayerCommandType_Receive:
-				res = processReceiveMessage(layer, fd, &command);
-				break;
-			case LayerCommandType_NewNeighbor:
-				res = processNewNeighbor(layer, fd, &command);
-				break;
-			case LayerCommandType_LostNeighbor:
-				res = processLostNeighbor(layer, fd, &command);
-				break;
-			case LayerCommandType_UpdateNeighbor:
-				res = processUpdateNeighbor(layer, fd, &command);
-				break;
-			default:
-				res = FUNC_RESULT_FAILED_ARGUMENT;
-				break;
-		}
-		//free metadata
-		free(command.MetaData);
-		return res;
-	}
-	return FUNC_RESULT_FAILED;
-}
 
 //process send message
 int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){

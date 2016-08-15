@@ -2,7 +2,7 @@
 // Created by svalov on 7/26/16.
 //
 
-#include "moarMessageProcessing.h"
+#include "moarChannelCommandProcessing.h"
 #include <funcResults.h>
 #include <moarChannelMetadata.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@
 #include <moarChannelNeighbors.h>
 #include <moarChannel.h>
 #include <moarChannelMessageQueue.h>
-#include <moarMessageTable.h>
+#include <moarChannelMessageTable.h>
 #include <moarTime.h>
 #include <moarChannelHello.h>
 

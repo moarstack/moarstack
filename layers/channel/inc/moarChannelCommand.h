@@ -9,21 +9,21 @@
 #include <moarCommons.h>
 
 // register interface
-int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *command);
 // unregister interface
-int processUnregisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processUnregisterInterface(void* layerRef, int fd, LayerCommandStruct_T *command);
 // processing received message
-int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process interface state
-int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process new neighbor
-int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process lost neighbor
-int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processLostNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process update neighbor
-int processUpdateNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processUpdateNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process send message
-int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command);
+int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command);
 //process queue entry
 int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 //process all queue

@@ -42,14 +42,14 @@ int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, Route
 }
 
 // register interface
-int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	InterfaceRegisterMetadata_T registerMetadata;
 	int res = readRegisterMetadata(fd,command, &registerMetadata); //allocate memory for address
 	if(FUNC_RESULT_SUCCESS != res)
@@ -93,14 +93,16 @@ int processRegisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T
 	return FUNC_RESULT_SUCCESS;
 }
 // unregister interface
-int processUnregisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processUnregisterInterface(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//close connection
+
 	int res = processCloseConnection(layer,fd);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
@@ -108,14 +110,14 @@ int processUnregisterInterface(ChannelLayer_T *layer, int fd, LayerCommandStruct
 	return FUNC_RESULT_SUCCESS;
 }
 // processing received message
-int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -178,13 +180,14 @@ int processReceiveMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	return FUNC_RESULT_SUCCESS;
 }
 //process interface state
-int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//get interface
 	InterfaceDescriptor_T* ifaceDesc = interfaceFindBySocket(layer, fd);
 	if(NULL == ifaceDesc)
@@ -224,13 +227,14 @@ int processInterfaceState(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *c
 	return FUNC_RESULT_SUCCESS;
 }
 //process new neighbor
-int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//get
 	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
 	if(NULL == interface)
@@ -267,13 +271,14 @@ int processNewNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *comm
 	return FUNC_RESULT_SUCCESS;
 }
 //process lost neighbor
-int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processLostNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//get
 	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
 	if(NULL == interface)
@@ -286,27 +291,28 @@ int processLostNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *com
 	return FUNC_RESULT_SUCCESS;
 }
 //process update neighbor
-int processUpdateNeighbor(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processUpdateNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	// TODO ?????
 	// TODO PROFIT
 	return FUNC_RESULT_SUCCESS;
 }
 
 //process send message
-int processSendMessage(ChannelLayer_T *layer, int fd, LayerCommandStruct_T *command){
-	if(NULL == layer)
+int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//check metadata
 	if(0 == command->MetaSize)
 		return FUNC_RESULT_FAILED_ARGUMENT;

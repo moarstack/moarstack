@@ -49,25 +49,26 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	InterfaceRegisterMetadata_T registerMetadata;
+
 	int res = readRegisterMetadata(fd,command, &registerMetadata); //allocate memory for address
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
 
 	InterfaceDescriptor_T* ifaceDesc = (InterfaceDescriptor_T*)malloc(sizeof(InterfaceDescriptor_T));
-	if(NULL == ifaceDesc)
+	if(NULL == ifaceDesc) {
+		unAddressFree(&(ifaceDesc->Address));
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
 	ifaceDesc->Socket = fd;
 	ifaceDesc->Address = registerMetadata.IfaceAddress;
 	ifaceDesc->Neighbors = NULL;
 	ifaceDesc->Ready = true;
 
 	int addRes = interfaceAdd(layer, ifaceDesc);
-	if(FUNC_RESULT_SUCCESS != addRes){
-		unAddressFree(&(ifaceDesc->Address));
-		free(ifaceDesc);
-	}
+
 	// write registration result to interface
 	ChannelRegisterResultMetadata_T resultMetadata;
 	//fill metadata
@@ -77,10 +78,16 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 	resultCommand.MetaData = &resultMetadata;
 	resultCommand.MetaSize = CHANNEL_REGISTER_RESULT_METADATA_SIZE;
 	int writedRes = WriteCommand(fd, &resultCommand);
+
+	if(FUNC_RESULT_SUCCESS != addRes) {
+		// if can not add interface
+		unAddressFree(&(ifaceDesc->Address));
+		free(ifaceDesc);
+		return addRes;
+	}
+	//here interface added  to table
 	if(FUNC_RESULT_SUCCESS != writedRes)
 		return writedRes;
-	if(FUNC_RESULT_SUCCESS != addRes)
-		return addRes;
 	// update hello packet
 	int helloRes = channelHelloFill(layer);
 	if(FUNC_RESULT_SUCCESS != helloRes)
@@ -102,7 +109,6 @@ int processUnregisterInterface(void* layerRef, int fd, LayerCommandStruct_T *com
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//close connection
-
 	int res = processCloseConnection(layer,fd);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
@@ -117,33 +123,32 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
+
 	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	InterfaceReceiveMetadata_T receiveMetadata = {0};
 	int res = readReceiveMetadata(fd, command, interface->Address.Length, &receiveMetadata);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
+
 	// if contains payload
 	if(command->DataSize > 0) {
 		// extract header
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		// check payload size
 		if(header->PayloadSize + CHANNEL_LAYER_HEADER_SIZE != command->DataSize) {
-			int addrRes = unAddressFree(&(receiveMetadata.From));
+			unAddressFree(&(receiveMetadata.From));
 			return FUNC_RESULT_FAILED;
 		}
 		//add neighbor
-		int addRes = neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
-
+		neighborAdd(layer, &(header->From), &(receiveMetadata.From), fd);
 		//check packet type
 		if(header->Hello){
-			int res = channelHelloProcess(layer, command->DataSize, command->Data);
-//			if (FUNC_RESULT_SUCCESS != res) {
-//				int addrRes = unAddressFree(&(receiveMetadata.From));
-//				return res;
-//			}
+			channelHelloProcess(layer, command->DataSize, command->Data);
 		}
 		// normal data
 		else if(header->PayloadSize > 0) {
@@ -161,14 +166,12 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 			//write
 			int writedRes = WriteCommand(layer->UpSocket, &channelReceiveCommand);
 			if (FUNC_RESULT_SUCCESS != writedRes) {
-				int addrRes = unAddressFree(&(receiveMetadata.From));
+				unAddressFree(&(receiveMetadata.From));
 				return writedRes;
 			}
 		}
 	}
-	int addrRes = unAddressFree(&(receiveMetadata.From));
-	if(FUNC_RESULT_SUCCESS != addrRes)
-		return addrRes;
+	unAddressFree(&(receiveMetadata.From));
 	return FUNC_RESULT_SUCCESS;
 }
 //process interface state
@@ -179,15 +182,19 @@ int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
+
 	//get interface
 	InterfaceDescriptor_T* ifaceDesc = interfaceFindBySocket(layer, fd);
 	if(NULL == ifaceDesc)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	//set free
 	ifaceDesc->Ready = true;
 	//get metadata
 	IfacePackStateMetadata_T* metadata = (IfacePackStateMetadata_T*)command->MetaData;
+
 	//find entry in table
 	ChannelMessageEntry_T entry;
 	int findRes = tableFindEntryById(layer, ifaceDesc, &(metadata->Id), &entry);
@@ -231,10 +238,12 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	InterfaceNeighborMetadata_T neighborMetadata = {0};
 	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
+
 	// if contains payload
 	if(command->DataSize > 0) {
 		// extract header
@@ -242,20 +251,13 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 		//add neighbor
 		int addRes = neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
 		//check packet type
-		if(header->Hello){
-			int res = channelHelloProcess(layer, command->DataSize, command->Data);
-//			if (FUNC_RESULT_SUCCESS != res) {
-//				int addrRes = unAddressFree(&(neighborMetadata.Address));
-//				return res;
-//			}
-		}
+		if(header->Hello)
+			channelHelloProcess(layer, command->DataSize, command->Data);
 	}
-	else{
-		int addRes = neighborAdd(layer, NULL, &(neighborMetadata.Address), fd);
-	}
-	int addrRes = unAddressFree(&(neighborMetadata.Address));
-	if(FUNC_RESULT_SUCCESS != addrRes)
-		return addrRes;
+	else
+		neighborAdd(layer, NULL, &(neighborMetadata.Address), fd);
+
+	unAddressFree(&(neighborMetadata.Address));
 	return FUNC_RESULT_SUCCESS;
 }
 //process lost neighbor
@@ -276,7 +278,8 @@ int processLostNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
 	int removeRes = neighborRemove(layer, neighborMetadata.Address);
-	return FUNC_RESULT_SUCCESS;
+	unAddressFree(&(neighborMetadata.Address));
+	return removeRes;
 }
 //process update neighbor
 int processUpdateNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
@@ -345,30 +348,34 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if (NULL == entry)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ChannelNeighbor_T *neighbor = NULL;
+	PackStateChannel_T state = PackStateChannel_None;
+
 	// if not trys left
-	if(entry->SendTrys > SEND_TRYS){
-		int responseRes = sendResponseToRouting(layer, PackStateChannel_NotSent, &(entry->Metadata), entry->SendTrys);
+	if(entry->SendTrys <= SEND_TRYS){
+		// search neighbor
+		neighbor = neighborFindByAddress(layer, &(entry->Metadata.Bridge));
+		//be sure that find remote can handle null
+		if (NULL == neighbor) //no neighbor | interface found
+			state = PackStateChannel_UnknownDest;
+	} else
+		state = PackStateChannel_NotSent;
+
+	//if state changed due to errors
+	if(PackStateChannel_None != state){
+		int responseRes = sendResponseToRouting(layer, state, &(entry->Metadata), entry->SendTrys);
 		//free memory here
 		free(entry->Data);
 		entry->Data = NULL;
 		return responseRes;
 	}
-	// search neighbor
-	ChannelNeighbor_T *neighbor = neighborFindByAddress(layer, &(entry->Metadata.Bridge));
-	//be sure that find remote can handle null
-	if (NULL == neighbor) {
-		//no neighbor | interface found
-		int responseRes = sendResponseToRouting(layer, PackStateChannel_UnknownDest, &(entry->Metadata), entry->SendTrys);
-		//free memory here
-		free(entry->Data);
-		entry->Data = NULL;
-		return responseRes;
-	}
+	// decrement
+	entry->SendTrys++;
+
 	//select interface
 	RemoteInterface_T *remoteInterface = neighborFindRemoteInterface(neighbor);
 	if(NULL != remoteInterface) {
-		// decrement
-		entry->SendTrys++;
 		//if interface found
 		ChannelSendMetadata_T sendMetadata = {0};
 		sendMetadata.Id = entry->Metadata.Id;
@@ -382,19 +389,11 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 			int res = tableAddEntry(layer, remoteInterface->BridgeInterface, &(entry->Metadata.Id), entry);
 			return res;
 		}
-		else{
-			// if can not push reenqueue
-			entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
-			int res = enqueueMessage(layer, entry);
-			return res;
-		}
 	}
-	else{
-		// if not found
-		entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
-		int res = enqueueMessage(layer, entry);
-		return res;
-	}
+	// if not found | not pushed
+	entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
+	int res = enqueueMessage(layer, entry);
+	return res;
 }
 // process channel message queue
 int processQueue(ChannelLayer_T* layer){
@@ -418,9 +417,8 @@ int processQueue(ChannelLayer_T* layer){
 			//remove from queue
 			dequeueMessage(layer, NULL);
 		}
-		else{
+		else
 			done = false;
-		}
 	}
 	return FUNC_RESULT_SUCCESS;
 }

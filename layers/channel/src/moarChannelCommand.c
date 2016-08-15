@@ -7,17 +7,10 @@
 #include <moarChannelMetadata.h>
 #include <stdlib.h>
 #include <moarChannelInterfaces.h>
-#include <moarInterfaceChannel.h>
-#include <moarCommons.h>
-#include <moarChannelRouting.h>
-#include <moarChannel.h>
 #include <memory.h>
-#include <moarChannelPrivate.h>
 #include <moarChannelNeighbors.h>
-#include <moarChannel.h>
 #include <moarChannelMessageQueue.h>
 #include <moarChannelMessageTable.h>
-#include <moarTime.h>
 #include <moarChannelHello.h>
 
 
@@ -59,7 +52,7 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 
 	InterfaceDescriptor_T* ifaceDesc = (InterfaceDescriptor_T*)malloc(sizeof(InterfaceDescriptor_T));
 	if(NULL == ifaceDesc) {
-		unAddressFree(&(ifaceDesc->Address));
+		unAddressFree(&(registerMetadata.IfaceAddress));
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	}
 	ifaceDesc->Socket = fd;
@@ -249,7 +242,7 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 		// extract header
 		ChannelLayerHeader_T* header = (ChannelLayerHeader_T*)(command->Data);
 		//add neighbor
-		int addRes = neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
+		neighborAdd(layer, &(header->From), &(neighborMetadata.Address), fd);
 		//check packet type
 		if(header->Hello)
 			channelHelloProcess(layer, command->DataSize, command->Data);
@@ -310,7 +303,7 @@ int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(NULL == command->MetaData)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	int res;
+	int res = FUNC_RESULT_FAILED;
 	//check for data and data size
 	if(0 != command->DataSize && NULL != command->Data) {
 		// build message
@@ -320,7 +313,12 @@ int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
 			//fill header
 			ChannelLayerHeader_T *header = newMessage;
 			header->From = layer->LocalAddress;
-			header->PayloadSize = command->DataSize;
+			header->PayloadSize = (PayloadSize_T)command->DataSize; // may be overflow
+			//assert for correct size
+			if(header->PayloadSize != command->DataSize){
+				free(newMessage);
+				return FUNC_RESULT_FAILED_ARGUMENT;
+			}
 			//copy data
 			memcpy(newMessage + CHANNEL_LAYER_HEADER_SIZE, command->Data, command->DataSize);
 			// add message to queue
@@ -331,14 +329,14 @@ int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
 			entry.ProcessingTime = timeGetCurrent();
 			entry.Metadata = *((RouteSendMetadata_T *) command->MetaData);
 			res = enqueueMessage(layer, &entry);
+			if(FUNC_RESULT_SUCCESS != res)
+				free(newMessage);
 		}
-		else {
+		else
 			res = FUNC_RESULT_FAILED_MEM_ALLOCATION;
-		}
 	}
-	else{
+	else
 		res = sendResponseToRouting(layer, PackStateChannel_NotSent, (RouteSendMetadata_T *) command->MetaData, 0);
-	}
 	return res;
 }
 

@@ -9,7 +9,7 @@
 #include <moarChannelInterfaces.h>
 #include <memory.h>
 #include <moarChannelNeighbors.h>
-#include <moarChannelMessageQueue.h>
+#include <moarChannelQueue.h>
 #include <moarChannelMessageTable.h>
 #include <moarChannelHello.h>
 

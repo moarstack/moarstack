@@ -5,7 +5,7 @@
 #include <funcResults.h>
 #include <moarChannelPrivate.h>
 #include <stdlib.h>
-#include "moarChannelMessageQueue.h"
+#include "moarChannelQueue.h"
 
 int queueInit(ChannelLayer_T* layer){
 	if(NULL == layer)

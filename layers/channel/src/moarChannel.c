@@ -13,7 +13,7 @@
 #include <moarChannelInterfaces.h>
 #include <moarChannelNeighbors.h>
 #include <moarChannelCommand.h>
-#include <moarChannelMessageQueue.h>
+#include <moarChannelQueue.h>
 #include <moarChannelHello.h>
 
 int epollInit(ChannelLayer_T *layer) {

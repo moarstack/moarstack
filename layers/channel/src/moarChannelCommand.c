@@ -353,7 +353,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	// if not trys left
 	if(entry->SendTrys <= SEND_TRYS){
 		// search neighbor
-		neighbor = neighborFindAddr(layer, &(entry->Metadata.Bridge));
+		neighbor = neighborFind(layer, &(entry->Metadata.Bridge));
 		//be sure that find remote can handle null
 		if (NULL == neighbor) //no neighbor | interface found
 			state = PackStateChannel_UnknownDest;

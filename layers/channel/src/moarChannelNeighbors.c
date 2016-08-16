@@ -28,7 +28,7 @@ int neighborsInit(ChannelLayer_T* layer){
 	return FUNC_RESULT_SUCCESS;
 }
 
-ChannelNeighbor_T* neighborFindAddr(ChannelLayer_T* layer, ChannelAddr_T* address){
+ChannelNeighbor_T* neighborFind(ChannelLayer_T* layer, ChannelAddr_T* address){
 	if(NULL == layer)
 		return NULL;
 	if(NULL == address)
@@ -87,7 +87,7 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	//if found remove
 	int removeRes = neighborNonResRemove(layer, remoteAddress);
 	// find neighbor
-	ChannelNeighbor_T* neighbor = neighborFindAddr(layer, address);
+	ChannelNeighbor_T* neighbor = neighborFind(layer, address);
 	if(NULL == neighbor){
 		// add new
 		neighbor = malloc(sizeof(ChannelNeighbor_T));
@@ -238,7 +238,7 @@ int neighborNonResAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int l
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	NonResolvedNeighbor_T* neighbor = neighborNonResFindAddr(layer, remoteAddress);
+	NonResolvedNeighbor_T* neighbor = neighborNonResFind(layer, remoteAddress);
 	if(NULL == neighbor){
 		//add here
 		neighbor = malloc(sizeof(NonResolvedNeighbor_T));
@@ -307,7 +307,7 @@ int neighborNonResRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address){
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-NonResolvedNeighbor_T* neighborNonResFindAddr(ChannelLayer_T* layer, UnIfaceAddr_T* address){
+NonResolvedNeighbor_T* neighborNonResFind(ChannelLayer_T* layer, UnIfaceAddr_T* address){
 	if(NULL == layer)
 		return NULL;
 	if(NULL == address)

@@ -12,6 +12,10 @@
 #include <moarChannelHello.h>
 #include <moarChannelNeighbors.h>
 
+#define COMPARE_EQUAL 		1
+#define COMPARE_DIFFERENT 	0
+typedef int(*compareFunc_T)(RemoteInterface_T* , RemoteInterface_T*);
+
 int neighborsInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -24,7 +28,7 @@ int neighborsInit(ChannelLayer_T* layer){
 	return FUNC_RESULT_SUCCESS;
 }
 
-ChannelNeighbor_T* neighborFindByAddress(ChannelLayer_T* layer, ChannelAddr_T* address){
+ChannelNeighbor_T* neighborFindAddr(ChannelLayer_T* layer, ChannelAddr_T* address){
 	if(NULL == layer)
 		return NULL;
 	if(NULL == address)
@@ -40,7 +44,7 @@ ChannelNeighbor_T* neighborFindByAddress(ChannelLayer_T* layer, ChannelAddr_T* a
 	}
 	return NULL;
 }
-RemoteInterface_T* neighborFindRemoteInterface(ChannelNeighbor_T* neighbor){
+RemoteInterface_T* neighborIfaceFind(ChannelNeighbor_T* neighbor){
 	if(NULL == neighbor)
 		return NULL;
 
@@ -53,7 +57,7 @@ RemoteInterface_T* neighborFindRemoteInterface(ChannelNeighbor_T* neighbor){
 	}
 	return NULL;
 }
-RemoteInterface_T* neighborFindRemoteInterfaceByAddress(ChannelNeighbor_T* neighbor, UnIfaceAddr_T* remoteAddress){
+RemoteInterface_T* neighborIfaceFindAddr(ChannelNeighbor_T* neighbor, UnIfaceAddr_T* remoteAddress){
 	if(NULL == neighbor)
 		return NULL;
 
@@ -75,15 +79,15 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//if channel address is unknown
 	if(NULL == address){
-		int res = neighborNonResolvedAdd(layer,remoteAddress,localSocket);
+		int res = neighborNonResAdd(layer,remoteAddress,localSocket);
 		return res;
 	}
 	bool isNew = false;
 	//find unresolved
 	//if found remove
-	int removeRes = neighborNonResolvedRemove(layer, remoteAddress);
+	int removeRes = neighborNonResRemove(layer, remoteAddress);
 	// find neighbor
-	ChannelNeighbor_T* neighbor = neighborFindByAddress(layer, address);
+	ChannelNeighbor_T* neighbor = neighborFindAddr(layer, address);
 	if(NULL == neighbor){
 		// add new
 		neighbor = malloc(sizeof(ChannelNeighbor_T));
@@ -98,14 +102,15 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 		isNew = true;
 	}
 	//search interface in neighbor interfaces table
-	RemoteInterface_T* remoteInterface = neighborFindRemoteInterfaceByAddress(neighbor, remoteAddress);
+	RemoteInterface_T* remoteInterface = neighborIfaceFindAddr(neighbor, remoteAddress);
 	//if not found
 	if(NULL == remoteInterface) {
 		// add interface here
 		remoteInterface = malloc(sizeof(RemoteInterface_T));
 		if (NULL == remoteInterface)
 			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-		remoteInterface->BridgeInterface = interfaceFindBySocket(layer, localSocket);
+
+		remoteInterface->BridgeInterface = interfaceFind(layer, localSocket);
 		//copy address
 		int cloneRes = unAddressClone(remoteAddress, &(remoteInterface->Address));
 		if (FUNC_RESULT_SUCCESS != cloneRes) {
@@ -119,6 +124,7 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 			free(remoteInterface);
 			return addRes;
 		}
+
 		if (isNew) {
 			int addNeighborRes = AddNext(&(layer->Neighbors), neighbor);
 			if (FUNC_RESULT_SUCCESS != addNeighborRes) {
@@ -126,16 +132,16 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 				unAddressFree(&(remoteInterface->Address));
 				//should be only one item in list
 				LinkedListItem_T *item = NextElement(&(neighbor->Interfaces));
-				item = DeleteElement(item);
-				free(remoteInterface);
+				while(NULL != item) {
+					free(item->Data); // free(remoteInterface);
+					item = DeleteElement(item);
+					item = NextElement(item);
+				}
 				free(neighbor);
 				return addNeighborRes;
 			}
-		}
-
-		if (isNew) {
 			// inform routing
-			//metadata
+			// metadata
 			ChannelNeighborMetadata_T neighborMetadata = {0};
 			neighborMetadata.Address = *address;
 			//commnad
@@ -148,9 +154,6 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-#define COMPARE_EQUAL 		1
-#define COMPARE_DIFFERENT 	0
-typedef int(*compareFunc_T)(RemoteInterface_T* , RemoteInterface_T*);
 
 int cleanNeighbors(ChannelLayer_T* layer, RemoteInterface_T* pattern, compareFunc_T compareFunction){
 	if(NULL == layer)
@@ -220,19 +223,22 @@ int neighborsRemoveAssociated(ChannelLayer_T* layer, int localSocket){
 	if(0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RemoteInterface_T refInterface;
-	refInterface.BridgeInterface = interfaceFindBySocket(layer,localSocket);
+	refInterface.BridgeInterface = interfaceFind(layer,localSocket);
 	int cleanRes = cleanNeighbors(layer, &refInterface, compareBySocket);
 	return cleanRes;
 }
+
+
+
 // non resolved processing
-int neighborNonResolvedAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int localSocket){
+int neighborNonResAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int localSocket){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == remoteAddress)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	NonResolvedNeighbor_T* neighbor = neighborNonResolvedFindByAddress(layer, remoteAddress);
+	NonResolvedNeighbor_T* neighbor = neighborNonResFindAddr(layer, remoteAddress);
 	if(NULL == neighbor){
 		//add here
 		neighbor = malloc(sizeof(NonResolvedNeighbor_T));
@@ -256,7 +262,7 @@ int neighborNonResolvedAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, 
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-int neighborNonResolvedProcess(ChannelLayer_T* layer){
+int neighborNonResProcess(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	moarTime_T currentTime = timeGetCurrent();
@@ -268,7 +274,7 @@ int neighborNonResolvedProcess(ChannelLayer_T* layer){
 			neighbor->NextProcessingTime = timeAddInterval(neighbor->NextProcessingTime, PROCESSING_UNRESOLVED_TIMEOUT);
 			neighbor->SendAttempts++;
 			//find interface
-			InterfaceDescriptor_T* iface = interfaceFindBySocket(layer, neighbor->LocalInterfaceSocket);
+			InterfaceDescriptor_T* iface = interfaceFind(layer, neighbor->LocalInterfaceSocket);
 			if(NULL == iface)
 				return FUNC_RESULT_FAILED;
 			if(iface->Ready) {
@@ -282,7 +288,7 @@ int neighborNonResolvedProcess(ChannelLayer_T* layer){
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-int neighborNonResolvedRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address){
+int neighborNonResRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == address)
@@ -301,7 +307,7 @@ int neighborNonResolvedRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address){
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-NonResolvedNeighbor_T* neighborNonResolvedFindByAddress(ChannelLayer_T* layer, UnIfaceAddr_T* address){
+NonResolvedNeighbor_T* neighborNonResFindAddr(ChannelLayer_T* layer, UnIfaceAddr_T* address){
 	if(NULL == layer)
 		return NULL;
 	if(NULL == address)

@@ -353,7 +353,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	// if not trys left
 	if(entry->SendTrys <= SEND_TRYS){
 		// search neighbor
-		neighbor = neighborFindByAddress(layer, &(entry->Metadata.Bridge));
+		neighbor = neighborFindAddr(layer, &(entry->Metadata.Bridge));
 		//be sure that find remote can handle null
 		if (NULL == neighbor) //no neighbor | interface found
 			state = PackStateChannel_UnknownDest;
@@ -372,7 +372,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	entry->SendTrys++;
 
 	//select interface
-	RemoteInterface_T *remoteInterface = neighborFindRemoteInterface(neighbor);
+	RemoteInterface_T *remoteInterface = neighborIfaceFind(neighbor);
 	if(NULL != remoteInterface) {
 		//if interface found
 		ChannelSendMetadata_T sendMetadata = {0};

@@ -14,6 +14,6 @@ int interfaceAdd(ChannelLayer_T* layer, InterfaceDescriptor_T* iface);
 // remove interface
 int interfaceRemove(ChannelLayer_T* layer, int fd);
 // find interface
-InterfaceDescriptor_T* interfaceFindBySocket(ChannelLayer_T *layer, int fd);
+InterfaceDescriptor_T* interfaceFind(ChannelLayer_T *layer, int fd);
 
 #endif //MOARSTACK_MOARINTERFACES_H

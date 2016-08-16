@@ -8,13 +8,14 @@
 #endif //MOARSTACK_MOARCHANNELNEIGHBORS_H
 
 int neighborsInit(ChannelLayer_T* layer);
-ChannelNeighbor_T* neighborFindByAddress(ChannelLayer_T* layer, ChannelAddr_T* address);
-RemoteInterface_T* neighborFindRemoteInterface(ChannelNeighbor_T* neighbor);
+ChannelNeighbor_T* neighborFindAddr(ChannelLayer_T* layer, ChannelAddr_T* address);
+RemoteInterface_T* neighborIfaceFind(ChannelNeighbor_T* neighbor);
+RemoteInterface_T* neighborIfaceFindAddr(ChannelNeighbor_T* neighbor, UnIfaceAddr_T* remoteAddress);
 int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* remoteAddress, int localSocket);
 int neighborRemove(ChannelLayer_T* layer, UnIfaceAddr_T remoteAddress);
 int neighborsRemoveAssociated(ChannelLayer_T* layer, int localSocket);
 //non resolved processing
-int neighborNonResolvedAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int localSocket);
-int neighborNonResolvedProcess(ChannelLayer_T* layer);
-int neighborNonResolvedRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address); // may be unused
-NonResolvedNeighbor_T* neighborNonResolvedFindByAddress(ChannelLayer_T* layer, UnIfaceAddr_T* address);// may be unused
+int neighborNonResAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int localSocket);
+int neighborNonResProcess(ChannelLayer_T* layer);
+int neighborNonResRemove(ChannelLayer_T* layer, UnIfaceAddr_T* address); // may be unused
+NonResolvedNeighbor_T* neighborNonResFindAddr(ChannelLayer_T* layer, UnIfaceAddr_T* address);// may be unused

@@ -12,7 +12,7 @@ int interfaceInit(ChannelLayer_T* layer){
 	return initRes;
 }
 
-InterfaceDescriptor_T* interfaceFindBySocket(ChannelLayer_T *layer, int fd){
+InterfaceDescriptor_T* interfaceFind(ChannelLayer_T *layer, int fd){
 	if(NULL == layer)
 		return NULL;
 	if(fd <= 0)

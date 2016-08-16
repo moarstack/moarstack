@@ -5,7 +5,7 @@
 #include <moarChannelPrivate.h>
 #include <funcResults.h>
 #include <memory.h>
-#include "moarChannelMessageTable.h"
+#include "moarChannelTable.h"
 
 const ChannelMessageEntry_T emptyChannelMessageEntry = {0};
 

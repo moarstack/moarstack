@@ -205,7 +205,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		int queueRes = processQueue(&channelLayer);
 		//if(FUNC_RESULT_SUCCESS != queueRes)
 		// update interval
-		int nonresolvedRes = neighborNonResolvedProcess(&channelLayer);
+		int nonresolvedRes = neighborNonResProcess(&channelLayer);
 	}
 
 }

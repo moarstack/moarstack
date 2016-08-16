@@ -10,7 +10,7 @@
 #include <memory.h>
 #include <moarChannelNeighbors.h>
 #include <moarChannelQueue.h>
-#include <moarChannelMessageTable.h>
+#include <moarChannelTable.h>
 #include <moarChannelHello.h>
 
 
@@ -119,7 +119,7 @@ int processReceiveMessage(void* layerRef, int fd, LayerCommandStruct_T *command)
 
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 
-	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	InterfaceDescriptor_T* interface = interfaceFind(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -179,7 +179,7 @@ int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command)
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 
 	//get interface
-	InterfaceDescriptor_T* ifaceDesc = interfaceFindBySocket(layer, fd);
+	InterfaceDescriptor_T* ifaceDesc = interfaceFind(layer, fd);
 	if(NULL == ifaceDesc)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -228,7 +228,7 @@ int processNewNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//get
-	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	InterfaceDescriptor_T* interface = interfaceFind(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -263,7 +263,7 @@ int processLostNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	ChannelLayer_T* layer = (ChannelLayer_T*)layerRef;
 	//get
-	InterfaceDescriptor_T* interface = interfaceFindBySocket(layer, fd);
+	InterfaceDescriptor_T* interface = interfaceFind(layer, fd);
 	if(NULL == interface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	InterfaceNeighborMetadata_T neighborMetadata = {0};

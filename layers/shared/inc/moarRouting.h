@@ -34,4 +34,6 @@ typedef struct{
 
 #pragma pack(pop)
 
+#define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
+
 #endif //MOARSTACK_MOARROUTING_H

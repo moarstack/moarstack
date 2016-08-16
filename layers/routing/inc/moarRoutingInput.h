@@ -1,0 +1,10 @@
+//
+// Created by svalov on 8/16/16.
+//
+
+#ifndef MOARSTACK_MOARROUTINGINPUT_H
+#define MOARSTACK_MOARROUTINGINPUT_H
+
+
+
+#endif //MOARSTACK_MOARROUTINGINPUT_H

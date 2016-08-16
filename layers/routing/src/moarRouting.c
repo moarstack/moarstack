@@ -7,7 +7,7 @@
 #include <moarRoutingPrivate.h>
 #include <funcResults.h>
 #include <memory.h>
-#include <moarRouitngCommandProcessing.h>
+#include <moarRoutingCommand.h>
 
 
 int initEpoll(RoutingLayer_T* layer){

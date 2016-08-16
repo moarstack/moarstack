@@ -26,6 +26,6 @@ typedef struct{
 	MessageId_T			InternalId;
 	RoutingMessageId_T 	MessageId;
 	//ttl/htl
-}RoutePacketMetadata_T;
+}RouteStoredPacket_T;
 
 #endif //MOARSTACK_MOARROUTINGPACKETMETADATA_H

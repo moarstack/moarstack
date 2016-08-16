@@ -48,20 +48,16 @@ int interfaceRemove(ChannelLayer_T* layer, int fd){
 	LinkedListItem_T* iterator = NextElement(&(layer->Interfaces));
 	while(NULL != iterator)	{
 		InterfaceDescriptor_T* iface = (InterfaceDescriptor_T*)iterator->Data;
-		if(fd == iface->Socket)
-			break;
+		if(fd == iface->Socket){
+			int res = unAddressFree(&iface->Address);
+			//remove descriptor
+			free(iterator->Data);
+			//delete element
+			LinkedListItem_T* deleteRes = DeleteElement(iterator);
+			if(FUNC_RESULT_SUCCESS != res)
+				return res;
+		}
 		iterator = NextElement(iterator);
-	}
-	if(NULL != iterator) {
-		//remove address
-		InterfaceDescriptor_T* iface = (InterfaceDescriptor_T*)iterator->Data;
-		int res = unAddressFree(&iface->Address);
-		//remove descriptor
-		free(iface);
-		//delete element
-		LinkedListItem_T* deleteRes = DeleteElement(iterator);
-		if(FUNC_RESULT_SUCCESS != res)
-			return res;
 	}
 	return FUNC_RESULT_SUCCESS;
 }

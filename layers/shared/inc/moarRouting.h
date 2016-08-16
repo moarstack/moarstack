@@ -6,7 +6,7 @@
 #define MOARSTACK_MOARROUTING_H
 
 #include <stdint.h>
-#include <moarRouintgMessageId.h>
+#include <moarRoutingMessageId.h>
 #include <moarChannel.h>
 //#define ROUTE_ADDR_SIZE	8
 

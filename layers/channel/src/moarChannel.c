@@ -12,8 +12,8 @@
 #include <stdio.h>
 #include <moarChannelInterfaces.h>
 #include <moarChannelNeighbors.h>
-#include <moarMessageProcessing.h>
-#include <moarChannelMessageQueue.h>
+#include <moarChannelCommand.h>
+#include <moarChannelQueue.h>
 #include <moarChannelHello.h>
 
 int epollInit(ChannelLayer_T *layer) {
@@ -107,39 +107,63 @@ int processCloseConnection(ChannelLayer_T* layer, int fd){
 	return FUNC_RESULT_SUCCESS;
 }
 
-void * MOAR_LAYER_ENTRY_POINT(void* arg){
+int channelInit(ChannelLayer_T* layer, void* arg){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == arg)
-		return NULL;
-	ChannelLayer_T channelLayer = {0};
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	MoarLayerStartupParams_T* startupParams = (MoarLayerStartupParams_T*) arg;
 
 	if(startupParams->DownSocketHandler <=0)
-		return NULL;
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(startupParams->UpSocketHandler <=0)
-		return NULL;
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	channelLayer.UpSocket = startupParams->UpSocketHandler;
-	channelLayer.DownSocket = startupParams->DownSocketHandler;
+	layer->UpSocket = startupParams->UpSocketHandler;
+	layer->DownSocket = startupParams->DownSocketHandler;
 	//
-	int listRes = interfaceInit(&channelLayer);
+	int listRes = interfaceInit(layer);
 	if(FUNC_RESULT_SUCCESS != listRes)
-		return NULL;
-		
-	int neighborsRes = neighborsInit(&channelLayer);
+		return listRes;
+
+	int neighborsRes = neighborsInit(layer);
 	if(FUNC_RESULT_SUCCESS != neighborsRes)
+		return neighborsRes;
+
+	int messageInitRes = queueInit(layer);
+	if(FUNC_RESULT_SUCCESS != messageInitRes){
+		return messageInitRes;
+	}
+
+	int helloRes = channelHelloFill(layer);
+	if(FUNC_RESULT_SUCCESS != helloRes)
+		return helloRes;
+
+	//init function pointers
+	layer->InterfaceProcessingRules[0] = MakeProcessingRule(LayerCommandType_MessageState, processInterfaceState);
+	layer->InterfaceProcessingRules[1] = MakeProcessingRule(LayerCommandType_Receive, processReceiveMessage);
+	layer->InterfaceProcessingRules[2] = MakeProcessingRule(LayerCommandType_RegisterInterface, processRegisterInterface);
+	layer->InterfaceProcessingRules[3] = MakeProcessingRule(LayerCommandType_UnregisterInterface, processUnregisterInterface);
+	layer->InterfaceProcessingRules[4] = MakeProcessingRule(LayerCommandType_NewNeighbor, processNewNeighbor);
+	layer->InterfaceProcessingRules[5] = MakeProcessingRule(LayerCommandType_LostNeighbor, processLostNeighbor);
+	layer->InterfaceProcessingRules[6] = MakeProcessingRule(LayerCommandType_UpdateNeighbor, processUpdateNeighbor);
+	layer->InterfaceProcessingRules[7] = MakeProcessingRule(LayerCommandType_None, NULL);
+
+	layer->RoutingProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendMessage);
+	layer->RoutingProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
+	return FUNC_RESULT_SUCCESS;
+}
+
+void * MOAR_LAYER_ENTRY_POINT(void* arg){
+	ChannelLayer_T channelLayer = {0};
+	int initRes = channelInit(&channelLayer, arg);
+	if(FUNC_RESULT_SUCCESS != initRes)
 		return NULL;
 
-	int messageInitRes = queueInit(&channelLayer);
-	if(FUNC_RESULT_SUCCESS != messageInitRes){
-		return NULL;
-	}
 	// load configuration
 	//
 	// listen for interface connection
-
-	int helloRes = channelHelloFill(&channelLayer);
-	if(FUNC_RESULT_SUCCESS != helloRes)
-		return NULL;
 	//listen(channelLayer.DownSocket, LISTEN_COUNT);
 	int res = epollInit(&channelLayer);
 	if(FUNC_RESULT_SUCCESS != res)
@@ -158,29 +182,30 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			uint32_t event = channelLayer.EpollEvent[i].events;
 			int fd = channelLayer.EpollEvent[i].data.fd;
 			// if new interface connected
-			if(fd == channelLayer.DownSocket) {
-				int res = processNewConnection(&channelLayer, fd);
-				if(FUNC_RESULT_SUCCESS != res){
-					//TODO write error message
-				}
+			int res = FUNC_RESULT_FAILED;
+			if (fd == channelLayer.DownSocket) {
+				res = processNewConnection(&channelLayer, fd);
 			} // if command from routing
-			else if(fd == channelLayer.UpSocket) {
-				int res = processRoutingData(&channelLayer, fd, event);
-				if(FUNC_RESULT_SUCCESS != res){
-					//TODO write error message
-				}
+			else if (fd == channelLayer.UpSocket) {
+				res = ProcessCommand(&channelLayer, fd, event, EPOLL_ROUNTING_EVENTS,
+									 channelLayer.RoutingProcessingRules);
 			} //data from interface
 			else {
-				int res = processInterfaceData(&channelLayer, fd, event);
-				if(FUNC_RESULT_SUCCESS != res){
-					processCloseConnection(&channelLayer,fd);
+				//process disconnected event
+				// if interface disconnected
+				if ((event & EPOLL_INTERFACE_DISCONNECT_EVENTS) == 0) {
+					res = ProcessCommand(&channelLayer, fd, event, EPOLL_INTERFACE_EVENTS,
+										 channelLayer.InterfaceProcessingRules);
+				}
+				if (FUNC_RESULT_SUCCESS != res) {
+					processCloseConnection(&channelLayer, fd);
 				}
 			}
 		}
 		int queueRes = processQueue(&channelLayer);
 		//if(FUNC_RESULT_SUCCESS != queueRes)
 		// update interval
-		int nonresolvedRes = neighborNonResolvedProcess(&channelLayer);
+		int nonresolvedRes = neighborNonResProcess(&channelLayer);
 	}
 
 }

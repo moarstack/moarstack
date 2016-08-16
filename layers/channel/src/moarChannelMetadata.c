@@ -47,33 +47,26 @@ int writeSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dat
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	sendPlain->Id = metadata->Id;
 	//copy address to end of metadata
-	int addrRes = writeAddressToMetadata(&(metadata->Bridge), sendPlain, CHANNEL_SEND_METADATA_PLAIN_SIZE);
-	if(FUNC_RESULT_SUCCESS != addrRes) {
-		free(sendPlain);
-		return addrRes;
-	}
-	// fill command
-	LayerCommandStruct_T command;
-	command.Command = LayerCommandType_Send;
-	// metadata + address
-	command.MetaSize = metadataSize;
-	command.MetaData = (void *)(sendPlain);
-	command.DataSize = dataSize;
-	command.Data = data;
-	// write command
-	int res = WriteCommand(fd, &command);
-	if(FUNC_RESULT_SUCCESS != res) { //some error
-		free(sendPlain);
-		return res;
+	int res = writeAddressToMetadata(&(metadata->Bridge), sendPlain, CHANNEL_SEND_METADATA_PLAIN_SIZE);
+	if(FUNC_RESULT_SUCCESS == res) {
+		// fill command
+		LayerCommandStruct_T command;
+		command.Command = LayerCommandType_Send;
+		// metadata + address
+		command.MetaSize = metadataSize;
+		command.MetaData = (void *) (sendPlain);
+		command.DataSize = dataSize;
+		command.Data = data;
+		// write command
+		res = WriteCommand(fd, &command);
 	}
 	//free memory
 	free(sendPlain);
 	//all done
-	return FUNC_RESULT_SUCCESS;
+	return res;
 }
 
 //allocate addrSize bytes for address storage
-//allocate metadata->MessageSize bytes for data storage
 int readReceiveMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceReceiveMetadata_T* metadata){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -126,7 +119,6 @@ int readRegisterMetadata(int fd, LayerCommandStruct_T* command, InterfaceRegiste
 	return FUNC_RESULT_SUCCESS;
 }
 //allocate addrSize bytes for address storage
-//allocate metadata->BeaconPayloadSize bytes for data storage
 int readNeighborMetadata(int fd, LayerCommandStruct_T* command, UnIfaceAddrLen_T addrSize, InterfaceNeighborMetadata_T* metadata){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;

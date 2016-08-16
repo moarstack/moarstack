@@ -5,10 +5,10 @@
 #include <stddef.h>
 #include <funcResults.h>
 #include <memory.h>
-#include <moarRouintgMessageId.h>
+#include <moarRoutingMessageId.h>
 #include <stdlib.h>
 #include <moarTime.h>
-#include "moarRouintgMessageId.h"
+#include "moarRoutingMessageId.h"
 
 
 bool rmidEqual( RoutingMessageId_T * one, RoutingMessageId_T * two ){

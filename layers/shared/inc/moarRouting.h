@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <moarRoutingMessageId.h>
 #include <moarChannel.h>
+#include <moarCommons.h>
 //#define ROUTE_ADDR_SIZE	8
 
 #pragma pack(push, 1)
@@ -25,6 +26,7 @@ typedef enum{
 
 typedef struct{
 	RoutePackType_T 	PacketType;
+	PayloadSize_T 		PayloadSize;
 	RouteAddr_T 		Source;
 	RouteAddr_T 		Destination;
 	RoutingMessageId_T 	Id;

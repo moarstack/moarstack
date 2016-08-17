@@ -3,6 +3,7 @@
 //
 
 #include <moarIfaceMockitActions.h>
+#include <moarInterfacePrivate.h>
 
 
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
@@ -44,6 +45,7 @@ int actMockitRegister( IfaceState_T * layer ) {
 	gettimeofday( &moment, NULL );
 	srand( ( unsigned int )( moment.tv_usec ) );
 	address = 1 + rand() % IFACE_ADDRESS_LIMIT;
+	memset( layer->Memory.Buffer, 0, IFACE_BUFFER_SIZE );
 	snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 	memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
 	result = writeDown( layer, layer->Memory.Buffer, length );
@@ -116,21 +118,42 @@ int actMockitReceived( IfaceState_T * layer ) {
 }
 
 int actMockitConnection( IfaceState_T * layer ) {
-	int	result;
+	int					result;
+	struct epoll_event	* event;
 
 	result = connectDown( layer );
 
-	if( FUNC_RESULT_SUCCESS == result )
-		result = actMockitRegister( layer );
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	event = layer->Memory.EpollEvents + 0;
+	event->data.fd = layer->Config.MockitSocket;
+	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
+	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED;
+
+	result = actMockitRegister( layer );
 
 	return result;
 }
 
-int actMockitReconnection( IfaceState_T * layer ) {
-	int result;
+int actMockitReconnection( IfaceState_T * layer, bool forced ) {
+	int					result;
+	struct epoll_event	* event;
 
-	shutdown( layer->Config.MockitSocket, SHUT_RDWR );
-	close( layer->Config.MockitSocket );
+	event = layer->Memory.EpollEvents + 0;
+	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.MockitSocket, event );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED;
+
+	if( forced ) {
+		shutdown( layer->Config.MockitSocket, SHUT_RDWR );
+		close( layer->Config.MockitSocket );
+	}
+
 	layer->Config.IsConnectedToMockit = false;
 	result = actMockitConnection( layer );
 

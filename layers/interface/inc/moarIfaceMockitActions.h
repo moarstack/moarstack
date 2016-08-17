@@ -19,6 +19,6 @@ int actMockitReceived( IfaceState_T * layer );
 
 int actMockitConnection( IfaceState_T * layer );
 
-int actMockitReconnection( IfaceState_T * layer );
+int actMockitReconnection( IfaceState_T * layer, bool forced );
 
 #endif //MOARSTACK_MOARIFACEMOCKITACTIONS_H

@@ -13,10 +13,14 @@
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
 
-	if( events & EPOLLIN ) // if new data received
+	if( events & EPOLLHUP )
+		result = actMockitReconnection( layer, false );
+	else if( events & EPOLLIN )// if new data received
 		result = actMockitReceived( layer );
+	else if ( events & EPOLLERR )
+		result = actMockitReconnection( layer, true );
 	else
-		result = actMockitReconnection( layer );
+		result = FUNC_RESULT_FAILED_ARGUMENT;
 
 	return result;
 }
@@ -24,48 +28,58 @@ int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 int processChannelEvent( IfaceState_T * layer, uint32_t events ) {
 	int	result;
 
-	if( events & EPOLLIN ) // if new command from channel
+	if( events & EPOLLHUP )
+		result = processChannelReconnection( layer, false );
+	else if( events & EPOLLIN )// if new command from channel
 		result = processCommandChannel( layer );
+	else if ( events & EPOLLERR )
+		result = processChannelReconnection( layer, true );
 	else
-		result = processChannelReconnection( layer );
+		result = FUNC_RESULT_FAILED_ARGUMENT;
 
 	return result;
 }
 
+int initInterface( IfaceState_T * layer, void * params ) {
+	int							result;
+	MoarIfaceStartupParams_T	* paramsStruct;
+
+	if( NULL == params )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	paramsStruct = ( MoarIfaceStartupParams_T * )params;
+	strncpy( layer->Config.ChannelSocketFilepath, paramsStruct->socketToChannel, SOCKET_FILEPATH_SIZE );
+	layer->Config.EpollHandler = epoll_create( IFACE_OPENING_SOCKETS );
+	result = actMockitConnection( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = processChannelConnection( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	layer->Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL; // for cases when beaconIntervalCurrent will change
+
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	IfaceState_T		state = { 0 };
-	struct epoll_event	events[ IFACE_OPENING_SOCKETS ] = {{ 0 }},
-						oneSocketEvent;
+	struct epoll_event	* event;
 	int					result,
-						epollHandler,
 						eventsCount;
 
-	if( NULL == arg )
+	result = initInterface( &state, arg );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		printf( "IFACE: error %d while init\n", result );
 		return NULL;
-
-	strncpy( state.Config.ChannelSocketFilepath, ( ( MoarIfaceStartupParams_T * )arg )->socketToChannel, SOCKET_FILEPATH_SIZE );
-
-	epollHandler = epoll_create( IFACE_OPENING_SOCKETS );
-	oneSocketEvent.events = EPOLLIN | EPOLLET;
-	result = actMockitConnection( &state );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return NULL;
-
-	oneSocketEvent.data.fd = state.Config.MockitSocket;
-	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.MockitSocket, &oneSocketEvent );
-	result = processChannelConnection( &state );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return NULL;
-
-	oneSocketEvent.data.fd = state.Config.ChannelSocket;
-	epoll_ctl( epollHandler, EPOLL_CTL_ADD, state.Config.ChannelSocket, &oneSocketEvent );
-	state.Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL; // for cases when beaconIntervalCurrent will change
+	}
 
 	while( true ) {
-		eventsCount = epoll_wait( epollHandler, events, IFACE_OPENING_SOCKETS, state.Config.BeaconIntervalCurrent );
-		result = FUNC_RESULT_SUCCESS;
+		eventsCount = epoll_wait( state.Config.EpollHandler, state.Memory.EpollEvents, IFACE_OPENING_SOCKETS, state.Config.BeaconIntervalCurrent );
 
 		if( 0 == eventsCount ) {// timeout
 			if( state.Config.IsWaitingForResponse )
@@ -74,10 +88,10 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				result = transmitBeacon( &state );
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
-				if( events[ eventIndex ].data.fd == state.Config.MockitSocket )
-					result = actMockitEvent( &state, events[ eventIndex ].events );
-				else if( events[ eventIndex ].data.fd == state.Config.ChannelSocket )
-					result = processChannelEvent( &state, events[ eventIndex ].events );
+				if( state.Memory.EpollEvents[ eventIndex ].data.fd == state.Config.MockitSocket )
+					result = actMockitEvent( &state, state.Memory.EpollEvents[ eventIndex ].events );
+				else if( state.Memory.EpollEvents[ eventIndex ].data.fd == state.Config.ChannelSocket )
+					result = processChannelEvent( &state, state.Memory.EpollEvents[ eventIndex ].events );
 				else
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 

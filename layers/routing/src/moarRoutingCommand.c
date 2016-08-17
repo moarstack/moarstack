@@ -4,7 +4,7 @@
 
 #include <moarRoutingPrivate.h>
 #include <funcResults.h>
-#include "moarRouitngCommandProcessing.h"
+#include "moarRoutingCommand.h"
 
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)

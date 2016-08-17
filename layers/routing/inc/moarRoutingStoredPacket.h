@@ -14,6 +14,7 @@ typedef enum{
 	StoredPackState_InProcessing,
 	StoredPackState_WaitSent,
 	StoredPackState_WaitAck,
+	StoredPackState_Disposed,
 }StoredPackState_T;
 
 typedef struct{

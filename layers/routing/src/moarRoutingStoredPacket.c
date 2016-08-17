@@ -24,7 +24,7 @@ int disposeStoredPacket(RouteStoredPacket_T** packet){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	int res = disposeStoredPacket(*packet);
+	int res = disposeStoredPacketData(*packet);
 	free(*packet);
 	*packet = NULL;
 

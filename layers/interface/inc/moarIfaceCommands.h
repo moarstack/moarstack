@@ -12,6 +12,7 @@
 
 #define IFACE_BEACON_INTERVAL			120000 // in milliseconds
 #define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
+#define IFACE_ARRAY_CHANNEL_POSITION	1 // position in array preallocated in layer state
 
 // clear inner preallocated command
 int clearCommand( IfaceState_T * layer );
@@ -53,6 +54,6 @@ int processCommandChannel( IfaceState_T * layer );
 int processChannelConnection( IfaceState_T * layer );
 
 // high-level reconnection to channel layer
-int processChannelReconnection( IfaceState_T * layer );
+int processChannelReconnection( IfaceState_T * layer, bool forced );
 
 #endif //MOARSTACK_MOARIFACECOMMANDS_H

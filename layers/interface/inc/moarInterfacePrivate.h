@@ -84,7 +84,8 @@ typedef struct {
 						ChannelSocket,
 						NeighborsCount,
 						BeaconPayloadSize,
-						BeaconIntervalCurrent;
+						BeaconIntervalCurrent,
+						EpollHandler;
 	PowerFloat_T		CurrentSensitivity,
 						CurrentBeaconPower;
 	bool				IsWaitingForResponse,
@@ -103,6 +104,7 @@ typedef struct {
 	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
 	LayerCommandStruct_T	Command;
 	MessageId_T				ProcessingMessageId;
+	struct epoll_event		EpollEvents[ IFACE_OPENING_SOCKETS ];
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

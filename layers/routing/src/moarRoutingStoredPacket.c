@@ -11,7 +11,25 @@
 #include <memory.h>
 
 
-int disposeStoredPacket(RouteStoredPacket_T* packet){}
+int disposeStoredPacketData(RouteStoredPacket_T* packet){
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	free(packet->Payload);
+	packet->Payload = NULL;
+
+	return FUNC_RESULT_SUCCESS;
+}
+int disposeStoredPacket(RouteStoredPacket_T** packet){
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int res = disposeStoredPacket(*packet);
+	free(*packet);
+	*packet = NULL;
+
+	return res;
+}
 
 int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	if(NULL == layer)

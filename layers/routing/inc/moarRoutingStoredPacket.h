@@ -28,7 +28,8 @@ typedef struct{
 	//ttl/htl
 }RouteStoredPacket_T;
 
-int disposeStoredPacket(RouteStoredPacket_T* packet);
+int disposeStoredPacketData(RouteStoredPacket_T* packet);
+int disposeStoredPacket(RouteStoredPacket_T** packet);
 
 int processInputFromChannel(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize);
 //int processInputFromPresentation(RouteStoredPacket_T* packet, PresentationSendMetadata_T* metadata, void* data, PayloadSize_T dataSize);

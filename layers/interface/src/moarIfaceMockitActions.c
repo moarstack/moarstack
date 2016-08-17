@@ -37,20 +37,29 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 }
 
 int actMockitRegister( IfaceState_T * layer ) {
-	struct timeval	moment;
 	int				result,
 					length,
 					address;
 
-	gettimeofday( &moment, NULL );
-	srand( ( unsigned int )( moment.tv_usec ) );
-	address = 1 + rand() % IFACE_ADDRESS_LIMIT;
-	memset( layer->Memory.Buffer, 0, IFACE_BUFFER_SIZE );
+	memcpy( &address, &( layer->Config.Address ), IFACE_ADDR_SIZE );
+
+	if( 0 == address ) {
+		struct timeval	moment;
+
+		gettimeofday( &moment, NULL );
+		srand( ( unsigned int )( moment.tv_usec ) );
+		address = 1 + rand() % IFACE_ADDRESS_LIMIT;
+	}
+
 	snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
-	memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
 	result = writeDown( layer, layer->Memory.Buffer, length );
 
-	return result;
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
+
+	return FUNC_RESULT_SUCCESS;
 }
 
 int actMockitRegisterResult( IfaceState_T * layer ) {

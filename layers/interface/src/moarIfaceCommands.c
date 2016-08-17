@@ -3,6 +3,7 @@
 //
 
 #include <moarIfaceCommands.h>
+#include <moarInterfacePrivate.h>
 
 int clearCommand( IfaceState_T * layer ) {
 	return FreeCommand( &( layer->Memory.Command ) );
@@ -205,21 +206,42 @@ int processCommandChannel( IfaceState_T * layer ) {
 }
 
 int processChannelConnection( IfaceState_T * layer ) {
-	int	result;
+	int					result;
+	struct epoll_event	* event;
 
 	result = connectUp( layer );
 
-	if( FUNC_RESULT_SUCCESS == result )
-		result = processCommandIfaceRegister( layer );
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	event = layer->Memory.EpollEvents + 1;
+	event->data.fd = layer->Config.ChannelSocket;
+	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
+	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.ChannelSocket, event );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED;
+
+	result = processCommandIfaceRegister( layer );
 
 	return result;
 }
 
-int processChannelReconnection( IfaceState_T * layer ) {
-	int result;
+int processChannelReconnection( IfaceState_T * layer, bool forced ) {
+	int					result;
+	struct epoll_event	* event;
 
-	shutdown( layer->Config.ChannelSocket, SHUT_RDWR );
-	close( layer->Config.ChannelSocket );
+	event = layer->Memory.EpollEvents + 1;
+	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.ChannelSocket, event );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return FUNC_RESULT_FAILED;
+
+	if( forced ) {
+		shutdown( layer->Config.ChannelSocket, SHUT_RDWR );
+		close( layer->Config.ChannelSocket );
+	}
+
 	layer->Config.IsConnectedToChannel = false;
 	result = processChannelConnection( layer );
 

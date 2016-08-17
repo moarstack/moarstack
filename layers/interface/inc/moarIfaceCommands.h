@@ -53,6 +53,6 @@ int processCommandChannel( IfaceState_T * layer );
 int processChannelConnection( IfaceState_T * layer );
 
 // high-level reconnection to channel layer
-int processChannelReconnection( IfaceState_T * layer );
+int processChannelReconnection( IfaceState_T * layer, bool forced );
 
 #endif //MOARSTACK_MOARIFACECOMMANDS_H

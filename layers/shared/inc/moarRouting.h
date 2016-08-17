@@ -6,9 +6,32 @@
 #define MOARSTACK_MOARROUTING_H
 
 #include <stdint.h>
+#include <moarRoutingMessageId.h>
+#include <moarChannel.h>
+#include <moarCommons.h>
+//#define ROUTE_ADDR_SIZE	8
 
-#define ROUTE_ADDR_SIZE	8
+#pragma pack(push, 1)
 
-typedef uint8_t	RouteAddr_T[ ROUTE_ADDR_SIZE ];
+//typedef struct{
+//	uint8_t		Address[ ROUTE_ADDR_SIZE ];
+//} RouteAddr_T;
+
+typedef ChannelAddr_T RouteAddr_T;
+
+typedef enum{
+	RoutePackType_Data,
+	RoutePackType_Service,
+}RoutePackType_T;
+
+typedef struct{
+	RoutePackType_T 	PacketType;
+	PayloadSize_T 		PayloadSize;
+	RouteAddr_T 		Source;
+	RouteAddr_T 		Destination;
+	RoutingMessageId_T 	Id;
+}RoutingHeader_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARROUTING_H

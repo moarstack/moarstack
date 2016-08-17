@@ -135,7 +135,7 @@ int actMockitConnection( IfaceState_T * layer ) {
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
-	event = layer->Memory.EpollEvents + 0;
+	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
 	event->data.fd = layer->Config.MockitSocket;
 	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
@@ -152,7 +152,7 @@ int actMockitReconnection( IfaceState_T * layer, bool forced ) {
 	int					result;
 	struct epoll_event	* event;
 
-	event = layer->Memory.EpollEvents + 0;
+	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.MockitSocket, event );
 
 	if( FUNC_RESULT_SUCCESS != result )

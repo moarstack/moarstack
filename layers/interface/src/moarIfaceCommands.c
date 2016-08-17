@@ -214,7 +214,7 @@ int processChannelConnection( IfaceState_T * layer ) {
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
-	event = layer->Memory.EpollEvents + 1;
+	event = layer->Memory.EpollEvents + IFACE_ARRAY_CHANNEL_POSITION;
 	event->data.fd = layer->Config.ChannelSocket;
 	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.ChannelSocket, event );
@@ -231,7 +231,7 @@ int processChannelReconnection( IfaceState_T * layer, bool forced ) {
 	int					result;
 	struct epoll_event	* event;
 
-	event = layer->Memory.EpollEvents + 1;
+	event = layer->Memory.EpollEvents + IFACE_ARRAY_CHANNEL_POSITION;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.ChannelSocket, event );
 
 	if( FUNC_RESULT_SUCCESS != result )

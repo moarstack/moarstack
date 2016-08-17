@@ -12,8 +12,9 @@
 #define IFACE_ADDRESS_LIMIT				10 // sync with the mockit config file
 #define IFACE_REGISTRATION_OK			"Registration ok\n" // sync with mockit
 #define IFACE_REGISTRATION_OK_SIZE		strlen( IFACE_REGISTRATION_OK )
-#define IFACE_MIN_FINISH_POWER	-70 // in dBm
-#define IFACE_MAX_START_POWER	16 // in dBm
+#define IFACE_MIN_FINISH_POWER			-70 // in dBm
+#define IFACE_MAX_START_POWER			16 // in dBm
+#define IFACE_ARRAY_MOCKIT_POSITION		0 // position in array preallocated in layer state
 
 int actMockitReceived( IfaceState_T * layer );
 

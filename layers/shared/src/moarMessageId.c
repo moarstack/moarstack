@@ -39,13 +39,3 @@ int midGenerate( MessageId_T * identifier, MoarLayerType_T layer ) {
 
 	return FUNC_RESULT_SUCCESS;
 }
-
-// returns source layer - layer which denerated this id
-MoarLayerType_T midSourceLayer( MessageId_T * identifier ) {
-	MoarLayerType_T	layer = MoarLayer_LayersCount;
-
-	if( NULL != identifier )
-		layer = identifier->SourceLayer;
-
-	return layer;
-}

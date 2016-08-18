@@ -34,7 +34,7 @@ int midGenerate( MessageId_T * identifier, MoarLayerType_T layer ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	increment();
-	memcmp( identifier, valueArray, MESSAGE_ID_FULL_SIZE );
+	memcpy( identifier, valueArray, MESSAGE_ID_FULL_SIZE );
 
 	if( MoarLayer_LayersCount > layer )
 		identifier->SourceLayer = layer;

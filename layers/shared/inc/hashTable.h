@@ -5,14 +5,22 @@
 #ifndef MOARSTACK_HASHTABLE_H
 #define MOARSTACK_HASHTABLE_H
 
+#include <stdlib.h>
+
 // hash function proto
 typedef int (* hashFunc_T)(void* data, size_t size);
+
+typedef struct hashEntry_T hashEntry_T;
+
+// hash stuct
+struct hashEntry_T{
+	int 			HashValue;
+	void* 			Key;
+	void* 			Data;
+	hashEntry_T* 	Next;
+};
+
 // hash iterator
-typedef  struct{
-	int 	HashValue;
-	void* 	Key;
-	void* 	Data;
-}hashEntry_T;
 
 // hash table
 typedef struct{
@@ -20,7 +28,8 @@ typedef struct{
 	size_t  		DataSize;
 	hashFunc_T		HashFunction;
 	int 			StorageSize;
-	void**			Table; // TODO move type to list
+	hashEntry_T**	Table;
+	int				Count;
 }hashTable_T;
 
 #ifdef __cplusplus
@@ -31,7 +40,7 @@ extern int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, si
 extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
-extern void* hashGet(hashTable_T* table, void* key);
+extern int hashGet(hashTable_T* table, void* key, void*);
 
 
 #ifdef __cplusplus

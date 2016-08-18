@@ -10,7 +10,7 @@
 
 #include <moarLibInterface.h> // MoarLayerType_T
 
-#define MESSAGE_ID_FREE_SIZE	7
+#define MESSAGE_ID_FREE_SIZE	4
 #define MESSAGE_ID_FULL_SIZE	sizeof( MessageId_T )
 
 #pragma pack(push, 1)

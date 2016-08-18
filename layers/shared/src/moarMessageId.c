@@ -7,7 +7,7 @@
 #include <funcResults.h>
 #include <moarMessageId.h>
 
-static uint8_t	valueArray[ MESSAGE_ID_FULL_SIZE ] = { 0 };
+static uint8_t	valueArray[ MESSAGE_ID_FREE_SIZE ] = { 0 };
 
 // checks whether given message ids are equal; returns true, if are, false otherwise
 bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
@@ -34,25 +34,18 @@ int midGenerate( MessageId_T * identifier, MoarLayerType_T layer ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	increment();
-	memcpy( identifier, valueArray, MESSAGE_ID_FULL_SIZE );
-
-	if( MoarLayer_LayersCount > layer )
-		identifier->SourceLayer = layer;
+	memcpy( identifier->FreePart, valueArray, MESSAGE_ID_FREE_SIZE );
+	identifier->SourceLayer = layer;
 
 	return FUNC_RESULT_SUCCESS;
 }
 
 // returns source layer - layer which denerated this id
 MoarLayerType_T midSourceLayer( MessageId_T * identifier ) {
-	int				tempValue;
 	MoarLayerType_T	layer = MoarLayer_LayersCount;
 
-	if( NULL != identifier ) {
-		memcpy( &tempValue, &( identifier->SourceLayer ), sizeof( MoarLayerType_T ) );
-
-		if( ( int )MoarLayer_Interface <= tempValue && ( int )MoarLayer_LayersCount > tempValue )
-			layer = identifier->SourceLayer;
-	}
+	if( NULL != identifier )
+		layer = identifier->SourceLayer;
 
 	return layer;
 }

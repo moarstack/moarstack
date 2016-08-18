@@ -11,7 +11,7 @@
 #include <memory.h>
 
 
-int disposeStoredPacketData(RouteStoredPacket_T* packet){
+int clearStoredPacket(RouteStoredPacket_T* packet){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -24,7 +24,7 @@ int disposeStoredPacket(RouteStoredPacket_T** packet){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	int res = disposeStoredPacketData(*packet);
+	int res = clearStoredPacket(*packet);
 	free(*packet);
 	*packet = NULL;
 
@@ -70,7 +70,7 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	return sendRes;
 }
 
-int processInputFromChannel(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
+int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == metadata)

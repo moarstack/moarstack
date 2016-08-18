@@ -28,7 +28,7 @@ typedef struct{
 	size_t  		DataSize;
 	hashFunc_T		HashFunction;
 	int 			StorageSize;
-	hashEntry_T**	Table;
+	hashEntry_T*	Table;
 	int				Count;
 }hashTable_T;
 
@@ -40,7 +40,7 @@ extern int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, si
 extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
-extern int hashGet(hashTable_T* table, void* key, void*);
+extern int hashGet(hashTable_T* table, void* key, void* data);
 
 
 #ifdef __cplusplus

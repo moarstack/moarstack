@@ -6,6 +6,7 @@
 #define MOARSTACK_HASHTABLE_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 // hash function proto
 typedef int (* hashFunc_T)(void* data, size_t size);
@@ -28,7 +29,7 @@ typedef struct{
 	size_t  		DataSize;
 	hashFunc_T		HashFunction;
 	int 			StorageSize;
-	hashEntry_T*	Table;
+	hashEntry_T**	Table;
 	int				Count;
 }hashTable_T;
 
@@ -41,7 +42,7 @@ extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
 extern int hashGet(hashTable_T* table, void* key, void* data);
-
+extern bool hashContain(hashTable_T* table, void* key);
 
 #ifdef __cplusplus
 }

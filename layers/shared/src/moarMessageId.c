@@ -21,7 +21,7 @@ bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
 
 // increments value in specified array
 void increment( void ) {
-	int i = MESSAGE_ID_FULL_SIZE;
+	int i = MESSAGE_ID_FREE_SIZE;
 
 	while( 0 <= --i )
 		if( 0 != ++( valueArray[ i ] ) )

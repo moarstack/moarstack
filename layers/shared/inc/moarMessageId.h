@@ -32,6 +32,9 @@ extern bool midAreEqual( MessageId_T * one, MessageId_T * two );
 // generates new identifier for some packet
 extern int midGenerate( MessageId_T * identifier, MoarLayerType_T layer );
 
+// returns source layer - layer which denerated this id
+extern MoarLayerType_T midSourceLayer( MessageId_T * identifier );
+
 #ifdef __cplusplus
 }
 #endif

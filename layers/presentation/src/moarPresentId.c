@@ -13,7 +13,7 @@ static uint8_t	valueArray[ PRESENT_ID_ORDER_SIZE ] = { 0 };
 
 // checks whether given message ids are equal; returns true, if are, false otherwise
 bool prIdAreEqual( PresentId_T * one, PresentId_T * two ) {
-	if( ( NULL != one && NULL == two ) || ( NULL == one && NULL != two ) )
+	if( NULL == one || NULL == two )
 		return false;
 	else if( one == two ) // pointers are equal
 		return true;

@@ -71,35 +71,15 @@ int processUpdateNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* c
 int processSendCommand( void * layerRef, int fd, LayerCommandStruct_T * command ) {
 	int						result;
 	RoutingLayer_T			* layer;
-	PresentSendMetadata_T	* metadata;
 	RouteStoredPacket_T		storedPacket;
 
 	if( NULL == layerRef || fd <= 0 || NULL == command || 0 == command->MetaSize || NULL == command->MetaData )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	layer = ( RoutingLayer_T * )layerRef;
-	metadata = ( PresentSendMetadata_T * )command->MetaData;
+	result = prepareSentPacket( &storedPacket, command->MetaData, command->Data, command->DataSize );
 
-	if( 0 == command->DataSize || NULL == command->Data ) { // if no meaningfull data
-		// inform presentation about not sent message
-	} else { //
-		result = rmidGenerate( &( storedPacket.MessageId ) );
+	// some logic here: informing presentation or adding to packet store TODO implement
 
-		if( FUNC_RESULT_SUCCESS == result ) {
-			storedPacket.Destination = metadata->Destination;
-			storedPacket.InternalId = metadata->Id;
-			storedPacket.PackType = RoutePackType_Data;
-			storedPacket.Payload = command->Data;
-			storedPacket.PayloadSize = command->DataSize;
-			storedPacket.NextProcessing = timeGetCurrent();
-			// no Source due to no way to find out own address (yet)
-			// no LastHop due to current hop being first
-			// no NextHop because its routing work to know such things
-
-			//save packet to the packet store
-		}
-	}
-
-
-	return FUNC_RESULT_SUCCESS;
+	return result;
 }

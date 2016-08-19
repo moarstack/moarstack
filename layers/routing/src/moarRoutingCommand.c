@@ -5,6 +5,8 @@
 #include <moarRoutingPrivate.h>
 #include <funcResults.h>
 #include <moarRoutingCommand.h>
+#include <moarRoutingStoredPacket.h>
+#include <moarCommons.h>
 
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
@@ -81,9 +83,21 @@ int processSendCommand( void * layerRef, int fd, LayerCommandStruct_T * command 
 	if( 0 == command->DataSize || NULL == command->Data ) { // if no meaningfull data
 		// inform presentation about not sent message
 	} else { //
-		storedPacket.Destination = metadata->Destination;
-		storedPacket.InternalId = metadata->Id;
 		result = rmidGenerate( &( storedPacket.MessageId ) );
+
+		if( FUNC_RESULT_SUCCESS == result ) {
+			storedPacket.Destination = metadata->Destination;
+			storedPacket.InternalId = metadata->Id;
+			storedPacket.PackType = RoutePackType_Data;
+			storedPacket.Payload = command->Data;
+			storedPacket.PayloadSize = command->DataSize;
+			storedPacket.NextProcessing = timeGetCurrent();
+			// no Source due to no way to find out own address (yet)
+			// no LastHop due to current hop being first
+			// no NextHop because its routing work to know such things
+
+			//save packet to the packet store
+		}
 	}
 
 

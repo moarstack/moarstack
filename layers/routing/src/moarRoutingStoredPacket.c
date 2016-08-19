@@ -9,6 +9,7 @@
 #include <funcResults.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <moarCommons.h>
 
 
 int clearStoredPacket(RouteStoredPacket_T* packet){
@@ -71,6 +72,36 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	free(newData);
 	return sendRes;
 }
+
+int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	int						result;
+	LayerCommandStruct_T	command = { 0 };
+	RouteReceivedMetadata_T	metadata = { 0 };
+
+	if( NULL == layer || NULL == packet || 0 >= layer->PresentationSocket )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	command.Data = malloc( packet->PayloadSize );
+
+	if( NULL == command.Data )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	command.Command = LayerCommandType_Receive;
+
+	memcpy( command.Data, packet->Payload, packet->PayloadSize );
+	command.DataSize = packet->PayloadSize;
+
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof( RouteReceivedMetadata_T );
+
+	metadata.From = packet->Source;
+	metadata.Id = packet->InternalId;
+
+	result = WriteCommand( layer->PresentationSocket, &command );
+	free( command.Data );
+	return result;
+}
+
 
 int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
 	if(NULL == packet)

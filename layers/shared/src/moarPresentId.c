@@ -3,9 +3,10 @@
 //
 
 #include <string.h> 			// memcmp()
+#include <stdlib.h>				// srand(), rand()
 
 #include <moarPresentId.h>
-#include <moarTime.h>			// timeGetCurrent
+#include <moarTime.h>			// timeGetCurrent()
 #include <funcResults.h>
 
 static bool		sranded = false;

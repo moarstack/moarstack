@@ -111,8 +111,8 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	return FUNC_RESULT_SUCCESS;
 }
 
-int prepareSentPacket( RouteStoredPacket_T * packet, PresentationSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
-	int	result
+int prepareSentPacket( RouteStoredPacket_T * packet, PresentSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
+	int	result;
 
 	if( NULL == packet || NULL == metadata || NULL == data || 0 == dataSize )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -128,7 +128,7 @@ int prepareSentPacket( RouteStoredPacket_T * packet, PresentationSendMetadata_T 
 	if( NULL == packet->Payload )
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
-	memcpy( packet->Payload, data, daatSize );
+	memcpy( packet->Payload, data, dataSize );
 	packet->PayloadSize = dataSize;
 	packet->PackType = RoutePackType_Data;
 	packet->NextProcessing = timeGetCurrent();

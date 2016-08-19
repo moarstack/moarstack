@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define HASH_ENABLE_ITERATOR
+
 // hash function proto
 typedef int (* hashFunc_T)(void* data, size_t size);
 
@@ -19,10 +21,15 @@ struct hashEntry_T{
 	void* 			Key;
 	void* 			Data;
 	hashEntry_T* 	Next;
+#ifdef HASH_ENABLE_ITERATOR
+	hashEntry_T*  	ListNext;
+	hashEntry_T*	ListPrev;
+#endif
 };
-
+#ifdef HASH_ENABLE_ITERATOR
 // hash iterator
-
+typedef hashEntry_T* hashIterator_T;
+#endif
 // hash table
 typedef struct{
 	size_t  		KeySize;
@@ -31,6 +38,9 @@ typedef struct{
 	int 			StorageSize;
 	hashEntry_T**	Table;
 	int				Count;
+#ifdef HASH_ENABLE_ITERATOR
+	hashEntry_T* 	Last;
+#endif
 }hashTable_T;
 
 #ifdef __cplusplus
@@ -43,7 +53,12 @@ extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
 extern int hashGet(hashTable_T* table, void* key, void* data);
 extern bool hashContain(hashTable_T* table, void* key);
-
+#ifdef HASH_ENABLE_ITERATOR
+extern hashIterator_T hashGetIterator(hashTable_T* table);
+extern hashIterator_T hashIteratorNext(hashIterator_T item);
+extern void* hashIteratorData(hashIterator_T item);
+extern void* hashIteratorKey(hashIterator_T item);
+#endif
 #ifdef __cplusplus
 }
 #endif

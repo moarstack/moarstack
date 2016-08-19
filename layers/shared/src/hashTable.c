@@ -26,6 +26,10 @@ int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t ke
 	table->StorageSize = storageSize;
 	table->Count = 0;
 
+#ifdef HASH_ENABLE_ITERATOR
+	table->Last = NULL;
+#endif
+
 	size_t totalStorageSize = sizeof(hashEntry_T*)*storageSize;
 	table->Table = malloc(totalStorageSize);
 	if(NULL == table->Table)
@@ -39,7 +43,8 @@ int hashFree(hashTable_T* table){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 != table->Count)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	// TODO
+	free(table->Table);
+	table->Table = NULL;
 	return FUNC_RESULT_SUCCESS;
 }
 int hashAdd(hashTable_T* table, void* key, void* data){
@@ -73,8 +78,16 @@ int hashAdd(hashTable_T* table, void* key, void* data){
 	memcpy(entry->Key, key, table->KeySize);
 	memcpy(entry->Data, data, table->DataSize);
 
-	table->Table[bin] = entry;
+#ifdef HASH_ENABLE_ITERATOR
+	entry->ListPrev = table->Last;
+	if(NULL != table->Last)
+		table->Last->ListNext = entry;
+	entry->ListNext = NULL;
+	table->Last = entry;
+#endif
 
+	table->Table[bin] = entry;
+	table->Count++;
 	return FUNC_RESULT_SUCCESS;
 }
 int hashRemove(hashTable_T* table, void* key){
@@ -95,11 +108,22 @@ int hashRemove(hashTable_T* table, void* key){
 			int compare = memcmp(cEntry->Key, key, table->KeySize);
 			//found
 			if(0 == compare){
+#ifdef HASH_ENABLE_ITERATOR
+				//remove from list
+				if(NULL != cEntry->ListPrev)
+					cEntry->ListPrev->ListNext = cEntry->ListNext;
+				if(NULL != cEntry->ListNext)
+					cEntry->ListNext->ListPrev = cEntry->ListPrev;
+				if(table->Last == cEntry)
+					table->Last = cEntry->ListPrev;
+#endif
+
 				//remove
 				free(cEntry->Key);
 				free(cEntry->Data);
 				*entry = cEntry->Next;
 				free(cEntry);
+				table->Count--;
 				return FUNC_RESULT_SUCCESS;
 			}
 		}
@@ -163,3 +187,29 @@ bool hashContain(hashTable_T* table, void* key){
 	}
 	return false;
 }
+
+#ifdef HASH_ENABLE_ITERATOR
+hashIterator_T hashGetIterator(hashTable_T* table){
+	if(NULL == table)
+		return NULL;
+	return table->Last;
+}
+
+hashIterator_T hashIteratorNext(hashIterator_T item){
+	if(NULL == item)
+		return NULL;
+	return item->ListPrev;
+}
+
+void* hashIteratorData(hashIterator_T item){
+	if(NULL == item)
+		return NULL;
+	return item->Data;
+}
+
+void* hashIteratorKey(hashIterator_T item){
+	if(NULL == item)
+		return NULL;
+	return item->Key;
+}
+#endif

@@ -9,8 +9,17 @@
 #include <moarRoutingMessageId.h>
 #include <moarTime.h>
 
+typedef enum{
+	StoredPackState_Received,
+	StoredPackState_InProcessing,
+	StoredPackState_WaitSent,
+	StoredPackState_WaitAck,
+	StoredPackState_Disposed,
+}StoredPackState_T;
+
 typedef struct{
 	RoutePackType_T 	PackType;
+	StoredPackState_T	State;
 
 	RouteAddr_T			Source;
 	RouteAddr_T			Destination;

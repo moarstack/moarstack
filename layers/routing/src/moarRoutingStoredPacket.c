@@ -17,7 +17,7 @@ int clearStoredPacket(RouteStoredPacket_T* packet){
 
 	free(packet->Payload);
 	packet->Payload = NULL;
-
+	packet->State = StoredPackState_Disposed;
 	return FUNC_RESULT_SUCCESS;
 }
 int disposeStoredPacket(RouteStoredPacket_T** packet){
@@ -65,6 +65,8 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	command.MetaSize = sizeof(RouteSendMetadata_T);
 	// send
 	int sendRes = WriteCommand(layer->ChannelSocket, &command);
+	if(FUNC_RESULT_SUCCESS == sendRes)
+		packet->State = StoredPackState_WaitSent;
 	// free allocated memory
 	free(newData);
 	return sendRes;
@@ -104,6 +106,7 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	packet->PackType = header->PacketType;
 	// additional
 	packet->NextProcessing = timeGetCurrent();
+	packet->State = StoredPackState_Received;
 	// TODO add metrics here
 	return FUNC_RESULT_SUCCESS;
 }

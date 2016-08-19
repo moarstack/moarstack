@@ -2,8 +2,8 @@
 // Created by kryvashek on 18.08.16.
 //
 
-#ifndef MOARSTACK_MOARPRESENTATIONID_H
-#define MOARSTACK_MOARPRESENTATIONID_H
+#ifndef MOARSTACK_MOARPRESENTID_H
+#define MOARSTACK_MOARPRESENTID_H
 
 #include <stdint.h> 	// uint16_t
 #include <stdbool.h>	// bool
@@ -38,4 +38,4 @@ extern PresentId_T prIdGenerate( void );
 }
 #endif
 
-#endif //MOARSTACK_MOARPRESENTATIONID_H
+#endif //MOARSTACK_MOARPRESENTID_H

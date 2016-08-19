@@ -134,7 +134,7 @@ int prepareSentPacket( RouteStoredPacket_T * packet, PresentSendMetadata_T * met
 	packet->NextProcessing = timeGetCurrent();
 	packet->Destination = metadata->Destination;
 	packet->InternalId = metadata->Id;
-	packet->State = StoredPackState_InProcessing; // Is it right?..
+	packet->State = StoredPackState_Received; // received (=got) by routing from its input
 		// no Source due to no way to find out own address (yet) TODO implement
 		// no LastHop due to current hop being first
 		// no NextHop because its routing work to know such things

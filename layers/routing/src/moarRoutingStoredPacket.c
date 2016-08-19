@@ -110,3 +110,33 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	// TODO add metrics here
 	return FUNC_RESULT_SUCCESS;
 }
+
+int prepareSentPacket( RouteStoredPacket_T * packet, PresentationSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
+	int	result
+
+	if( NULL == packet || NULL == metadata || NULL == data || 0 == dataSize )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	memset( packet, 0, sizeof( RouteStoredPacket_T ) );
+	result = rmidGenerate( &( packet->MessageId ) );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	packet->Payload = malloc( dataSize );
+
+	if( NULL == packet->Payload )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	memcpy( packet->Payload, data, daatSize );
+	packet->PayloadSize = dataSize;
+	packet->PackType = RoutePackType_Data;
+	packet->NextProcessing = timeGetCurrent();
+	packet->Destination = metadata->Destination;
+	packet->InternalId = metadata->Id;
+		// no Source due to no way to find out own address (yet) TODO implement
+		// no LastHop due to current hop being first
+		// no NextHop because its routing work to know such things
+
+	return FUNC_RESULT_SUCCESS;
+}

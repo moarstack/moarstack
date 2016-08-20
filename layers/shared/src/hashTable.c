@@ -8,7 +8,7 @@
 
 #include "hashTable.h"
 
-bool equals(hashEntry_T* entry, int hash, void* key, size_t size){
+bool checkEquality(hashEntry_T *entry, int hash, void *key, size_t size){
 	if(NULL == entry)
 		return FUNC_RESULT_SUCCESS;
 	if(NULL == key)
@@ -119,7 +119,7 @@ int hashRemove(hashTable_T* table, void* key){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(equals(cEntry, hash, key, table->KeySize)){
+		if(checkEquality(cEntry, hash, key, table->KeySize)){
 #ifdef HASH_ENABLE_ITERATOR
 				//remove from list
 				if(NULL != cEntry->ListPrev)
@@ -156,7 +156,7 @@ int hashGet(hashTable_T* table, void* key, void* data){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(equals(cEntry, hash, key, table->KeySize)) {
+		if(checkEquality(cEntry, hash, key, table->KeySize)) {
 			// copy
 			memcpy(data, cEntry->Data, table->DataSize);
 			return FUNC_RESULT_SUCCESS;
@@ -179,7 +179,7 @@ bool hashContain(hashTable_T* table, void* key){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(equals(cEntry, hash, key, table->KeySize)) {
+		if(checkEquality(cEntry, hash, key, table->KeySize)) {
 			// return
 			return true;
 		}
@@ -204,7 +204,7 @@ int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(equals(cEntry, hash, key, table->KeySize)){
+		if(checkEquality(cEntry, hash, key, table->KeySize)){
 				// fill iterator
 				iterator->Item = cEntry;
 				iterator->Compare = true;
@@ -245,11 +245,9 @@ int hashIteratorNext(hashIterator_T* item){
 	if(NULL == item->Item)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(item->Compare) {
-		item->Item = item->Item->Next;
-		// cycle here
-		while(NULL != item->Item && !equals(item->Item, item->HashValue, item->Key, item->KeySize))
+		do {
 			item->Item = item->Item->Next;
-		// item->Item = item->Item->Next;
+		}while(NULL != item->Item && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize));
 		return FUNC_RESULT_SUCCESS;
 	}
 	else{

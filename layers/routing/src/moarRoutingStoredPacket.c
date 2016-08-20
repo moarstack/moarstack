@@ -81,24 +81,18 @@ int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 	if( NULL == layer || NULL == packet || 0 >= layer->PresentationSocket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	command.Data = malloc( packet->PayloadSize );
-
-	if( NULL == command.Data )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
 	command.Command = LayerCommandType_Receive;
 
-	memcpy( command.Data, packet->Payload, packet->PayloadSize );
+	command.Data = packet->Payload;
 	command.DataSize = packet->PayloadSize;
-
-	command.MetaData = &metadata;
-	command.MetaSize = sizeof( RouteReceivedMetadata_T );
 
 	metadata.From = packet->Source;
 	metadata.Id = packet->InternalId;
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof( RouteReceivedMetadata_T );
 
 	result = WriteCommand( layer->PresentationSocket, &command );
-	free( command.Data );
+
 	return result;
 }
 

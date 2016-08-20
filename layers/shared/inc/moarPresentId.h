@@ -21,6 +21,9 @@ extern bool pridAreEqual( PresentId_T * one, PresentId_T * two );
 // generates new identifier for some packet
 extern PresentId_T pridGenerate( void );
 
+// converts internal message id into presentation id
+extern PresentId_T pridConvert( MessageId_T internalId );
+
 #ifdef __cplusplus
 }
 #endif

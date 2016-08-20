@@ -13,11 +13,12 @@
 #define MESSAGE_ID_RAND_SIZE	2
 #define MESSAGE_ID_ORDER_SIZE	2
 #define MESSAGE_ID_FULL_SIZE	sizeof( MessageId_T )
+#define MESSAGE_BITS_FOR_LAYER	8
 
 #pragma pack(push, 1)
 
 typedef struct {
-	MoarLayerType_T	SourceLayer;
+	MoarLayerType_T	SourceLayer:MESSAGE_BITS_FOR_LAYER;
 	uint8_t			PartOrdered[ MESSAGE_ID_ORDER_SIZE ],
 					PartRandom[ MESSAGE_ID_RAND_SIZE ];
 } MessageId_T;

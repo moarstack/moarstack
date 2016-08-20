@@ -15,10 +15,10 @@ PresentId_T pridGenerate( void ) {
 
 	midGenerate( &tempId, MoarLayer_Presentation );
 
-	return ( PresentId_T )tempId;
+	return *( PresentId_T * )&tempId;
 }
 
 // converts internal message id into presentation id
 PresentId_T pridConvert( MessageId_T internalId ) {
-	return ( PresentId_T )internalId;
+	return *( PresentId_T * )&internalId;
 }

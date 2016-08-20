@@ -271,4 +271,16 @@ void* hashIteratorKey(hashIterator_T* item){
 		return NULL;
 	return item->Item->Key;
 }
+
+int hashIteratorFree(hashIterator_T* item){
+	if(NULL == item)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	item->Item = NULL;
+	free(item->Key);
+	item->Key = NULL;
+	item->KeySize = 0;
+	item->Compare = false;
+	return FUNC_RESULT_SUCCESS;
+
+}
 #endif

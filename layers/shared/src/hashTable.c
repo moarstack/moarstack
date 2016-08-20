@@ -8,6 +8,22 @@
 
 #include "hashTable.h"
 
+bool equals(hashEntry_T* entry, int hash, void* key, size_t size){
+	if(NULL == entry)
+		return FUNC_RESULT_SUCCESS;
+	if(NULL == key)
+		return FUNC_RESULT_SUCCESS;
+	if(0 == size)
+		return FUNC_RESULT_SUCCESS;
+
+	if(entry->HashValue == hash) {
+		// compare key
+		int compare = memcmp(entry->Key, key, size);
+		return (0 == compare);
+	}
+	return false;
+}
+
 int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t keySize, size_t dataSize){
 	if(NULL == table)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -103,11 +119,7 @@ int hashRemove(hashTable_T* table, void* key){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(cEntry->HashValue == hash){
-			// compare key
-			int compare = memcmp(cEntry->Key, key, table->KeySize);
-			//found
-			if(0 == compare){
+		if(equals(cEntry, hash, key, table->KeySize)){
 #ifdef HASH_ENABLE_ITERATOR
 				//remove from list
 				if(NULL != cEntry->ListPrev)
@@ -117,7 +129,6 @@ int hashRemove(hashTable_T* table, void* key){
 				if(table->Last == cEntry)
 					table->Last = cEntry->ListPrev;
 #endif
-
 				//remove
 				free(cEntry->Key);
 				free(cEntry->Data);
@@ -125,7 +136,6 @@ int hashRemove(hashTable_T* table, void* key){
 				free(cEntry);
 				table->Count--;
 				return FUNC_RESULT_SUCCESS;
-			}
 		}
 		entry = &(cEntry->Next);
 	}
@@ -146,15 +156,10 @@ int hashGet(hashTable_T* table, void* key, void* data){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(cEntry->HashValue == hash){
-			// compare key
-			int compare = memcmp(cEntry->Key, key, table->KeySize);
-			// found
-			if(0 == compare){
-				// copy
-				memcpy(data, cEntry->Data, table->DataSize);
-				return FUNC_RESULT_SUCCESS;
-			}
+		if(equals(cEntry, hash, key, table->KeySize)) {
+			// copy
+			memcpy(data, cEntry->Data, table->DataSize);
+			return FUNC_RESULT_SUCCESS;
 		}
 		entry = &(cEntry->Next);
 	}
@@ -174,14 +179,9 @@ bool hashContain(hashTable_T* table, void* key){
 
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(cEntry->HashValue == hash){
-			// compare key
-			int compare = memcmp(cEntry->Key, key, table->KeySize);
-			// found
-			if(0 == compare){
-				// return
-				return true;
-			}
+		if(equals(cEntry, hash, key, table->KeySize)) {
+			// return
+			return true;
 		}
 		entry = &(cEntry->Next);
 	}
@@ -189,27 +189,88 @@ bool hashContain(hashTable_T* table, void* key){
 }
 
 #ifdef HASH_ENABLE_ITERATOR
-hashIterator_T hashGetIterator(hashTable_T* table){
+
+int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 	if(NULL == table)
-		return NULL;
-	return table->Last;
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == key)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int hash = table->HashFunction(key, table->KeySize);
+	int bin = hash % table->StorageSize;
+
+	hashEntry_T** entry = table->Table+bin;
+
+	while(NULL != *entry){
+		hashEntry_T* cEntry = *entry;
+		if(equals(cEntry, hash, key, table->KeySize)){
+				// fill iterator
+				iterator->Item = cEntry;
+				iterator->Compare = true;
+				iterator->KeySize = table->KeySize;
+				iterator->Key = malloc(iterator->KeySize);
+				if(NULL == iterator->Key)
+					return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+				memcpy(iterator->Key, key, iterator->KeySize);
+				iterator->HashValue = hash;
+				// return sucess
+				return FUNC_RESULT_SUCCESS;
+		}
+		entry = &(cEntry->Next);
+	}
+	return FUNC_RESULT_FAILED;
 }
 
-hashIterator_T hashIteratorNext(hashIterator_T item){
+int hashIterator(hashTable_T* table, hashIterator_T* iterator){
+	if(NULL == table)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	iterator->HashValue = 0;
+	iterator->Compare = false;
+	iterator->Key = NULL;
+	iterator->KeySize = 0;
+	iterator->Item = table->Last;
+	return FUNC_RESULT_SUCCESS;
+}
+bool hashIteratorLast(hashIterator_T* item){
 	if(NULL == item)
-		return NULL;
-	return item->ListPrev;
+		return false;
+	return (NULL == item->Item);
+}
+int hashIteratorNext(hashIterator_T* item){
+	if(NULL == item)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == item->Item)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(item->Compare) {
+		item->Item = item->Item->Next;
+		// cycle here
+		while(NULL != item->Item && !equals(item->Item, item->HashValue, item->Key, item->KeySize))
+			item->Item = item->Item->Next;
+		// item->Item = item->Item->Next;
+		return FUNC_RESULT_SUCCESS;
+	}
+	else{
+		item->Item = item->Item->ListPrev;
+		return FUNC_RESULT_SUCCESS;
+	}
 }
 
-void* hashIteratorData(hashIterator_T item){
+void* hashIteratorData(hashIterator_T* item){
 	if(NULL == item)
 		return NULL;
-	return item->Data;
+	if(NULL == item->Item)
+		return NULL;
+	return item->Item->Data;
 }
 
-void* hashIteratorKey(hashIterator_T item){
+void* hashIteratorKey(hashIterator_T* item){
 	if(NULL == item)
 		return NULL;
-	return item->Key;
+	if(NULL == item->Item)
+		return NULL;
+	return item->Item->Key;
 }
 #endif

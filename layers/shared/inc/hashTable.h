@@ -28,7 +28,13 @@ struct hashEntry_T{
 };
 #ifdef HASH_ENABLE_ITERATOR
 // hash iterator
-typedef hashEntry_T* hashIterator_T;
+typedef struct{
+	hashEntry_T* 	Item;
+	bool 		 	Compare;
+	int 			HashValue;
+	void* 			Key;
+	size_t  		KeySize;
+} hashIterator_T;
 #endif
 // hash table
 typedef struct{
@@ -54,10 +60,12 @@ extern int hashRemove(hashTable_T* table, void* key);
 extern int hashGet(hashTable_T* table, void* key, void* data);
 extern bool hashContain(hashTable_T* table, void* key);
 #ifdef HASH_ENABLE_ITERATOR
-extern hashIterator_T hashGetIterator(hashTable_T* table);
-extern hashIterator_T hashIteratorNext(hashIterator_T item);
-extern void* hashIteratorData(hashIterator_T item);
-extern void* hashIteratorKey(hashIterator_T item);
+extern int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator);
+extern int hashIterator(hashTable_T* table, hashIterator_T* iterator);
+extern int hashIteratorNext(hashIterator_T* item);
+extern bool hashIteratorLast(hashIterator_T* item);
+extern void* hashIteratorData(hashIterator_T* item);
+extern void* hashIteratorKey(hashIterator_T* item);
 #endif
 #ifdef __cplusplus
 }

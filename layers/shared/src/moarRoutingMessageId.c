@@ -27,5 +27,5 @@ int rmidGenerate( RoutingMessageId_T * identifier){
 	for(int i=0; i<ROUTING_MESSAGE_ID_SIZE; i++)
 		identifier->Data[i] = (uint8_t)(rand() & 0xFF);
 
-	return FUNC_RESULT_FAILED;
+	return FUNC_RESULT_SUCCESS;
 }

@@ -25,8 +25,9 @@ typedef struct {
 
 // metadata of packet moving from presentation to routing
 typedef struct {
+	MessageId_T	Id;
 	RouteAddr_T	Destination;
-} PresentMsgDown_T;
+} PresentSendMetadata_T;
 
 //const size_t	ROUTE_MSG_UP_SIZE = sizeof( RouteMsgUp_T );
 //const size_t	PRESENT_MSG_DOWN_SIZE = sizeof( PresentMsgDown_T );

@@ -9,7 +9,11 @@
 
 #include <moarMessageId.h>
 
-typedef MessageId_T	PresentId_T;
+#define PRESENT_ID_SIZE	sizeof( MessageId_T )
+
+typedef struct {
+	uint8_t Value[ PRESENT_ID_SIZE ];
+} PresentId_T;
 
 #ifdef __cplusplus
 extern "C" {

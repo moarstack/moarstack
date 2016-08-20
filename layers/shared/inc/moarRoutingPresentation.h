@@ -20,8 +20,9 @@ typedef enum {
 
 // metadata of packet moving from routing to presentation
 typedef struct {
-	PackStateRoute_T	State;	// state of packet moving from channel to routing
-} RouteMsgUp_T;
+	MessageId_T	Id;
+	RouteAddr_T	From;	// source node of this packet
+} RouteReceivedMetadata_T;
 
 // metadata of packet moving from presentation to routing
 typedef struct {

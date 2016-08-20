@@ -10,15 +10,17 @@
 
 #include <moarLibInterface.h> // MoarLayerType_T
 
-#define MESSAGE_ID_FREE_SIZE	4
+#define MESSAGE_ID_RAND_SIZE	2
+#define MESSAGE_ID_ORDER_SIZE	2
 #define MESSAGE_ID_FULL_SIZE	sizeof( MessageId_T )
 
 #pragma pack(push, 1)
 
 typedef struct {
 	MoarLayerType_T	SourceLayer;
-	uint8_t			FreePart[ MESSAGE_ID_FREE_SIZE ];
-} MessageId_T ;
+	uint8_t			PartOrdered[ MESSAGE_ID_ORDER_SIZE ],
+					PartRandom[ MESSAGE_ID_RAND_SIZE ];
+} MessageId_T;
 
 #pragma pack(pop)
 

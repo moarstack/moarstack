@@ -119,5 +119,10 @@ int LogClose( LogHandle_T * handle ) {
 
 	result = fclose( *handle );
 
-	return ( EOF == result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
+	if( 0 != result )
+		return FUNC_RESULT_FAILED_IO;
+
+	*handle = NULL;
+
+	return FUNC_RESULT_SUCCESS;
 }

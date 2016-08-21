@@ -64,17 +64,56 @@ int logMoment( LogHandle_T handle ) {
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
+char * logReformat( const char * startFormat ) {
+	char	* finishFormat,
+			* replace;
+	size_t	length;
+
+	if( NULL == startFormat )
+		return NULL;
+
+	length = strlen( startFormat );
+
+	if( 0 == length )
+		return NULL;
+
+	finishFormat = malloc( length + 1 );
+
+	if( NULL == finishFormat )
+		return NULL;
+
+	memcpy( finishFormat, startFormat, length );
+	finishFormat[ length ] = 0;
+
+	if( '\n' == finishFormat[ length - 1 ] )
+		finishFormat[ length - 1 ] = 0;
+
+	replace = strchr( finishFormat, '\n' );
+
+	while( NULL != replace ) {
+		*replace = ' ';
+		replace = strchr( replace + 1, '\n' );
+	}
+
+	return finishFormat;
+}
+
 // writes some message to the log file specified by handle, adding time of writing
 int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... ) {
-	va_list		args;
-	int			result;
-	size_t		length;
+	va_list	args;
+	int		result;
+	char	* lineFormat;
 
-	if( NULL == handle || NULL == format || NULL == handle->FileHandle || 0 == strlen( format ) )
+	if( NULL == handle || NULL == format || NULL == handle->FileHandle )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;
+
+	lineFormat = logReformat( format );
+
+	if( NULL == lineFormat )
+		return FUNC_RESULT_FAILED;
 
 	result = logMoment( handle );
 
@@ -82,9 +121,11 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 		return result;
 
 	va_start( args, format );
-	result = vfprintf( handle->FileHandle, format, args );
+	result = vfprintf( handle->FileHandle, lineFormat, args );
 	va_end( args );
+	fprintf( handle->FileHandle, "\n" );
 	fflush( handle->FileHandle );
+	free( lineFormat );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -107,9 +148,18 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "system error %d (%s)\n", errorValue, strerror( errorValue ) );
-	else
-		result = fprintf( handle->FileHandle, "system error %d (%s) : %s\n", errorValue, strerror( errorValue ), message );
+	else {
+		char	* lineMessage = logReformat( message );
 
+		if( NULL == lineMessage )
+			return FUNC_RESULT_FAILED;
+
+		result = fprintf( handle->FileHandle, "system error %d (%s) : %s\n", errorValue, strerror( errorValue ),
+						  lineMessage );
+		free( lineMessage );
+	}
+
+	fprintf( handle->FileHandle, "\n" );
 	fflush( handle->FileHandle );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
@@ -132,9 +182,18 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ returnResult ] );
-	else
-		result = fprintf( handle->FileHandle, "moar error %d (%s) : %s\n", returnResult, moarErrorMessages[ returnResult ], message );
+	else {
+		char	* lineMessage = logReformat( message );
 
+		if( NULL == lineMessage )
+			return FUNC_RESULT_FAILED;
+
+		result = fprintf( handle->FileHandle, "moar error %d (%s) : %s\n", returnResult,
+						  moarErrorMessages[ returnResult ], lineMessage );
+		free( lineMessage );
+	}
+
+	fprintf( handle->FileHandle, "\n" );
 	fflush( handle->FileHandle );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );

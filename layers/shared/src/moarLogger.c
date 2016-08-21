@@ -83,9 +83,9 @@ int LogErrSystem( LogHandle_T handle, const char * message ) {
 		return result;
 
 	if( NULL == message )
-		result = fprintf( handle, "system error %d : %s\n", errno, strerror( errno ) );
+		result = fprintf( handle, "system error %d (%s)\n", errno, strerror( errno ) );
 	else
-		result = fprintf( handle, "system error %d (%s) : %s\n", errno, message, strerror( errno ) );
+		result = fprintf( handle, "system error %d (%s) : %s\n", errno, strerror( errno ), message );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -103,9 +103,9 @@ int LogErrMoar( LogHandle_T handle, int returnResult, const char * message ) {
 		return result;
 
 	if( NULL == message )
-		result = fprintf( handle, "moar error %d : %s\n", returnResult, moarErrorMessages[ returnResult ] );
+		result = fprintf( handle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ returnResult ] );
 	else
-		result = fprintf( handle, "moar error %d (%s) : %s\n", returnResult, message, moarErrorMessages[ returnResult ] );
+		result = fprintf( handle, "moar error %d (%s) : %s\n", returnResult, moarErrorMessages[ returnResult ], message );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }

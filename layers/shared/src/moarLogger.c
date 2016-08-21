@@ -45,6 +45,7 @@ int logMoment( LogHandle_T handle ) {
 		return FUNC_RESULT_FAILED;
 
 	result = fprintf( handle, "%s : ", buffer );
+	fflush( handle );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -66,6 +67,7 @@ int LogWrite( LogHandle_T handle, const char * format, ... ) {
 	va_start( args, format );
 	result = vfprintf( handle, format, args );
 	va_end( args );
+	fflush( handle );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -87,6 +89,8 @@ int LogErrSystem( LogHandle_T handle, const char * message ) {
 	else
 		result = fprintf( handle, "system error %d (%s) : %s\n", errno, strerror( errno ), message );
 
+	fflush( handle );
+
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
@@ -107,6 +111,8 @@ int LogErrMoar( LogHandle_T handle, int returnResult, const char * message ) {
 	else
 		result = fprintf( handle, "moar error %d (%s) : %s\n", returnResult, moarErrorMessages[ returnResult ], message );
 
+	fflush( handle );
+	
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
@@ -117,6 +123,7 @@ int LogClose( LogHandle_T * handle ) {
 	if( NULL == handle )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	fflush( *handle );
 	result = fclose( *handle );
 
 	if( 0 != result )

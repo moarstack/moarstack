@@ -9,7 +9,7 @@
 #include <stdbool.h>	// bool
 
 #include <moarLibInterface.h> // MoarLayerType_T
-
+#include <stdlib.h>
 #define MESSAGE_ID_RAND_SIZE	2
 #define MESSAGE_ID_ORDER_SIZE	2
 #define MESSAGE_ID_FULL_SIZE	sizeof( MessageId_T )
@@ -28,7 +28,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+uint32_t midHash(void* address, size_t size);
 // checks whether given message ids are equal; returns true, if are, false otherwise
 extern bool midAreEqual( MessageId_T * one, MessageId_T * two );
 

@@ -17,6 +17,8 @@ uint32_t unAddressHash(void* address, size_t size){
 	if(NULL != address && addr->Length !=0) {
 		uint32_t mp = 0xf42439;
 		uint8_t shift = 32/addr->Length;
+		if(shift == 0)
+			shift = 1;
 		for(int i=0;i<addr->Length;i++){
 			hash <<= shift;
 			hash ^= mp*addr->Value[i];

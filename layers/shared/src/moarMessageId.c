@@ -12,6 +12,22 @@
 static uint8_t	nextOrderedValueArray[ MESSAGE_ID_ORDER_SIZE ] = { 0 };
 static bool		sranded = false;	// TODO implement normal random and remove that when done
 
+uint32_t midHash(void* address, size_t size){
+	uint32_t hash = 0;
+	uint8_t* addr = (uint8_t*)address;
+	if(NULL != address && 0 != MESSAGE_ID_FULL_SIZE) {
+		uint32_t mp = 0xf424d9;
+		uint8_t shift = 32/MESSAGE_ID_FULL_SIZE;
+		if(shift == 0)
+			shift = 1;
+		for(int i=0;i<MESSAGE_ID_FULL_SIZE;i++){
+			hash <<= shift;
+			hash ^= mp*addr[i];
+		}
+	}
+	return hash;
+}
+
 // checks whether given message ids are equal; returns true, if are, false otherwise
 bool midAreEqual( MessageId_T * one, MessageId_T * two ) {
 	if( NULL == one || NULL == two )

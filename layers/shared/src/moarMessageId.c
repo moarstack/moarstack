@@ -15,12 +15,12 @@ static bool		sranded = false;	// TODO implement normal random and remove that wh
 uint32_t midHash(void* address, size_t size){
 	uint32_t hash = 0;
 	uint8_t* addr = (uint8_t*)address;
-	if(NULL != address && 0 != MESSAGE_ID_FULL_SIZE) {
+	if(NULL != address && 0 != size) {
 		uint32_t mp = 0xf424d9;
-		uint8_t shift = 32/MESSAGE_ID_FULL_SIZE;
+		uint8_t shift = 32/size;
 		if(shift == 0)
 			shift = 1;
-		for(int i=0;i<MESSAGE_ID_FULL_SIZE;i++){
+		for(int i=0;i<size;i++){
 			hash <<= shift;
 			hash ^= mp*addr[i];
 		}

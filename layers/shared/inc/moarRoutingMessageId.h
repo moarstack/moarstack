@@ -21,7 +21,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+uint32_t rmidHash(void* address, size_t size);
 extern bool rmidEqual( RoutingMessageId_T * one, RoutingMessageId_T * two );
 extern int rmidGenerate( RoutingMessageId_T * identifier);
 

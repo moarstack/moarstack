@@ -6,6 +6,7 @@
 #include <time.h>			// localtime(), strftime(), ...
 #include <errno.h>			// errno
 #include <stdlib.h>			// malloc(), free()
+#include <stdbool.h>		// bool
 
 #include <moarLogger.h>
 #include <moarTime.h>		// timeGetCurrent()
@@ -82,7 +83,7 @@ int logMoment( LogHandle_T handle ) {
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
-char * logReformat( const char * startFormat ) {
+char * logReformat( const char * startFormat, bool replaceDumpSpecifier ) {
 	char	* finishFormat,
 			* replace;
 	size_t	length;
@@ -106,14 +107,71 @@ char * logReformat( const char * startFormat ) {
 	if( '\n' == finishFormat[ length - 1 ] )
 		finishFormat[ length - 1 ] = 0;
 
-	replace = strchr( finishFormat, '\n' );
+	replace = strpbrk( finishFormat, "%\n" );
 
 	while( NULL != replace ) {
-		*replace = ' ';
-		replace = strchr( replace + 1, '\n' );
+		if( '\n' == replace[ 0 ] )
+			replace[ 0 ] = ' ';
+		else if( replaceDumpSpecifier && 'b' == replace[ 1 ] ) {
+			replace[ 0 ] = '[';
+			replace[ 1 ] = ']';
+		}
+
+		replace = strpbrk( replace + 1, "%\n" );
 	}
 
 	return finishFormat;
+}
+
+int logPrintBinary( LogHandle_T handle, va_list args ) {
+	int 	result = 1;
+	char	* binaryData;
+	size_t	binaryDataSize;
+
+	binaryData = va_arg( args, char* );
+	binaryDataSize = va_arg( args, size_t );
+
+	for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
+		result = fprintf( handle->FileHandle, "%02X ", binaryData[ byte ] );
+
+	if( 0 <= result )
+		result = fprintf( handle->FileHandle, "%02X", binaryData[ binaryDataSize - 1 ] );
+
+	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
+}
+
+int logPrint( LogHandle_T handle, char * format, va_list args ) {
+	int 	result = 1;
+	char	* next = strstr( format, "%b" );
+
+	if( NULL == handle || NULL == format || NULL == handle->FileHandle )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	while( NULL != next ) {
+		next[ 0 ] = next[ 1 ] = 0;
+		result = vfprintf( handle->FileHandle, format, args );
+
+		if( 0 <= result )
+			result = logPrintBinary( handle, args );
+		else
+			result = FUNC_RESULT_FAILED_IO;
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		format = next + 2;
+		next = strstr( format, "%b" );
+	}
+
+	if( 0 <= result )
+		result = vfprintf( handle->FileHandle, format, args );
+
+	if( 0 <= result )
+		result = fprintf( handle->FileHandle, "\n" );
+
+	fflush( handle->FileHandle );
+
+	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
 // writes some message to the log file specified by handle, adding time of writing
@@ -128,7 +186,7 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;
 
-	lineFormat = logReformat( format );
+	lineFormat = logReformat( format, logLevel < handle->MinDumpLevel );
 
 	if( NULL == lineFormat )
 		return FUNC_RESULT_FAILED;
@@ -139,13 +197,11 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 		return result;
 
 	va_start( args, format );
-	result = vfprintf( handle->FileHandle, lineFormat, args );
+	result = logPrint( handle, lineFormat, args );
 	va_end( args );
-	fprintf( handle->FileHandle, "\n" );
-	fflush( handle->FileHandle );
 	free( lineFormat );
 
-	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
+	return result;
 }
 
 // writes system error message to the log file specified by handle, adding time of writing
@@ -167,7 +223,7 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "system error %d (%s)\n", errorValue, strerror( errorValue ) );
 	else {
-		char	* lineMessage = logReformat( message );
+		char	* lineMessage = logReformat( message, true );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
@@ -201,7 +257,7 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ returnResult ] );
 	else {
-		char	* lineMessage = logReformat( message );
+		char	* lineMessage = logReformat( message, true );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;

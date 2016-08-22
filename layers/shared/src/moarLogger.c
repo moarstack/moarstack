@@ -20,7 +20,7 @@ static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
 };
 
 // opens log file with specified filepath; returns handler on success, value <= 0 otherwise
-int LogOpen( LogFilepath_T logFile, LogLevel_T logLevel, LogHandle_T * handle ) {
+int LogOpen( LogFilepath_T logFile, LogHandle_T * handle ) {
 	if( NULL == logFile || NULL == handle || 0 == strlen( logFile ) )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -37,7 +37,25 @@ int LogOpen( LogFilepath_T logFile, LogLevel_T logLevel, LogHandle_T * handle ) 
 		return FUNC_RESULT_FAILED_IO;
 	}
 
-	( *handle )->MinLogLevel = logLevel;
+	return FUNC_RESULT_SUCCESS;
+}
+
+// tunes specified descriptor with given value of minimal logging level
+int LogSetLevelLog( LogHandle_T handle, LogLevel_T logLevel ) {
+	if( NULL == handle )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	handle->MinLogLevel = logLevel;
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+// tunes specified descriptor with given value of minimal dumping level
+int LogSetLevelDump( LogHandle_T handle, LogLevel_T dumpLevel ) {
+	if( NULL == handle )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	handle->MinDumpLevel = dumpLevel;
 
 	return FUNC_RESULT_SUCCESS;
 }

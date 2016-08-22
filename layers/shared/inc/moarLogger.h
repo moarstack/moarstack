@@ -13,6 +13,8 @@
 #define LOG_FILEPATH_SIZE	108 // just chosen to be the same as length of SOCKET_FILEPATH_SIZE
 #define LOG_TIMESTAMP_SIZE	30	// just copied from MockIT
 #define LOG_MOAR_ERRS_COUNT	(FUNC_RESULT_SUCCESS-FUNC_RESULT_FAILED_MEM_ALLOCATION+1)
+#define LOG_BITS_FOR_LOG	4
+#define LOG_BITS_FOR_DUMP	4
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];
@@ -31,7 +33,8 @@ typedef enum {
 typedef struct {
 	LogFileHandle_T	FileHandle;
 	LogMoment_T		MomentBuffer;
-	LogLevel_T		MinLogLevel;
+	LogLevel_T		MinLogLevel:LOG_BITS_FOR_LOG,
+					MinDumpLevel:LOG_BITS_FOR_DUMP;
 } LogDescriptor_T;
 
 typedef LogDescriptor_T	* LogHandle_T;
@@ -41,7 +44,13 @@ extern "C" {
 #endif
 
 // opens log file with specified filepath; returns handler on success, value <= 0 otherwise
-extern int LogOpen( LogFilepath_T logFile, LogLevel_T logLevel, LogHandle_T * handle );
+extern int LogOpen( LogFilepath_T logFile, LogHandle_T * handle );
+
+// tunes specified descriptor with given value of minimal logging level
+extern int LogSetLevelLog( LogHandle_T handle, LogLevel_T logLevel );
+
+// tunes specified descriptor with given value of minimal dumping level
+extern int LogSetLevelDump( LogHandle_T handle, LogLevel_T dumpLevel );
 
 // writes some message to the log file specified by handle, adding time of writing
 extern int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... );

@@ -19,7 +19,7 @@ uint32_t hashBytesEx(void* data, size_t size, uint32_t mpc){
 		}
 		return hash;
 }
-uint32_t hashInt(void* data, size_t size){
+uint32_t hashInt32(void *data, size_t size){
 	return *(uint32_t*)data;
 }
 uint32_t hashBytes(void* data, size_t size){

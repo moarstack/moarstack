@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <stdlib.h>
 #define ROUTING_MESSAGE_ID_SIZE	8
 
 #pragma pack(push, 1)

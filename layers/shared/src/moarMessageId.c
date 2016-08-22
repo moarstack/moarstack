@@ -8,24 +8,13 @@
 #include <moarMessageId.h>
 #include <funcResults.h>
 #include <moarTime.h>		// timeGetCurrent()
+#include <hashFunc.h>
 
 static uint8_t	nextOrderedValueArray[ MESSAGE_ID_ORDER_SIZE ] = { 0 };
 static bool		sranded = false;	// TODO implement normal random and remove that when done
 
 uint32_t midHash(void* address, size_t size){
-	uint32_t hash = 0;
-	uint8_t* addr = (uint8_t*)address;
-	if(NULL != address && 0 != size) {
-		uint32_t mp = 0xf424d9;
-		uint8_t shift = 32/size;
-		if(shift == 0)
-			shift = 1;
-		for(int i=0;i<size;i++){
-			hash <<= shift;
-			hash ^= mp*addr[i];
-		}
-	}
-	return hash;
+	return hashBytesEx(address, size, 0xf424d9);
 }
 
 // checks whether given message ids are equal; returns true, if are, false otherwise

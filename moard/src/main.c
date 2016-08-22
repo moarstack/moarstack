@@ -14,6 +14,7 @@
 #include "moarLibrary.h"
 #include "layerSockets.h"		// socketsPrepare(), socketUp(), socketDown() and so on
 #include "moarInterface.h"		// MoarIfaceStartupParams_T
+#include <moarLogger.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
 #define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
@@ -67,9 +68,35 @@ int runLayer( MoarLibrary_T * layerLibrary ) {
 	return result;
 }
 
+int LogWorkIllustration( void ) {
+	LogHandle_T log;
+	int			result;
+	char		bd[] = { '0', '1', '\0', '2', '3', '\0', '4', '5' };
+
+	result = LogOpen( "/tmp/someMoarLog.log", &log );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		printf( "Error starting logger\n" );
+		fflush( stdout );
+		return result;
+	}
+
+	// who cares about the results?..
+	result = LogSetLevelLog( log, LogLevel_Information );
+	result = LogSetLevelDump( log, LogLevel_Warning );
+	result = LogWrite( log, LogLevel_DebugQuiet, "Some%s data of %zu\nlength: %b\n\n(DebugQuiet)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
+	result = LogWrite( log, LogLevel_Information, "Some%s data of %zu\nlength: %b\n\n(Information)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
+	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(Warning)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
+	result = LogClose( &log );
+
+	return result;
+}
+
 int main(int argc, char** argv)
 {
     MoarLibrary_T libraries[LAYERS_COUNT];
+
+	LogWorkIllustration();
 
     char *fileNames[LAYERS_COUNT];
     fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;

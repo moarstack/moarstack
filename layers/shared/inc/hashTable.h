@@ -7,11 +7,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <stdint.h>
 #define HASH_ENABLE_ITERATOR
 
 // hash function proto
-typedef int (* hashFunc_T)(void* data, size_t size);
+typedef uint32_t (* hashFunc_T)(void* data, size_t size);
 
 typedef struct hashEntry_T hashEntry_T;
 
@@ -31,7 +31,7 @@ struct hashEntry_T{
 typedef struct{
 	hashEntry_T* 	Item;
 	bool 		 	Compare;
-	int 			HashValue;
+	uint32_t		HashValue;
 	void* 			Key;
 	size_t  		KeySize;
 } hashIterator_T;

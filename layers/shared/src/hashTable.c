@@ -6,8 +6,6 @@
 #include <hashTable.h>
 #include <memory.h>
 
-#include "hashTable.h"
-
 bool checkEquality(hashEntry_T *entry, int hash, void *key, size_t size){
 	if(NULL == entry)
 		return false;

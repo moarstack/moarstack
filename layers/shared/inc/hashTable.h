@@ -63,7 +63,7 @@ extern bool hashContain(hashTable_T* table, void* key);
 extern int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator);
 extern int hashIterator(hashTable_T* table, hashIterator_T* iterator);
 extern int hashIteratorNext(hashIterator_T* item);
-extern bool hashIteratorLast(hashIterator_T* item);
+extern bool hashIteratorIsLast(hashIterator_T *item);
 extern void* hashIteratorData(hashIterator_T* item);
 extern void* hashIteratorKey(hashIterator_T* item);
 extern int hashIteratorFree(hashIterator_T* item);

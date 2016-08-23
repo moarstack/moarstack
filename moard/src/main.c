@@ -15,6 +15,7 @@
 #include "layerSockets.h"		// socketsPrepare(), socketUp(), socketDown() and so on
 #include "moarInterface.h"		// MoarIfaceStartupParams_T
 #include <moarLogger.h>
+#include <errno.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
 #define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
@@ -82,12 +83,12 @@ int LogWorkIllustration( void ) {
 	}
 
 	// who cares about the results?..
-	result = LogSetLevelLog( log, LogLevel_Information );
-	result = LogSetLevelDump( log, LogLevel_Warning );
-	result = LogWrite( log, LogLevel_DebugQuiet, "Some%s data of %zu\nlength: %b\n\n(DebugQuiet)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
-	result = LogWrite( log, LogLevel_Information, "Some%s data of %zu\nlength: %b\n\n(Information)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
-	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(Warning)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
+	result = LogWrite( log, LogLevel_DebugQuiet, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( bd ), bd, sizeof( bd ), "DebugQuiet" );
+	result = LogWrite( log, LogLevel_Information, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( bd ), bd, sizeof( bd ), "Information" );
+	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( bd ), bd, sizeof( bd ), "Warning" );
+	errno = ECONNABORTED;
 	result = LogErrSystem( log, LogLevel_Critical, "system error message" );
+	errno = 0;
 	result = LogErrMoar( log, LogLevel_Error, FUNC_RESULT_FAILED_MEM_ALLOCATION, "moar error message" );
 	result = LogClose( &log );
 

@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <stdlib.h>
 #define ROUTING_MESSAGE_ID_SIZE	8
 
 #pragma pack(push, 1)
@@ -21,7 +21,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+extern uint32_t rmidHash(void* id, size_t size);
 extern bool rmidEqual( RoutingMessageId_T * one, RoutingMessageId_T * two );
 extern int rmidGenerate( RoutingMessageId_T * identifier);
 

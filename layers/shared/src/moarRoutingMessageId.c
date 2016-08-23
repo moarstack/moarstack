@@ -9,8 +9,10 @@
 #include <stdlib.h>
 #include <moarTime.h>
 #include "moarRoutingMessageId.h"
-
-
+#include <hashFunc.h>
+uint32_t rmidHash(void* id, size_t size){
+	return hashBytesEx(id, size, 0xf4e20f);
+}
 bool rmidEqual( RoutingMessageId_T * one, RoutingMessageId_T * two ){
 	if(NULL == one || NULL == two)
 		return false;

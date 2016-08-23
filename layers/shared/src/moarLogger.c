@@ -257,14 +257,14 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 		return result;
 
 	if( NULL == message )
-		result = fprintf( handle->FileHandle, "system error %d (%s)\n", errorValue, strerror( errorValue ) );
+		result = fprintf( handle->FileHandle, "system error %d (%s)", errorValue, strerror( errorValue ) );
 	else {
 		char	* lineMessage = logReformat( message, true );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
 
-		result = fprintf( handle->FileHandle, "system error %d (%s) %c %s\n", errorValue, strerror( errorValue ), handle->Delimiter,
+		result = fprintf( handle->FileHandle, "system error %d (%s) %c %s", errorValue, strerror( errorValue ), handle->Delimiter,
 						  lineMessage );
 		free( lineMessage );
 	}
@@ -291,14 +291,14 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 		return result;
 
 	if( NULL == message )
-		result = fprintf( handle->FileHandle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ -returnResult ] );
+		result = fprintf( handle->FileHandle, "moar error %d (%s)", returnResult, moarErrorMessages[ -returnResult ] );
 	else {
 		char	* lineMessage = logReformat( message, true );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
 
-		result = fprintf( handle->FileHandle, "moar error %d (%s) %c %s\n", returnResult,
+		result = fprintf( handle->FileHandle, "moar error %d (%s) %c %s", returnResult,
 						  moarErrorMessages[ -returnResult ], handle->Delimiter, lineMessage );
 		free( lineMessage );
 	}

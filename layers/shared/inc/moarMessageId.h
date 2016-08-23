@@ -28,7 +28,7 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-uint32_t midHash(void* address, size_t size);
+uint32_t midHash(void* id, size_t size);
 // checks whether given message ids are equal; returns true, if are, false otherwise
 extern bool midAreEqual( MessageId_T * one, MessageId_T * two );
 

@@ -13,8 +13,8 @@
 static uint8_t	nextOrderedValueArray[ MESSAGE_ID_ORDER_SIZE ] = { 0 };
 static bool		sranded = false;	// TODO implement normal random and remove that when done
 
-uint32_t midHash(void* address, size_t size){
-	return hashBytesEx(address, size, 0xf424d9);
+uint32_t midHash(void* id, size_t size){
+	return hashBytesEx(id, size, 0xf424d9);
 }
 
 // checks whether given message ids are equal; returns true, if are, false otherwise

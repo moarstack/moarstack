@@ -18,6 +18,7 @@
 #define LOG_DEF_DELIMITER	'|'
 #define LOG_DEF_LEVEL_LOG	LogLevel_Information
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
+#define LOG_LEVELS_COUNT	(1+(int)LogLevel_Critical)
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];

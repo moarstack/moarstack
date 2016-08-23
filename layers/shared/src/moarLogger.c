@@ -20,6 +20,16 @@ static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
 	"FUNC_RESULT_FAILED_MEM_ALLOCATION"
 };
 
+static char *moarLogLevelNames[LOG_LEVELS_COUNT] = {
+	"DUMP",
+	"DEBUGVERBOSE",
+	"DEBUGQUIET",
+	"INFORMATION",
+	"WARNING",
+	"ERROR",
+	"CRITICAL"
+};
+
 // opens log file with specified filepath; returns handler on success, value <= 0 otherwise
 int LogOpen( LogFilepath_T logFile, LogHandle_T * handle ) {
 	if( NULL == logFile || NULL == handle || 0 == strlen( logFile ) )
@@ -106,7 +116,7 @@ int logPrintMoment( LogHandle_T handle ) {
 int logPrintLevel( LogHandle_T handle, LogLevel_T logLevel ) {
 	int	result;
 
-	result = fprintf( handle->FileHandle, "LL_%d %c ", ( int )logLevel, handle->Delimiter );
+	result = fprintf( handle->FileHandle, "%s (%d) %c ", moarLogLevelNames[ logLevel ], logLevel, handle->Delimiter );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -125,7 +135,7 @@ int logPrintMeta( LogHandle_T handle, LogLevel_T logLevel ) {
 	return result;
 }
 
-char * logReformat( const char * startFormat, bool replaceDumpSpecifier ) {
+char * logReformat( const char * startFormat ) {
 	char	* finishFormat,
 			* replace;
 	size_t	length;
@@ -146,23 +156,17 @@ char * logReformat( const char * startFormat, bool replaceDumpSpecifier ) {
 	if( '\n' == finishFormat[ length - 1 ] )
 		finishFormat[ length - 1 ] = 0;
 
-	replace = strpbrk( finishFormat, "%\n" );
+	replace = strchr( finishFormat, '\n' );
 
 	while( NULL != replace ) {
-		if( '\n' == replace[ 0 ] )
-			replace[ 0 ] = ' ';
-		else if( replaceDumpSpecifier && 'b' == replace[ 1 ] ) {
-			replace[ 0 ] = '[';
-			replace[ 1 ] = ']';
-		}
-
-		replace = strpbrk( replace + 1, "%\n" );
+		*replace = ' ';
+		replace = strchr( replace + 1, '\n' );
 	}
 
 	return finishFormat;
 }
 
-int logPrintBinary( LogHandle_T handle, va_list args ) {
+int logPrintBinary( LogHandle_T handle, bool printReally, va_list args ) {
 	int 	result = 1;
 	char	* binaryData;
 	size_t	binaryDataSize;
@@ -170,16 +174,19 @@ int logPrintBinary( LogHandle_T handle, va_list args ) {
 	binaryData = va_arg( args, char* );
 	binaryDataSize = va_arg( args, size_t );
 
-	for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
-		result = fprintf( handle->FileHandle, "%02X ", binaryData[ byte ] );
+	if( printReally ) {
+		for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
+			result = fprintf( handle->FileHandle, "%02X ", binaryData[ byte ] );
 
-	if( 0 <= result )
-		result = fprintf( handle->FileHandle, "%02X", binaryData[ binaryDataSize - 1 ] );
+		if( 0 <= result )
+			result = fprintf( handle->FileHandle, "%02X", binaryData[ binaryDataSize - 1 ] );
+	} else
+		result = fprintf( handle->FileHandle, "[]" );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
-int logPrintFormatted( LogHandle_T handle, char * format, va_list args ) {
+int logPrintFormatted( LogHandle_T handle, bool printBinary, char * format, va_list args ) {
 	int 	result = 1;
 	char	* next = strstr( format, "%b" );
 
@@ -188,7 +195,7 @@ int logPrintFormatted( LogHandle_T handle, char * format, va_list args ) {
 		result = vfprintf( handle->FileHandle, format, args );
 
 		if( 0 <= result )
-			result = logPrintBinary( handle, args );
+			result = logPrintBinary( handle, printBinary, args );
 		else
 			result = FUNC_RESULT_FAILED_IO;
 
@@ -222,7 +229,7 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;
 
-	lineFormat = logReformat( format, logLevel < handle->MinDumpLevel );
+	lineFormat = logReformat( format );
 
 	if( NULL == lineFormat )
 		return FUNC_RESULT_FAILED;
@@ -233,7 +240,7 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 		return result;
 
 	va_start( args, format );
-	result = logPrintFormatted( handle, lineFormat, args );
+	result = logPrintFormatted( handle, logLevel >= handle->MinDumpLevel, lineFormat, args );
 	va_end( args );
 	free( lineFormat );
 
@@ -259,7 +266,7 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "system error %d (%s)", errorValue, strerror( errorValue ) );
 	else {
-		char	* lineMessage = logReformat( message, true );
+		char	* lineMessage = logReformat( message );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
@@ -293,7 +300,7 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 	if( NULL == message )
 		result = fprintf( handle->FileHandle, "moar error %d (%s)", returnResult, moarErrorMessages[ -returnResult ] );
 	else {
-		char	* lineMessage = logReformat( message, true );
+		char	* lineMessage = logReformat( message );
 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;

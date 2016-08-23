@@ -38,6 +38,9 @@ int LogOpen( LogFilepath_T logFile, LogHandle_T * handle ) {
 		return FUNC_RESULT_FAILED_IO;
 	}
 
+	( *handle )->MinLogLevel = LOG_DEF_LEVEL_LOG;
+	( *handle )->MinDumpLevel = LOG_DEF_LEVEL_DUMP;
+
 	return FUNC_RESULT_SUCCESS;
 }
 

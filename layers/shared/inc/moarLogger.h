@@ -15,6 +15,8 @@
 #define LOG_MOAR_ERRS_COUNT	(FUNC_RESULT_SUCCESS-FUNC_RESULT_FAILED_MEM_ALLOCATION+1)
 #define LOG_BITS_FOR_LOG	4
 #define LOG_BITS_FOR_DUMP	4
+#define LOG_DEF_LEVEL_LOG	LogLevel_Information
+#define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];

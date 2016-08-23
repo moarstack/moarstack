@@ -15,6 +15,7 @@
 #define LOG_MOAR_ERRS_COUNT	(FUNC_RESULT_SUCCESS-FUNC_RESULT_FAILED_MEM_ALLOCATION+1)
 #define LOG_BITS_FOR_LOG	4
 #define LOG_BITS_FOR_DUMP	4
+#define LOG_DEF_DELIMITER	'|'
 #define LOG_DEF_LEVEL_LOG	LogLevel_Information
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 
@@ -37,6 +38,7 @@ typedef struct {
 	LogMoment_T		MomentBuffer;
 	LogLevel_T		MinLogLevel:LOG_BITS_FOR_LOG,
 					MinDumpLevel:LOG_BITS_FOR_DUMP;
+	char			Delimiter;
 } LogDescriptor_T;
 
 typedef LogDescriptor_T	* LogHandle_T;
@@ -53,6 +55,9 @@ extern int LogSetLevelLog( LogHandle_T handle, LogLevel_T logLevel );
 
 // tunes specified descriptor with given value of minimal dumping level
 extern int LogSetLevelDump( LogHandle_T handle, LogLevel_T dumpLevel );
+
+// tunes specified descriptor with given value of delimiter
+extern int LogSetDelimiter( LogHandle_T handle, char delimiter );
 
 // writes some message to the log file specified by handle, adding time of writing
 extern int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... );

@@ -38,6 +38,7 @@ int LogOpen( LogFilepath_T logFile, LogHandle_T * handle ) {
 		return FUNC_RESULT_FAILED_IO;
 	}
 
+	( *handle )->Delimiter = LOG_DEF_DELIMITER;
 	( *handle )->MinLogLevel = LOG_DEF_LEVEL_LOG;
 	( *handle )->MinDumpLevel = LOG_DEF_LEVEL_DUMP;
 
@@ -60,6 +61,16 @@ int LogSetLevelDump( LogHandle_T handle, LogLevel_T dumpLevel ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	handle->MinDumpLevel = dumpLevel;
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+// tunes specified descriptor with given value of delimiter
+int LogSetDelimiter( LogHandle_T handle, char delimiter ) {
+	if( NULL == handle )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	handle->Delimiter = delimiter;
 
 	return FUNC_RESULT_SUCCESS;
 }

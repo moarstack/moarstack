@@ -75,7 +75,7 @@ int LogSetDelimiter( LogHandle_T handle, char delimiter ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int logMoment( LogHandle_T handle ) {
+int logPrintMoment( LogHandle_T handle ) {
 	int			result;
 	time_t		seconds;
 	moarTime_T	moment;
@@ -84,26 +84,51 @@ int logMoment( LogHandle_T handle ) {
 	memset( handle->MomentBuffer, 0, LOG_TIMESTAMP_SIZE );
 	moment = timeGetCurrent();
 	seconds = ( time_t )( moment / 1000 );
-	strftime( handle->MomentBuffer, LOG_TIMESTAMP_SIZE, "%F %T", localtime( &seconds ) );
+	strftime( handle->MomentBuffer, LOG_TIMESTAMP_SIZE, "%F ", localtime( &seconds ) );
+	length = strlen( handle->MomentBuffer );
+
+	if( length + 1 == LOG_TIMESTAMP_SIZE )
+		return FUNC_RESULT_FAILED;
+
+	handle->MomentBuffer[ length++ ] = handle->Delimiter;
+	strftime( handle->MomentBuffer + length, LOG_TIMESTAMP_SIZE - length - 1, " %T", localtime( &seconds ) );
 	length = strlen( handle->MomentBuffer );
 	result = snprintf( handle->MomentBuffer + length, LOG_TIMESTAMP_SIZE - length - 1, ".%03u", ( unsigned )( moment % 1000 ) );
 
 	if( 0 > result )
 		return FUNC_RESULT_FAILED;
 
-	result = fprintf( handle->FileHandle, "%s : ", handle->MomentBuffer );
-	fflush( handle->FileHandle );
+	result = fprintf( handle->FileHandle, "%s %c ", handle->MomentBuffer, handle->Delimiter );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
+}
+
+int logPrintLevel( LogHandle_T handle, LogLevel_T logLevel ) {
+	int	result;
+
+	result = fprintf( handle->FileHandle, "LL_%d %c ", ( int )logLevel, handle->Delimiter );
+
+	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
+}
+
+int logPrintMeta( LogHandle_T handle, LogLevel_T logLevel ) {
+	int	result;
+
+	result = logPrintMoment( handle );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = logPrintLevel( handle, logLevel );
+	fflush( handle->FileHandle );
+
+	return result;
 }
 
 char * logReformat( const char * startFormat, bool replaceDumpSpecifier ) {
 	char	* finishFormat,
 			* replace;
 	size_t	length;
-
-	if( NULL == startFormat )
-		return NULL;
 
 	length = strlen( startFormat );
 
@@ -154,12 +179,9 @@ int logPrintBinary( LogHandle_T handle, va_list args ) {
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
-int logPrint( LogHandle_T handle, char * format, va_list args ) {
+int logPrintFormatted( LogHandle_T handle, char * format, va_list args ) {
 	int 	result = 1;
 	char	* next = strstr( format, "%b" );
-
-	if( NULL == handle || NULL == format || NULL == handle->FileHandle )
-		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	while( NULL != next ) {
 		next[ 0 ] = next[ 1 ] = 0;
@@ -205,13 +227,13 @@ int LogWrite( LogHandle_T handle, LogLevel_T logLevel, const char * format, ... 
 	if( NULL == lineFormat )
 		return FUNC_RESULT_FAILED;
 
-	result = logMoment( handle );
+	result = logPrintMeta( handle, logLevel );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
 	va_start( args, format );
-	result = logPrint( handle, lineFormat, args );
+	result = logPrintFormatted( handle, lineFormat, args );
 	va_end( args );
 	free( lineFormat );
 
@@ -229,7 +251,7 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;
 
-	result = logMoment( handle );
+	result = logPrintMeta( handle, logLevel );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
@@ -242,7 +264,7 @@ int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * message 
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
 
-		result = fprintf( handle->FileHandle, "system error %d (%s) : %s\n", errorValue, strerror( errorValue ),
+		result = fprintf( handle->FileHandle, "system error %d (%s) %c %s\n", errorValue, strerror( errorValue ), handle->Delimiter,
 						  lineMessage );
 		free( lineMessage );
 	}
@@ -263,7 +285,7 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;
 
-	result = logMoment( handle );
+	result = logPrintMeta( handle, logLevel );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
@@ -276,8 +298,8 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 		if( NULL == lineMessage )
 			return FUNC_RESULT_FAILED;
 
-		result = fprintf( handle->FileHandle, "moar error %d (%s) : %s\n", returnResult,
-						  moarErrorMessages[ returnResult ], lineMessage );
+		result = fprintf( handle->FileHandle, "moar error %d (%s) %c %s\n", returnResult,
+						  moarErrorMessages[ returnResult ], handle->Delimiter, lineMessage );
 		free( lineMessage );
 	}
 

@@ -87,6 +87,8 @@ int LogWorkIllustration( void ) {
 	result = LogWrite( log, LogLevel_DebugQuiet, "Some%s data of %zu\nlength: %b\n\n(DebugQuiet)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
 	result = LogWrite( log, LogLevel_Information, "Some%s data of %zu\nlength: %b\n\n(Information)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
 	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(Warning)\n", " binary", sizeof( bd ), bd, sizeof( bd ) );
+	result = LogErrSystem( log, LogLevel_Critical, "system error message" );
+	result = LogErrMoar( log, LogLevel_Error, FUNC_RESULT_FAILED_MEM_ALLOCATION, "moar error message" );
 	result = LogClose( &log );
 
 	return result;

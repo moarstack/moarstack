@@ -291,7 +291,7 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 		return result;
 
 	if( NULL == message )
-		result = fprintf( handle->FileHandle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ returnResult ] );
+		result = fprintf( handle->FileHandle, "moar error %d (%s)\n", returnResult, moarErrorMessages[ -returnResult ] );
 	else {
 		char	* lineMessage = logReformat( message, true );
 
@@ -299,7 +299,7 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 			return FUNC_RESULT_FAILED;
 
 		result = fprintf( handle->FileHandle, "moar error %d (%s) %c %s\n", returnResult,
-						  moarErrorMessages[ returnResult ], handle->Delimiter, lineMessage );
+						  moarErrorMessages[ -returnResult ], handle->Delimiter, lineMessage );
 		free( lineMessage );
 	}
 

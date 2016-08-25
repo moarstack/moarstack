@@ -132,18 +132,18 @@ int actMockitConnection( IfaceState_T * layer ) {
 
 	result = connectDown( layer );
 
+	if( FUNC_RESULT_SUCCESS == result ) {
+		event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
+		event->data.fd = layer->Config.MockitSocket;
+		event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
+		result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
+	}
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = actMockitRegister( layer );
+
 	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
-	event->data.fd = layer->Config.MockitSocket;
-	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
-	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
-
-	result = actMockitRegister( layer );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "connection to the mockit" );
 
 	return result;
 }
@@ -155,16 +155,18 @@ int actMockitReconnection( IfaceState_T * layer, bool forced ) {
 	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.MockitSocket, event );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		if( forced ) {
+			shutdown( layer->Config.MockitSocket, SHUT_RDWR );
+			close( layer->Config.MockitSocket );
+		}
 
-	if( forced ) {
-		shutdown( layer->Config.MockitSocket, SHUT_RDWR );
-		close( layer->Config.MockitSocket );
+		layer->Config.IsConnectedToMockit = false;
+		result = actMockitConnection( layer );
 	}
 
-	layer->Config.IsConnectedToMockit = false;
-	result = actMockitConnection( layer );
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Error, result, "reconnection to the mockit" );
 
 	return result;
 }

@@ -27,10 +27,7 @@
 #define MAX_CLIENTS		10
 #define BUF_SIZE		32
 #define POWER_BUF_SIZE	10
-#define MSG_SIZE		256
-#define ERRMSG_SIZE		256
 #define ADDR_SIZE		30
-#define POWER_CONSTANT	63
 #define LIGHT_SPEED		299792458
 #define TIME_SIZE		30
 #define M_PI			3.14159265358979323846
@@ -80,10 +77,6 @@ void printTimely( FILE * stream , const char * format, ... ) {
 static inline void socketKill( int sock ) {
 	shutdown( sock, SHUT_RDWR );
 	close( sock );
-}
-
-static inline const int getSocket( const Addr_T addr, const Config_T * cfg ) {
-	return cfg->addr_data[ Search_Hash( cfg->addr_hash, addr ) ].sock;
 }
 
 static inline const Addr_T getAddr( const int sock, const Config_T * cfg ) {

@@ -15,7 +15,7 @@
 int writeDown( IfaceState_T * layer, void * buffer, size_t bytes );
 
 // read from physics layer
-ssize_t readDown( IfaceState_T * layer, void * buffer, size_t bytes );
+int readDown( IfaceState_T * layer, void * buffer, size_t bytes );
 
 // connect to physics layer
 int connectDown( IfaceState_T * layer );

@@ -211,18 +211,18 @@ int processChannelConnection( IfaceState_T * layer ) {
 
 	result = connectUp( layer );
 
+	if( FUNC_RESULT_SUCCESS == result ) {
+		event = layer->Memory.EpollEvents + IFACE_ARRAY_CHANNEL_POSITION;
+		event->data.fd = layer->Config.ChannelSocket;
+		event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
+		result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.ChannelSocket, event );
+	}
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = processCommandIfaceRegister( layer );
+
 	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	event = layer->Memory.EpollEvents + IFACE_ARRAY_CHANNEL_POSITION;
-	event->data.fd = layer->Config.ChannelSocket;
-	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
-	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.ChannelSocket, event );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
-
-	result = processCommandIfaceRegister( layer );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "connection to the channel" );
 
 	return result;
 }
@@ -234,16 +234,18 @@ int processChannelReconnection( IfaceState_T * layer, bool forced ) {
 	event = layer->Memory.EpollEvents + IFACE_ARRAY_CHANNEL_POSITION;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.ChannelSocket, event );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		if( forced ) {
+			shutdown( layer->Config.ChannelSocket, SHUT_RDWR );
+			close( layer->Config.ChannelSocket );
+		}
 
-	if( forced ) {
-		shutdown( layer->Config.ChannelSocket, SHUT_RDWR );
-		close( layer->Config.ChannelSocket );
+		layer->Config.IsConnectedToChannel = false;
+		result = processChannelConnection( layer );
 	}
 
-	layer->Config.IsConnectedToChannel = false;
-	result = processChannelConnection( layer );
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "reconnection to the channel" );
 
 	return result;
 }

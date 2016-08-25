@@ -84,7 +84,6 @@ typedef struct {
 	int					MockitSocket,
 						ChannelSocket,
 						NeighborsCount,
-						BeaconPayloadSize,
 						BeaconIntervalCurrent,
 						EpollHandler;
 	PowerFloat_T		CurrentSensitivity,
@@ -96,6 +95,7 @@ typedef struct {
 	SocketFilepath_T	ChannelSocketFilepath;
 	LogFilepath_T 		LogFilepath;
 	LogHandle_T			LogHandle;
+	size_t				BeaconPayloadSize;
 } IfaceConfiguration_T;
 
 // struct with preallocated memory for iface routines

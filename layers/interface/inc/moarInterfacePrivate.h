@@ -20,6 +20,7 @@
 #include <moarInterface.h>
 #include <moarInterfaceChannel.h>
 #include <funcResults.h>
+#include <moarLogger.h>
 
 #define IFACE_ADDR_SIZE					sizeof( unsigned int )
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
@@ -92,6 +93,8 @@ typedef struct {
 						IsConnectedToChannel,
 						IsConnectedToMockit;
 	SocketFilepath_T	ChannelSocketFilepath;
+	LogFilepath_T 		LogFilepath;
+	LogHandle_T			LogHandle;
 } IfaceConfiguration_T;
 
 // struct with preallocated memory for iface routines

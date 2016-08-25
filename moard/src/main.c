@@ -16,8 +16,10 @@
 #include "moarInterface.h"		// MoarIfaceStartupParams_T
 #include <moarLogger.h>
 #include <errno.h>
+#include <moarInterface.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
+#define IFACE_LOG_FILE				"/tmp/moarInterface.log"
 #define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
 
 //#define LOAD_MULTIPLE_INTERFACES
@@ -50,6 +52,7 @@ int runLayer( MoarLibrary_T * layerLibrary ) {
 			return -1;
 
 		strncpy( spIface->socketToChannel, IFACE_CHANNEL_SOCKET_FILE, SOCKET_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE
+		strncpy( spIface->filepathToLog, IFACE_LOG_FILE, LOG_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE TOO
 		vsp = spIface;
     } else {
         MoarLayerStartupParams_T	* spNonIface;

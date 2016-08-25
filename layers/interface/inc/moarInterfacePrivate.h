@@ -91,7 +91,8 @@ typedef struct {
 						CurrentBeaconPower;
 	bool				IsWaitingForResponse,
 						IsConnectedToChannel,
-						IsConnectedToMockit;
+						IsConnectedToMockit,
+						IsRunning;
 	SocketFilepath_T	ChannelSocketFilepath;
 	LogFilepath_T 		LogFilepath;
 	LogHandle_T			LogHandle;

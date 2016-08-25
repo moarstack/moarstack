@@ -23,6 +23,7 @@
 #define CONFIG_FLNM_DEF	"config.txt"
 #define CONFIG_FLNM_SZ	255
 #define SOCK_FLNM_SZ	108 // limited with length of [struct sockadddr_un].sun_path
+#define SOCK_FLNM_FRMT	"%108s" // format string to read socket filename as a string safely
 #define MAX_CLIENTS		10
 #define BUF_SIZE		32
 #define POWER_BUF_SIZE	10
@@ -111,7 +112,8 @@ void readConfig( Config_T * cfg ) {
 	if( NULL == configFile )
 		die( 0, "Opening config file is impossible" );
 
-	fscanf( configFile, "%s%f%d", cfg->socketFilename, &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
+	fscanf( configFile, SOCK_FLNM_FRMT, cfg->socketFilename );
+	fscanf( configFile, "%f%d", &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
 	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
 	Init_Hash( cfg->addr_hash );
 

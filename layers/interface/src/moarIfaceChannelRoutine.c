@@ -3,6 +3,7 @@
 //
 
 #include <moarIfaceChannelRoutine.h>
+#include <moarInterfacePrivate.h>
 
 int writeUp( IfaceState_T * layer ) {
 	int result;
@@ -15,6 +16,9 @@ int writeUp( IfaceState_T * layer ) {
 		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "writing into the channel socket" );
 
 	return result;
 }
@@ -31,6 +35,9 @@ int readUp( IfaceState_T * layer ) {
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "reading from the channel socket" );
+
 	return result;
 }
 
@@ -45,6 +52,9 @@ int connectUp( IfaceState_T * layer ) {
 		else if( 1 < IFACE_PUSH_ATTEMPTS_COUNT )
 			sleep( IFACE_CHANNEL_WAIT_INTERVAL );
 	}
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "opening the channel socket file" );
 
 	return result;
 }

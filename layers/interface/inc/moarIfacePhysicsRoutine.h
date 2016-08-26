@@ -12,10 +12,10 @@
 #define IFACE_SEND_ATTEMPTS_COUNT	3
 
 // send to physics layer
-int writeDown( IfaceState_T * layer, void * buffer, size_t bytes );
+int writeDown( IfaceState_T * layer, void * buffer, int bytes );
 
 // read from physics layer
-int readDown( IfaceState_T * layer, void * buffer, size_t bytes );
+int readDown( IfaceState_T * layer, void * buffer, int bytes );
 
 // connect to physics layer
 int connectDown( IfaceState_T * layer );

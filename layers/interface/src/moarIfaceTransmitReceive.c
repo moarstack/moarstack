@@ -4,7 +4,7 @@
 
 #include <moarIfaceTransmitReceive.h>
 
-int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
+int getFloat( PowerFloat_T * value, char * buffer, int * bytesLeft ) {
 	char	* end;
 
 	if( NULL == buffer )
@@ -15,24 +15,24 @@ int getFloat( PowerFloat_T * value, char * buffer, ssize_t * bytesLeft ) {
 	else
 		*value = strtof( buffer, &end );
 
-	if( NULL != bytesLeft && 0 < *bytesLeft )
-		*bytesLeft -= ( end - buffer );
-
 	if( 0 == end - buffer )
 		return FUNC_RESULT_FAILED;
+
+	if( NULL != bytesLeft && 0 < *bytesLeft )
+		*bytesLeft -= ( end - buffer );
 
 	return FUNC_RESULT_SUCCESS;
 }
 
-int receiveDataPiece( IfaceState_T * layer, void * destination, ssize_t expectedSize, char ** bufStart, ssize_t * bytesLeft ) {
-	ssize_t	bytesDone = 0;
+int receiveDataPiece( IfaceState_T * layer, void * destination, int expectedSize, char ** bufStart, int * bytesLeft ) {
+	int	bytesDone = 0;
 
 	if( NULL == bufStart || NULL == *bufStart || NULL == bytesLeft )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	if( 0 < *bytesLeft ) {
 		bytesDone = ( *bytesLeft < expectedSize ? *bytesLeft : expectedSize );
-		memcpy( destination, *bufStart, bytesDone );
+		memcpy( destination, *bufStart, ( size_t )bytesDone );
 		*bufStart += bytesDone;
 		*bytesLeft -= bytesDone;
 	}
@@ -47,14 +47,13 @@ int receiveDataPiece( IfaceState_T * layer, void * destination, ssize_t expected
 }
 
 int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
-	ssize_t	bytesLeft = 0;
-	int 	result = FUNC_RESULT_SUCCESS;
+	int		bytesLeft = 0,
+		 	result = FUNC_RESULT_SUCCESS;
 	char	* buffer = layer->Memory.Buffer;
 
 	if( NULL == finishPower )
 		result = FUNC_RESULT_FAILED_ARGUMENT;
-
-	if( FUNC_RESULT_SUCCESS == result ) {
+	else {
 		bytesLeft = readDown( layer, buffer, IFACE_BUFFER_SIZE );
 
 		if( 0 >= bytesLeft )
@@ -70,7 +69,7 @@ int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
 		result = receiveDataPiece( layer, &( layer->Memory.BufferHeader ), IFACE_HEADER_SIZE, &buffer, &bytesLeft );
 
 		if( FUNC_RESULT_SUCCESS != result && 0 < layer->Memory.BufferHeader.Size )
-			result = receiveDataPiece( layer, layer->Memory.Payload, layer->Memory.BufferHeader.Size, &buffer,
+			result = receiveDataPiece( layer, layer->Memory.Payload, ( int )( layer->Memory.BufferHeader.Size ), &buffer,
 									   &bytesLeft );
 
 		if( FUNC_RESULT_SUCCESS != result && IfacePackType_Beacon == layer->Memory.BufferHeader.Type )
@@ -83,20 +82,20 @@ int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
 	return result;
 }
 
-int transmitAnyData( IfaceState_T * layer, PowerFloat_T power, void * data, size_t size ) {
-	size_t	currentLength;
-	int		result = FUNC_RESULT_SUCCESS;
+int transmitAnyData( IfaceState_T * layer, PowerFloat_T power, void * data, int size ) {
+	int	currentLength,
+		result = FUNC_RESULT_SUCCESS;
 
 	if( ( NULL == data && 0 < size ) || ( NULL != data && 0 == size ) )
 		result = FUNC_RESULT_FAILED_ARGUMENT;
 
 	if( FUNC_RESULT_SUCCESS == result ) {
-		snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %zn", ( float )power, &currentLength );
+		snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, ":%f %n", ( float )power, &currentLength );
 		result = writeDown( layer, layer->Memory.Buffer, currentLength );
 	}
 
 	if( FUNC_RESULT_SUCCESS == result ) {
-		snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%zu %zn", size, &currentLength );
+		snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%d %n", size, &currentLength );
 		result = writeDown( layer, layer->Memory.Buffer, currentLength );
 	}
 
@@ -112,15 +111,15 @@ int transmitAnyData( IfaceState_T * layer, PowerFloat_T power, void * data, size
 int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {
 	void			* responsePacket,
 					* responsePayload;
-	int				result;
-	size_t			responseSize;
+	int				result,
+					responseSize;
 	IfaceHeader_T	* responseHeader;
 
 	if( NULL == receiver )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	responseSize = IFACE_HEADER_SIZE + 2 * CRC_SIZE;
-	responsePacket = malloc( responseSize );
+	responsePacket = malloc( ( size_t )responseSize );
 
 	if( NULL == responsePacket )
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
@@ -146,16 +145,16 @@ int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T cr
 
 int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse ) {
 	void			* messagePacket,
-			* messagePayload;
-	int				result;
-	size_t			messageSize;
+					* messagePayload;
+	int				result,
+					messageSize;
 	IfaceHeader_T	* messageHeader;
 
 	if( NULL == receiver )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	messageSize = IFACE_HEADER_SIZE + layer->Memory.Command.DataSize;
-	messagePacket = malloc( messageSize );
+	messagePacket = malloc( ( size_t )messageSize );
 
 	if( NULL == messagePacket )
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
@@ -181,13 +180,13 @@ int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool need
 int transmitBeacon( IfaceState_T * layer ) {
 	void			* beaconPacket,
 					* beaconPayload;
-	int				result;
-	size_t			beaconSize;
+	int				result,
+					beaconSize;
 	IfaceHeader_T	* beaconHeader;
 	IfaceFooter_T	* beaconFooter;
 
 	beaconSize = IFACE_HEADER_SIZE + layer->Config.BeaconPayloadSize + IFACE_FOOTER_SIZE;
-	beaconPacket = malloc( beaconSize );
+	beaconPacket = malloc( ( size_t )beaconSize );
 
 	if( NULL == beaconPacket )
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;

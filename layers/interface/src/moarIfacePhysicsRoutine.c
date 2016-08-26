@@ -4,7 +4,7 @@
 
 #include <moarIfacePhysicsRoutine.h>
 
-int writeDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
+int writeDown( IfaceState_T * layer, void * buffer, int bytes ) {
 	int result = FUNC_RESULT_SUCCESS;
 
 	if( ( NULL == buffer && 0 < bytes ) || 0 >= layer->Config.MockitSocket )
@@ -12,7 +12,7 @@ int writeDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
 
 	if( FUNC_RESULT_SUCCESS == result ) {
 		for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-			result = ( int )write( layer->Config.MockitSocket, buffer, bytes );
+			result = ( int )write( layer->Config.MockitSocket, buffer, ( size_t )bytes );
 
 			if( result == bytes )
 				break;
@@ -29,7 +29,7 @@ int writeDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
 	return result;
 }
 
-int readDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
+int readDown( IfaceState_T * layer, void * buffer, int bytes ) {
 	int	result = FUNC_RESULT_SUCCESS;
 
 	if( ( NULL == buffer && 0 < bytes ) || 0 >= layer->Config.MockitSocket ) {
@@ -39,7 +39,7 @@ int readDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
 
 	if( FUNC_RESULT_SUCCESS == result )
 		for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-			result = ( int )read( layer->Config.MockitSocket, buffer, bytes );
+			result = ( int )read( layer->Config.MockitSocket, buffer, ( size_t )bytes );
 
 			if( 0 < result )
 				break;
@@ -47,7 +47,7 @@ int readDown( IfaceState_T * layer, void * buffer, size_t bytes ) {
 				sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 		}
 
-	if( 0 >= result )
+	if( 0 > result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, FUNC_RESULT_FAILED_IO, "reading from the mockit socket" );
 
 	return result;

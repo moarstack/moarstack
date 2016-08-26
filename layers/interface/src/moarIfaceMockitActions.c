@@ -33,13 +33,16 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 			result = processCommandIfaceNeighborNew( layer, address );
 	}
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitReceivedBeacon()" );
+
 	return result;
 }
 
 int actMockitRegister( IfaceState_T * layer ) {
-	int				result,
-					length,
-					address;
+	int	result,
+		length,
+		address;
 
 	memcpy( &address, &( layer->Config.Address ), IFACE_ADDR_SIZE );
 
@@ -54,12 +57,12 @@ int actMockitRegister( IfaceState_T * layer ) {
 	snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 	result = writeDown( layer, layer->Memory.Buffer, length );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	if( FUNC_RESULT_SUCCESS == result )
+		memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
+	else
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitRegister()" );
 
-	memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
-
-	return FUNC_RESULT_SUCCESS;
+	return result;
 }
 
 int actMockitRegisterResult( IfaceState_T * layer ) {
@@ -73,11 +76,13 @@ int actMockitRegisterResult( IfaceState_T * layer ) {
 	layer->Config.IsConnectedToMockit = ( 0 == strncmp( IFACE_REGISTRATION_OK, layer->Memory.Buffer, IFACE_REGISTRATION_OK_SIZE ) );
 
 	if( layer->Config.IsConnectedToMockit ) {
-		printf( "Interface registered in MockIT with address %08X\n", *( unsigned int * )&( layer->Config.Address ) );
-		fflush( stdout );
+		LogWrite( layer->Config.LogHandle, LogLevel_Information, "interface registered in MockIT with address %08X", *( unsigned int * )&( layer->Config.Address ) );
 		result = FUNC_RESULT_SUCCESS;
 	} else
 		result = actMockitRegister( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitRegisterResult()" );
 
 	return result;
 }
@@ -113,6 +118,7 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 				default :
 					result = FUNC_RESULT_FAILED_ARGUMENT;
+					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
 			}
 
 		if( FUNC_RESULT_SUCCESS == result &&
@@ -122,6 +128,9 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 	} else
 		result = actMockitRegisterResult( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitReceived()" );
 
 	return result;
 }
@@ -143,7 +152,7 @@ int actMockitConnection( IfaceState_T * layer ) {
 		result = actMockitRegister( layer );
 
 	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "connection to the mockit" );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "actMockitConnection()" );
 
 	return result;
 }
@@ -166,7 +175,7 @@ int actMockitReconnection( IfaceState_T * layer, bool forced ) {
 	}
 
 	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Error, result, "reconnection to the mockit" );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Error, result, "actMockitReconnection()" );
 
 	return result;
 }

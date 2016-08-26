@@ -2,6 +2,7 @@
 // Created by kryvashek on 13.08.16.
 //
 
+#include <math.h>						// roundf
 #include <moarIfaceTransmitReceive.h>
 
 int getFloat( PowerFloat_T * value, char * buffer, int * bytesLeft ) {
@@ -111,34 +112,40 @@ int transmitAnyData( IfaceState_T * layer, PowerFloat_T power, void * data, int 
 int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull ) {
 	void			* responsePacket,
 					* responsePayload;
-	int				result,
+	int				result = FUNC_RESULT_SUCCESS,
 					responseSize;
 	IfaceHeader_T	* responseHeader;
 
 	if( NULL == receiver )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		result = FUNC_RESULT_FAILED_ARGUMENT;
+	else {
+		responseSize = IFACE_HEADER_SIZE + 2 * CRC_SIZE;
+		responsePacket = malloc( ( size_t )responseSize );
 
-	responseSize = IFACE_HEADER_SIZE + 2 * CRC_SIZE;
-	responsePacket = malloc( ( size_t )responseSize );
+		if( NULL == responsePacket )
+			result = FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
 
-	if( NULL == responsePacket )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		responseHeader = ( IfaceHeader_T * )responsePacket;
+		responsePayload = responsePacket + IFACE_HEADER_SIZE;
 
-	responseHeader = ( IfaceHeader_T * )responsePacket;
-	responsePayload = responsePacket + IFACE_HEADER_SIZE;
+		responseHeader->From = layer->Config.Address;
+		responseHeader->To = receiver->Address;
+		responseHeader->Size = 2 * CRC_SIZE;
+		responseHeader->CRC = 0; // that`s not implemented yet TODO
+		responseHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
+		responseHeader->Type = IfacePackType_IsResponse;
 
-	responseHeader->From = layer->Config.Address;
-	responseHeader->To = receiver->Address;
-	responseHeader->Size = 2 * CRC_SIZE;
-	responseHeader->CRC = 0; // that`s not implemented yet TODO
-	responseHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
-	responseHeader->Type = IfacePackType_IsResponse;
+		memcpy( responsePayload, &crcInHeader, CRC_SIZE );
+		memcpy( responsePayload + CRC_SIZE, &crcFull, CRC_SIZE );
 
-	memcpy( responsePayload, &crcInHeader, CRC_SIZE );
-	memcpy( responsePayload + CRC_SIZE, &crcFull, CRC_SIZE );
+		result = transmitAnyData( layer, receiver->MinPower, responsePacket, responseSize );
+		free( responsePacket );
+	}
 
-	result = transmitAnyData( layer, receiver->MinPower, responsePacket, responseSize );
-	free( responsePacket );
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "response transmitting" );
 
 	return result;
 }
@@ -146,33 +153,39 @@ int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T cr
 int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse ) {
 	void			* messagePacket,
 					* messagePayload;
-	int				result,
+	int				result = FUNC_RESULT_SUCCESS,
 					messageSize;
 	IfaceHeader_T	* messageHeader;
 
 	if( NULL == receiver )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		result = FUNC_RESULT_FAILED_ARGUMENT;
+	else {
+		messageSize = IFACE_HEADER_SIZE + layer->Memory.Command.DataSize;
+		messagePacket = malloc( ( size_t )messageSize );
 
-	messageSize = IFACE_HEADER_SIZE + layer->Memory.Command.DataSize;
-	messagePacket = malloc( ( size_t )messageSize );
+		if( NULL == messagePacket )
+			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
 
-	if( NULL == messagePacket )
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		messageHeader = ( IfaceHeader_T * )messagePacket;
+		messagePayload = messagePacket + IFACE_HEADER_SIZE;
 
-	messageHeader = ( IfaceHeader_T * )messagePacket;
-	messagePayload = messagePacket + IFACE_HEADER_SIZE;
+		messageHeader->From = layer->Config.Address;
+		messageHeader->To = receiver->Address;
+		messageHeader->Size = layer->Memory.Command.DataSize;
+		messageHeader->CRC = 0; // that`s not implemented yet TODO
+		messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
+		messageHeader->Type = ( needResponse ? IfacePackType_NeedResponse : IfacePackType_NeedNoResponse );
 
-	messageHeader->From = layer->Config.Address;
-	messageHeader->To = receiver->Address;
-	messageHeader->Size = layer->Memory.Command.DataSize;
-	messageHeader->CRC = 0; // that`s not implemented yet TODO
-	messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
-	messageHeader->Type = ( needResponse ? IfacePackType_NeedResponse : IfacePackType_NeedNoResponse );
+		memcpy( messagePayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
 
-	memcpy( messagePayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
+		result = transmitAnyData( layer, receiver->MinPower, messagePacket, messageSize );
+		free( messagePacket );
+	}
 
-	result = transmitAnyData( layer, receiver->MinPower, messagePacket, messageSize );
-	free( messagePacket );
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "message transmitting" );
 
 	return result;
 }
@@ -180,7 +193,7 @@ int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool need
 int transmitBeacon( IfaceState_T * layer ) {
 	void			* beaconPacket,
 					* beaconPayload;
-	int				result,
+	int				result = FUNC_RESULT_SUCCESS,
 					beaconSize;
 	IfaceHeader_T	* beaconHeader;
 	IfaceFooter_T	* beaconFooter;
@@ -191,23 +204,28 @@ int transmitBeacon( IfaceState_T * layer ) {
 	if( NULL == beaconPacket )
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
-	beaconHeader = ( IfaceHeader_T * )beaconPacket;
-	beaconPayload = beaconPacket + IFACE_HEADER_SIZE;
-	beaconFooter = ( IfaceFooter_T * )( beaconPayload + layer->Config.BeaconPayloadSize );
+	if( FUNC_RESULT_SUCCESS == result ) {
+		beaconHeader = ( IfaceHeader_T * )beaconPacket;
+		beaconPayload = beaconPacket + IFACE_HEADER_SIZE;
+		beaconFooter = ( IfaceFooter_T * )( beaconPayload + layer->Config.BeaconPayloadSize );
 
-	beaconHeader->From = layer->Config.Address;
-	memset( &( beaconHeader->To ), 0, IFACE_ADDR_SIZE );
-	beaconHeader->Size = layer->Config.BeaconPayloadSize;
-	beaconHeader->CRC = 0; // that`s not implemented yet TODO
-	beaconHeader->TxPower = ( PowerInt_T )roundf( layer->Config.CurrentBeaconPower );
-	beaconHeader->Type = IfacePackType_Beacon;
+		beaconHeader->From = layer->Config.Address;
+		memset( &( beaconHeader->To ), 0, IFACE_ADDR_SIZE );
+		beaconHeader->Size = layer->Config.BeaconPayloadSize;
+		beaconHeader->CRC = 0; // that`s not implemented yet TODO
+		beaconHeader->TxPower = ( PowerInt_T )roundf( layer->Config.CurrentBeaconPower );
+		beaconHeader->Type = IfacePackType_Beacon;
 
-	memcpy( beaconPayload, layer->Memory.BeaconPayload, layer->Config.BeaconPayloadSize );
+		memcpy( beaconPayload, layer->Memory.BeaconPayload, layer->Config.BeaconPayloadSize );
 
-	beaconFooter->MinSensitivity = ( PowerInt_T )roundf( layer->Config.CurrentSensitivity );
+		beaconFooter->MinSensitivity = ( PowerInt_T )roundf( layer->Config.CurrentSensitivity );
 
-	result = transmitAnyData( layer, beaconHeader->TxPower, beaconPacket, beaconSize );
-	free( beaconPacket );
+		result = transmitAnyData( layer, beaconHeader->TxPower, beaconPacket, beaconSize );
+		free( beaconPacket );
+	}
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "beacon transmitting" );
 
 	return result;
 }

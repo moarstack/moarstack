@@ -87,7 +87,6 @@ int initInterface( IfaceState_T * layer, void * params ) {
 
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	IfaceState_T		state = { 0 };
-	struct epoll_event	* event;
 	int					result,
 						eventsCount;
 

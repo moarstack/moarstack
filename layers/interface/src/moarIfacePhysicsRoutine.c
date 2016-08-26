@@ -34,7 +34,7 @@ int readDown( IfaceState_T * layer, void * buffer, int bytes ) {
 
 	if( ( NULL == buffer && 0 < bytes ) || 0 >= layer->Config.MockitSocket ) {
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, FUNC_RESULT_FAILED_ARGUMENT, "reading from the mockit socket" );
-		result = FUNC_RESULT_FAILED_ARGUMENT;
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	}
 
 	if( FUNC_RESULT_SUCCESS == result )
@@ -47,7 +47,7 @@ int readDown( IfaceState_T * layer, void * buffer, int bytes ) {
 				sleep( IFACE_MOCKIT_WAIT_INTERVAL );
 		}
 
-	if( 0 > result )
+	if( 0 >= result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, FUNC_RESULT_FAILED_IO, "reading from the mockit socket" );
 
 	return result;

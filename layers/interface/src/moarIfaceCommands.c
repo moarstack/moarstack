@@ -45,6 +45,9 @@ int processCommandIfaceRegister( IfaceState_T * layer ) {
 	metadata.Value = layer->Config.Address;
 	result = processCommandIface( layer, LayerCommandType_RegisterInterface, &metadata, NULL, 0 );
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceRegister()" );
+
 	return result;
 }
 
@@ -55,6 +58,9 @@ int processCommandIfaceUnknownDest( IfaceState_T * layer ) {
 	metadata.Id = layer->Memory.ProcessingMessageId;
 	metadata.State = IfacePackState_UnknownDest;
 	result = processCommandIface( layer, LayerCommandType_MessageState, &metadata, NULL, 0 );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceUnknownDest()" );
 
 	return result;
 }
@@ -71,6 +77,9 @@ int processCommandIfaceTimeoutFinished( IfaceState_T * layer, bool gotResponse )
 	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
 		layer->Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceTimeoutFinished()" );
+
 	return result;
 }
 
@@ -82,6 +91,9 @@ int processCommandIfaceMessageSent( IfaceState_T * layer ) {
 	metadata.State = IfacePackState_Sent;
 	result = processCommandIface( layer, LayerCommandType_MessageState, &metadata, NULL, 0 );
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceMessageSent()" );
+
 	return result;
 }
 
@@ -92,6 +104,9 @@ int processCommandIfaceNeighborNew( IfaceState_T * layer, IfaceAddr_T * address 
 	metadata.Neighbor = *address;
 	result = processCommandIface( layer, LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborNew()" );
+
 	return result;
 }
 
@@ -101,6 +116,9 @@ int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * addre
 
 	metadata.Neighbor = *address;
 	result = processCommandIface( layer, LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborUpdate()" );
 
 	return result;
 }
@@ -117,6 +135,9 @@ int processCommandIfaceReceived( IfaceState_T * layer ) {
 	metadata.From = layer->Memory.BufferHeader.From;
 	result = processCommandIface( layer, LayerCommandType_Receive, &metadata, layer->Memory.Buffer, layer->Memory.BufferHeader.Size );
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceReceived()" );
+
 	return result;
 }
 
@@ -127,11 +148,13 @@ int processCommandChannelRegisterResult( IfaceState_T * layer ) {
 	clearCommand( layer );
 
 	if( layer->Config.IsConnectedToChannel ) {
-		printf( "Interface registered in channel layer\n" );
-		fflush( stdout );
+		LogWrite( layer->Config.LogHandle, LogLevel_Information, "interface registered in channel layer" );
 		result = FUNC_RESULT_SUCCESS;
 	} else
 		result = processCommandIfaceRegister( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannelRegisterResult()" );
 
 	return result;
 }
@@ -150,31 +173,39 @@ int processCommandChannelSend( IfaceState_T * layer ) {
 	else {
 		result = transmitMessage( layer, neighbor, metadata->NeedResponse );
 
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
-
-		if( metadata->NeedResponse ) {
-			layer->Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
-			layer->Config.IsWaitingForResponse = true;
-		} else
-			result = processCommandIfaceMessageSent( layer );
-
-		clearCommand( layer );
+		if( FUNC_RESULT_SUCCESS == result ) {
+			if( metadata->NeedResponse ) {
+				layer->Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
+				layer->Config.IsWaitingForResponse = true;
+			} else
+				result = processCommandIfaceMessageSent( layer );
+		}
 	}
+
+	clearCommand( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannelSend()" );
 
 	return result;
 }
 
 int processCommandChannelUpdateBeacon( IfaceState_T * layer ) {
+	int result = FUNC_RESULT_SUCCESS;
+
 	if( ( NULL == layer->Memory.Command.Data && 0 < layer->Memory.Command.DataSize ) ||
 		( NULL != layer->Memory.Command.Data && 0 == layer->Memory.Command.DataSize ) ||
 		IFACE_MAX_PAYLOAD_BEACON_SIZE < layer->Memory.Command.DataSize )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		result = FUNC_RESULT_FAILED_ARGUMENT;
 
-	memcpy( layer->Memory.BeaconPayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
-	layer->Config.BeaconPayloadSize = layer->Memory.Command.DataSize;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		memcpy( layer->Memory.BeaconPayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
+		layer->Config.BeaconPayloadSize = layer->Memory.Command.DataSize;
+	} else
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannelUpdateBeacon()" );
+
 	clearCommand( layer );
-	return FUNC_RESULT_SUCCESS;
+	return result;
 }
 
 int processCommandChannel( IfaceState_T * layer ) {
@@ -182,25 +213,27 @@ int processCommandChannel( IfaceState_T * layer ) {
 
 	result = readUp( layer );
 
+	if( FUNC_RESULT_SUCCESS == result ) {
+		if( layer->Config.IsConnectedToChannel )
+			switch( layer->Memory.Command.Command ) {
+				case LayerCommandType_Send :
+					result = processCommandChannelSend( layer );
+					break;
+
+				case LayerCommandType_UpdateBeaconPayload :
+					result = processCommandChannelUpdateBeacon( layer );
+					break;
+
+				default :
+					result = FUNC_RESULT_FAILED_ARGUMENT;
+					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown command %d from channel", layer->Memory.Command.Command );
+			}
+		else if( LayerCommandType_RegisterInterfaceResult == layer->Memory.Command.Command )
+			result = processCommandChannelRegisterResult( layer );
+	}
+
 	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	if( layer->Config.IsConnectedToChannel )
-		switch( layer->Memory.Command.Command ) {
-			case LayerCommandType_Send :
-				result = processCommandChannelSend( layer );
-				break;
-
-			case LayerCommandType_UpdateBeaconPayload :
-				result = processCommandChannelUpdateBeacon( layer );
-				break;
-
-			default :
-				result = FUNC_RESULT_FAILED_ARGUMENT;
-				printf( "IFACE: unknown command %d from channel\n", layer->Memory.Command.Command );
-		}
-	else if( LayerCommandType_RegisterInterfaceResult == layer->Memory.Command.Command )
-		result = processCommandChannelRegisterResult( layer );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannel()" );
 
 	return result;
 }
@@ -222,7 +255,7 @@ int processChannelConnection( IfaceState_T * layer ) {
 		result = processCommandIfaceRegister( layer );
 
 	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "connection to the channel" );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "processChannelConnection()" );
 
 	return result;
 }
@@ -245,7 +278,7 @@ int processChannelReconnection( IfaceState_T * layer, bool forced ) {
 	}
 
 	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "reconnection to the channel" );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "processChannelReconnection()" );
 
 	return result;
 }

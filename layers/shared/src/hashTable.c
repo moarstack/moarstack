@@ -150,6 +150,21 @@ int hashRemove(hashTable_T* table, void* key){
 	}
 	return FUNC_RESULT_SUCCESS;
 }
+
+void* hashGetPtr(hashTable_T* table, void* key){
+	if(NULL == table)
+		return NULL;
+	if(NULL == key)
+		return NULL;
+
+
+	hashEntry_T** entry = searchEntry(table, key);
+	if(NULL != entry) {
+		hashEntry_T* cEntry = *entry;
+		return cEntry->Data;
+	}
+	return NULL;
+}
 int hashGet(hashTable_T* table, void* key, void* data){
 	if(NULL == table)
 		return FUNC_RESULT_FAILED_ARGUMENT;

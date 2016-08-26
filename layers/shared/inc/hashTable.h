@@ -58,6 +58,7 @@ extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
 extern int hashGet(hashTable_T* table, void* key, void* data);
+extern void* hashGetPtr(hashTable_T* table, void* key);
 extern bool hashContain(hashTable_T* table, void* key);
 #ifdef HASH_ENABLE_ITERATOR
 extern int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator);

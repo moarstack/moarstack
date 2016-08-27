@@ -33,13 +33,16 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 			result = processCommandIfaceNeighborNew( layer, address );
 	}
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitReceivedBeacon()" );
+
 	return result;
 }
 
 int actMockitRegister( IfaceState_T * layer ) {
-	int				result,
-					length,
-					address;
+	int	result,
+		length,
+		address;
 
 	memcpy( &address, &( layer->Config.Address ), IFACE_ADDR_SIZE );
 
@@ -54,12 +57,12 @@ int actMockitRegister( IfaceState_T * layer ) {
 	snprintf( layer->Memory.Buffer, IFACE_BUFFER_SIZE, "%d%n", address, &length );
 	result = writeDown( layer, layer->Memory.Buffer, length );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	if( FUNC_RESULT_SUCCESS == result )
+		memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
+	else
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitRegister()" );
 
-	memcpy( &( layer->Config.Address ), &address, IFACE_ADDR_SIZE );
-
-	return FUNC_RESULT_SUCCESS;
+	return result;
 }
 
 int actMockitRegisterResult( IfaceState_T * layer ) {
@@ -73,11 +76,13 @@ int actMockitRegisterResult( IfaceState_T * layer ) {
 	layer->Config.IsConnectedToMockit = ( 0 == strncmp( IFACE_REGISTRATION_OK, layer->Memory.Buffer, IFACE_REGISTRATION_OK_SIZE ) );
 
 	if( layer->Config.IsConnectedToMockit ) {
-		printf( "Interface registered in MockIT with address %08X\n", *( unsigned int * )&( layer->Config.Address ) );
-		fflush( stdout );
+		LogWrite( layer->Config.LogHandle, LogLevel_Information, "interface registered in MockIT with address %08X", *( unsigned int * )&( layer->Config.Address ) );
 		result = FUNC_RESULT_SUCCESS;
 	} else
 		result = actMockitRegister( layer );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitRegisterResult()" );
 
 	return result;
 }
@@ -113,6 +118,7 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 				default :
 					result = FUNC_RESULT_FAILED_ARGUMENT;
+					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
 			}
 
 		if( FUNC_RESULT_SUCCESS == result &&
@@ -123,6 +129,9 @@ int actMockitReceived( IfaceState_T * layer ) {
 	} else
 		result = actMockitRegisterResult( layer );
 
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitReceived()" );
+
 	return result;
 }
 
@@ -132,18 +141,18 @@ int actMockitConnection( IfaceState_T * layer ) {
 
 	result = connectDown( layer );
 
+	if( FUNC_RESULT_SUCCESS == result ) {
+		event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
+		event->data.fd = layer->Config.MockitSocket;
+		event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
+		result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
+	}
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = actMockitRegister( layer );
+
 	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
-	event->data.fd = layer->Config.MockitSocket;
-	event->events = EPOLLIN | EPOLLHUP | EPOLLERR;
-	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_ADD, layer->Config.MockitSocket, event );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
-
-	result = actMockitRegister( layer );
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Critical, result, "actMockitConnection()" );
 
 	return result;
 }
@@ -155,16 +164,18 @@ int actMockitReconnection( IfaceState_T * layer, bool forced ) {
 	event = layer->Memory.EpollEvents + IFACE_ARRAY_MOCKIT_POSITION;
 	result = epoll_ctl( layer->Config.EpollHandler, EPOLL_CTL_DEL, layer->Config.MockitSocket, event );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return FUNC_RESULT_FAILED;
+	if( FUNC_RESULT_SUCCESS == result ) {
+		if( forced ) {
+			shutdown( layer->Config.MockitSocket, SHUT_RDWR );
+			close( layer->Config.MockitSocket );
+		}
 
-	if( forced ) {
-		shutdown( layer->Config.MockitSocket, SHUT_RDWR );
-		close( layer->Config.MockitSocket );
+		layer->Config.IsConnectedToMockit = false;
+		result = actMockitConnection( layer );
 	}
 
-	layer->Config.IsConnectedToMockit = false;
-	result = actMockitConnection( layer );
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Error, result, "actMockitReconnection()" );
 
 	return result;
 }

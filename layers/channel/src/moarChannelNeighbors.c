@@ -270,7 +270,7 @@ int neighborNonResProcess(ChannelLayer_T* layer){
 	while(NULL != iterator){
 		NonResolvedNeighbor_T* neighbor = (NonResolvedNeighbor_T*)iterator->Data;
 		int compRes = timeCompare(currentTime, neighbor->NextProcessingTime);
-		if(compRes <= 0){
+		if(compRes >= 0){
 			neighbor->NextProcessingTime = timeAddInterval(neighbor->NextProcessingTime, PROCESSING_UNRESOLVED_TIMEOUT);
 			neighbor->SendAttempts++;
 			//find interface

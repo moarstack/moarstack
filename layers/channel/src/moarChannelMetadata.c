@@ -46,6 +46,7 @@ int writeSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dat
 	if(NULL == sendPlain)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	sendPlain->Id = metadata->Id;
+	sendPlain->NeedResponse = metadata->NeedResponse;
 	//copy address to end of metadata
 	int res = writeAddressToMetadata(&(metadata->Bridge), sendPlain, CHANNEL_SEND_METADATA_PLAIN_SIZE);
 	if(FUNC_RESULT_SUCCESS == res) {

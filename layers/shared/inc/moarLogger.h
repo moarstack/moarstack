@@ -26,8 +26,12 @@ typedef FILE	* LogFileHandle_T;
 
 typedef enum {
 	LogLevel_Dump,
-	LogLevel_DebugVerbose,
-	LogLevel_DebugQuiet,
+	LogLevel_Debug1,
+	LogLevel_DebugVerbose = LogLevel_Debug1,
+	LogLevel_Debug2,
+	LogLevel_Debug3,
+	LogLevel_Debug4,
+	LogLevel_DebugQuiet = LogLevel_Debug4,
 	LogLevel_Information,
 	LogLevel_Warning,
 	LogLevel_Error,

@@ -12,19 +12,24 @@
 #include <moarTime.h>		// timeGetCurrent()
 #include <funcResults.h>
 
+#define LOG_MAX_LEVEL_NAME	8 // length of the lonest name of log levels (see moarLogLevelNames[])
+
 static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
 	"FUNC_RESULT_SUCCESS",
 	"FUNC_RESULT_FAILED",
 	"FUNC_RESULT_FAILED_ARGUMENT",
 	"FUNC_RESULT_FAILED_IO",
-	"FUNC_RESULT_FAILED_MEM_ALLOCATION"
+	"FUNC_RESULT_FAILED_MEM_ALLOCATION",
+	"FUNC_RESULT_FAILED_NEIGHBORS"
 };
 
 static char *moarLogLevelNames[LOG_LEVELS_COUNT] = {
 	"DUMP",
-	"DEBUGVERBOSE",
-	"DEBUGQUIET",
-	"INFORMATION",
+	"DEBUG1",
+	"DEBUG2",
+	"DEBUG3",
+	"DEBUG4",
+	"INFO",
 	"WARNING",
 	"ERROR",
 	"CRITICAL"
@@ -116,7 +121,7 @@ int logPrintMoment( LogHandle_T handle ) {
 int logPrintLevel( LogHandle_T handle, LogLevel_T logLevel ) {
 	int	result;
 
-	result = fprintf( handle->FileHandle, "%s (%d) %c ", moarLogLevelNames[ logLevel ], logLevel, handle->Delimiter );
+	result = fprintf( handle->FileHandle, "%*s (%d) %c ", LOG_MAX_LEVEL_NAME, moarLogLevelNames[ logLevel ], logLevel, handle->Delimiter );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
@@ -175,11 +180,17 @@ int logPrintBinary( LogHandle_T handle, bool printReally, va_list args ) {
 	binaryDataSize = va_arg( args, size_t );
 
 	if( printReally ) {
-		for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
-			result = fprintf( handle->FileHandle, "%02X ", binaryData[ byte ] );
+		if( NULL == binaryData )
+			result = fprintf( handle->FileHandle, "(null)" );
+		else if( 0 == binaryDataSize )
+			result = 1;
+		else {
+			for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
+				result = fprintf( handle->FileHandle, "%.2hhX ", binaryData[ byte ] );
 
-		if( 0 <= result )
-			result = fprintf( handle->FileHandle, "%02X", binaryData[ binaryDataSize - 1 ] );
+			if( 0 <= result )
+				result = fprintf( handle->FileHandle, "%.2hhX", binaryData[ binaryDataSize - 1 ] );
+		}
 	} else
 		result = fprintf( handle->FileHandle, "[]" );
 

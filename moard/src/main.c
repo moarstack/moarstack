@@ -76,6 +76,7 @@ int LogWorkIllustration( void ) {
 	LogHandle_T log;
 	int			result;
 	char		bd[] = { '0', '1', '\0', '2', '3', '\0', '4', '5' };
+	int 		ibd[] = { 1, 2, 0, 3, 4, 0, 5, 6 };
 
 	result = LogOpen( "/tmp/someMoarLog.log", &log );
 
@@ -95,6 +96,7 @@ int LogWorkIllustration( void ) {
 	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( bd ), bd, sizeof( bd ), "Warning" );
 	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( bd ), NULL, sizeof( bd ), "NULL binary" );
 	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", 0, bd, 0, "zero size" );
+	result = LogWrite( log, LogLevel_Warning, "Some%s data of %zu\nlength: %b\n\n(%s)\n", " binary", sizeof( ibd ), ibd, sizeof( ibd ), "int array" );
 	errno = ECONNABORTED;
 	result = LogErrSystem( log, LogLevel_Critical, "system error message" );
 	errno = 0;

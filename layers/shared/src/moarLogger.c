@@ -185,10 +185,10 @@ int logPrintBinary( LogHandle_T handle, bool printReally, va_list args ) {
 			result = 1;
 		else {
 			for( size_t byte = 0; byte < binaryDataSize - 1 && 0 <= result; byte++ )
-				result = fprintf( handle->FileHandle, "%02X ", binaryData[ byte ] );
+				result = fprintf( handle->FileHandle, "%.2hhX ", binaryData[ byte ] );
 
 			if( 0 <= result )
-				result = fprintf( handle->FileHandle, "%02X", binaryData[ binaryDataSize - 1 ] );
+				result = fprintf( handle->FileHandle, "%.2hhX", binaryData[ binaryDataSize - 1 ] );
 		}
 	} else
 		result = fprintf( handle->FileHandle, "[]" );

@@ -12,6 +12,8 @@
 #include <moarTime.h>		// timeGetCurrent()
 #include <funcResults.h>
 
+#define LOG_MAX_LEVEL_NAME	8 // length of the lonest name of log levels (see moarLogLevelNames[])
+
 static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
 	"FUNC_RESULT_SUCCESS",
 	"FUNC_RESULT_FAILED",
@@ -118,7 +120,7 @@ int logPrintMoment( LogHandle_T handle ) {
 int logPrintLevel( LogHandle_T handle, LogLevel_T logLevel ) {
 	int	result;
 
-	result = fprintf( handle->FileHandle, "%s (%d) %c ", moarLogLevelNames[ logLevel ], logLevel, handle->Delimiter );
+	result = fprintf( handle->FileHandle, "%*s (%d) %c ", LOG_MAX_LEVEL_NAME, moarLogLevelNames[ logLevel ], logLevel, handle->Delimiter );
 
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }

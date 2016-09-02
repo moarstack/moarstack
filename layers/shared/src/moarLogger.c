@@ -22,9 +22,11 @@ static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
 
 static char *moarLogLevelNames[LOG_LEVELS_COUNT] = {
 	"DUMP",
-	"DEBUGVERBOSE",
-	"DEBUGQUIET",
-	"INFORMATION",
+	"DEBUG1",
+	"DEBUG2",
+	"DEBUG3",
+	"DEBUG4",
+	"INFO",
 	"WARNING",
 	"ERROR",
 	"CRITICAL"

@@ -10,7 +10,8 @@ moarTime_T timeGetCurrent(){
 	// TODO switch to clock_gettime later
 	int res = gettimeofday(&tv, NULL);
 	if(0 ==  res){
-		moarTime_T curTime = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+		moarTime_T seconds = tv.tv_sec;
+		moarTime_T curTime = seconds * 1000 + tv.tv_usec / 1000;
 		return curTime;
 	}
 	return (moarTime_T)-1;

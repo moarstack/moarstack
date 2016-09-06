@@ -17,7 +17,7 @@ typedef struct hashEntry_T hashEntry_T;
 
 // hash stuct
 struct hashEntry_T{
-	int 			HashValue;
+	uint32_t 			HashValue;
 	void* 			Key;
 	void* 			Data;
 	hashEntry_T* 	Next;

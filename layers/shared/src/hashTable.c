@@ -5,16 +5,17 @@
 #include <funcResults.h>
 #include <hashTable.h>
 #include <memory.h>
+#include <stdio.h>
 
-bool checkEquality(hashEntry_T *entry, int hash, void *key, size_t size){
+bool checkEquality(hashEntry_T *entry, uint32_t hash, void *key, size_t size){
 	if(NULL == entry)
 		return false;
 	if(NULL == key)
 		return false;
 	if(0 == size)
 		return false;
-
-	if(entry->HashValue == hash) {
+	uint32_t value = entry->HashValue;
+	if(value == hash) {
 		// compare key
 		int compare = memcmp(entry->Key, key, size);
 		return (0 == compare);
@@ -26,10 +27,8 @@ hashEntry_T** searchEntry(hashTable_T* table, void* key){
 		return NULL;
 	if(NULL == key)
 		return NULL;
-
-	int hash = table->HashFunction(key, table->KeySize);
-	int bin = hash % table->StorageSize;
-
+	uint32_t hash = table->HashFunction(key, table->KeySize);
+	uint32_t bin = hash % table->StorageSize;
 	hashEntry_T** entry = table->Table+bin;
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
@@ -88,16 +87,14 @@ int hashAdd(hashTable_T* table, void* key, void* data){
 	if(NULL == data)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	int hash = table->HashFunction(key, table->KeySize);
-	int bin = hash % table->StorageSize;
+	uint32_t hash = table->HashFunction(key, table->KeySize);
+	uint32_t bin = hash % table->StorageSize;
 
 	hashEntry_T* entry = malloc(sizeof(hashEntry_T));
 	if(NULL == entry)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
 	entry->HashValue = hash;
 	entry->Next = table->Table[bin];
-
 	//allocate
 	entry->Key = malloc(table->KeySize);
 	entry->Data = malloc(table->DataSize);
@@ -157,8 +154,8 @@ void* hashGetPtr(hashTable_T* table, void* key){
 	if(NULL == key)
 		return NULL;
 
-
 	hashEntry_T** entry = searchEntry(table, key);
+
 	if(NULL != entry) {
 		hashEntry_T* cEntry = *entry;
 		return cEntry->Data;

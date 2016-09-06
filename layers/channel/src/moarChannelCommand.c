@@ -199,6 +199,7 @@ int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command)
 		switch (metadata->State) {
 			case IfacePackState_UnknownDest:
 			case IfacePackState_Timeouted:
+			case IfacePackState_Notsent:
 				res = enqueueMessage(layer, &entry);
 				break;
 			case IfacePackState_Sent:

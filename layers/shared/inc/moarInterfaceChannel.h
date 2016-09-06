@@ -29,6 +29,7 @@ typedef enum {
 	IfacePackState_Responsed,	// current packet was sent and got response in time
 	IfacePackState_Timeouted,	// current packet was sent and got NO response in time
 	IfacePackState_UnknownDest,	// current packet was not sent due to no neighbor info found
+	IfacePackState_Notsent,		// current packet was not sent due to internal problems
 	IfacePackState_Received		// current packet was received
 } IfacePackState_T;
 

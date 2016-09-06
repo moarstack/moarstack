@@ -14,13 +14,14 @@
 
 #define LOG_MAX_LEVEL_NAME	8 // length of the lonest name of log levels (see moarLogLevelNames[])
 
-static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT] = {
+static char	*moarErrorMessages[LOG_MOAR_ERRS_COUNT+1] = {
 	"FUNC_RESULT_SUCCESS",
 	"FUNC_RESULT_FAILED",
 	"FUNC_RESULT_FAILED_ARGUMENT",
 	"FUNC_RESULT_FAILED_IO",
 	"FUNC_RESULT_FAILED_MEM_ALLOCATION",
-	"FUNC_RESULT_FAILED_NEIGHBORS"
+	"FUNC_RESULT_FAILED_NEIGHBORS",
+	"FUNC_RESULT_UNKNOWN_RETURN_RESULT"
 };
 
 static char *moarLogLevelNames[LOG_LEVELS_COUNT] = {
@@ -299,6 +300,9 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 
 	if( NULL == handle || NULL == handle->FileHandle )
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( returnResult < -LOG_MOAR_ERRS_COUNT )
+		returnResult = -LOG_MOAR_ERRS_COUNT;
 
 	if( logLevel < handle->MinLogLevel )
 		return FUNC_RESULT_SUCCESS;

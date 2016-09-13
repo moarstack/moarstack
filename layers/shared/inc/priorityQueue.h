@@ -5,6 +5,7 @@
 #ifndef MOARSTACK_PRIORITYQUEUE_H
 #define MOARSTACK_PRIORITYQUEUE_H
 
+#include <stdio.h>
 //compare function
 typedef int (* pqCompareFunc_T)(void* key1, void* key2, size_t size);
 
@@ -24,11 +25,13 @@ typedef struct {
 }PriorityQueue_T;
 
 int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySize, size_t dataSize);
+int pqClear(PriorityQueue_T* queue);
 int pqDeinit(PriorityQueue_T* queue);
 int pqEnqueue(PriorityQueue_T* queue, void* key, void* data); //copy data and key
 int pqDequeue(PriorityQueue_T* queue, void* data); // copy data and free memory
 int pqTop(PriorityQueue_T* queue, void* data); // copy data
-void* pqTopPtr(PriorityQueue_T* queue); // pointer to top data
-int pqChangePriotity(PriorityQueue_T* queue, void* data, void* newKey); //change priority
+void* pqTopData(PriorityQueue_T* queue); // pointer to top data
+void* pqTopPriority(PriorityQueue_T* queue); // pointer to top data
+int pqChangePriority(PriorityQueue_T* queue, void* data, void* newKey); //change priority
 
 #endif //MOARSTACK_PRIORITYQUEUE_H

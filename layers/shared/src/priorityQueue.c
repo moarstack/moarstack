@@ -25,11 +25,20 @@
 
 int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySize, size_t dataSize)
 {
-	//todo check args
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == func)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == keySize)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == dataSize)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	if (size < 4)  // allocate at least for 4 elements
 		size = 4;
 	queue->Storage = (pqEntry_T *)malloc(sizeof(pqEntry_T) * size);
+	if(NULL == queue->Storage)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	queue->Allocated = size;
 	queue->Count = 0;
 
@@ -40,36 +49,34 @@ int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySiz
 	return FUNC_RESULT_SUCCESS;
 }
 int pqClear(PriorityQueue_T* queue){
-	//todo check args
-	for(int i=0;i<queue->Count;i++){
-		free(queue->Storage[i].Priority);
-		queue->Storage[i].Priority = NULL;
-		free(queue->Storage[i].Data);
-		queue->Storage[i].Data = NULL;
-	}
-	queue->Count = 0;
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	while(queue->Count!=0)
+		pqDequeue(queue, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 int pqDeinit(PriorityQueue_T* queue){
-	//todo check args
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	int clearRes = pqClear(queue);
 	free(queue->Storage);
 	queue->Storage = NULL;
 	queue->Allocated = 0;
-	return FUNC_RESULT_SUCCESS;
+	return clearRes;
 }
 
-int parent(int index){
+static inline int parent(int index){
 	return (index-1)/2;
 }
-int child(int index){
+static inline int child(int index){
 	return index*2 + 1;
 }
 
 int pqLift(PriorityQueue_T* queue, int index){
 	pqEntry_T item = queue->Storage[index];
-	while(
-			index>0 &&
+	while(	index>0 &&
 			queue->Compare(item.Priority, queue->Storage[parent(index)].Priority, queue->PrioritySize)>0
 			){
 		int prnt = parent(index);
@@ -77,47 +84,67 @@ int pqLift(PriorityQueue_T* queue, int index){
 		index = prnt;
 	}
 	queue->Storage[index] = item;
-	return FUNC_RESULT_SUCCESS;
+	return index;
 }
 
 int pqSift(PriorityQueue_T* queue, int index){
 	pqEntry_T item = queue->Storage[index];
 	while(index<=parent(queue->Count-1)){
 		int j = child(index);
-		if(
-				j<queue->Count &&
+		if(		j<queue->Count &&
 				(queue->Compare(queue->Storage[j].Priority, queue->Storage[j+1].Priority, queue->PrioritySize)<0)
-				) ++j;
+				)
+			++j;
 		if(queue->Compare(item.Priority, queue->Storage[j].Priority, queue->PrioritySize)>=0) break;
 		queue->Storage[index] = queue->Storage[j];
 		index = j;
 	}
 	queue->Storage[index] = item;
+	return index;
 }
 
 int pqEnqueue(PriorityQueue_T* queue, void* key, void* data){
-	// todo check args
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == key)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	if (queue->Count >= queue->Allocated)
 	{
 		queue->Allocated *= 2;
 		queue->Storage = (pqEntry_T*)realloc(queue->Storage , sizeof(pqEntry_T) * queue->Allocated);
 		// todo check returned type
 	}
-	queue->Count++;
-	int index = queue->Count-1;
+
+	int index = queue->Count;
 	// allocate and copy data
 	queue->Storage[index].Data = malloc(queue->DataSize);
+	if(NULL == queue->Storage[index].Data)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	memcpy(queue->Storage[index].Data, data, queue->DataSize);
+
 	// allocate and copy key
 	queue->Storage[index].Priority = malloc(queue->PrioritySize);
+	if(NULL == queue->Storage[index].Priority)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	memcpy(queue->Storage[index].Priority, key, queue->PrioritySize);
+
+	queue->Count++;
 	// lift
 	int liftRes = pqLift(queue, index);
 	return FUNC_RESULT_SUCCESS;
 }
+
 int pqDequeue(PriorityQueue_T* queue, void* data){
-	// todo check args
-	memcpy(data, queue->Storage[0].Data, queue->DataSize);
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == queue->Count)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if(NULL != data)
+		memcpy(data, queue->Storage[0].Data, queue->DataSize);
 	// free
 	free(queue->Storage[0].Priority);
 	queue->Storage[0].Priority = NULL;
@@ -126,8 +153,36 @@ int pqDequeue(PriorityQueue_T* queue, void* data){
 	// move
 	queue->Storage[0] = queue->Storage[--(queue->Count)];
 	// sift down
-	pqSift(queue,0);
+	int siftRes = pqSift(queue,0);
 	return FUNC_RESULT_SUCCESS;
+}
+
+int pqTop(PriorityQueue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	void* dataPtr = pqTopData(queue);
+	if(NULL != dataPtr)
+		return FUNC_RESULT_FAILED;
+	memcpy(data, dataPtr, queue->DataSize);
+
+	return FUNC_RESULT_SUCCESS;
+}
+void* pqTopData(PriorityQueue_T* queue){
+	if(NULL == queue)
+		return NULL;
+	if(0 == queue->Count)
+		return NULL;
+	return queue->Storage[0].Data;
+}
+void* pqTopPriority(PriorityQueue_T* queue){
+	if(NULL == queue)
+		return NULL;
+	if(0 == queue->Count)
+		return NULL;
+	return queue->Storage[0].Priority;
 }
 
 //void pq_push(pq_ptr q, TYPEDATA data, int priority)

@@ -49,3 +49,28 @@ int psInit(PacketStorage_T* storage){
 	return FUNC_RESULT_SUCCESS;
 }
 
+int psDeinit(PacketStorage_T* storage){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	//init queue
+	int queueRes = pqDeinit(&(storage->NextProcessingTime));
+	if(FUNC_RESULT_SUCCESS != queueRes)
+		return queueRes;
+	//init dest table
+	int destRes = hashFree(&(storage->Destinations));
+	if(FUNC_RESULT_SUCCESS != destRes)
+		return destRes;
+	//init mid table
+	int midRes = hashFree(&(storage->MessageIds));
+	if(FUNC_RESULT_SUCCESS != midRes)
+		return midRes;
+	//init rmid table
+	int rmidRes = hashFree(&(storage->RoutingMessageIds));
+	if(FUNC_RESULT_SUCCESS != rmidRes)
+		return rmidRes;
+
+	storage->Count = 0;
+
+	return FUNC_RESULT_SUCCESS;
+}

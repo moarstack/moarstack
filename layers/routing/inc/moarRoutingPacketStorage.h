@@ -1,0 +1,10 @@
+//
+// Created by svalov on 9/14/16.
+//
+
+#ifndef MOARSTACK_MOARROUTINGPACKETSTORAGE_H
+#define MOARSTACK_MOARROUTINGPACKETSTORAGE_H
+
+#include <moarRoutingStoredPacket.h>
+
+#endif //MOARSTACK_MOARROUTINGPACKETSTORAGE_H

@@ -29,6 +29,7 @@ int pqClear(PriorityQueue_T* queue);
 int pqDeinit(PriorityQueue_T* queue);
 int pqEnqueue(PriorityQueue_T* queue, void* key, void* data); //copy data and key
 int pqDequeue(PriorityQueue_T* queue, void* data); // copy data and free memory
+int pqRemove(PriorityQueue_T* queue, void* data);
 int pqTop(PriorityQueue_T* queue, void* data); // copy data
 void* pqTopData(PriorityQueue_T* queue); // pointer to top data
 void* pqTopPriority(PriorityQueue_T* queue); // pointer to top data

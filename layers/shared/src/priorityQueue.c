@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <priorityQueue.h>
 
 
 int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySize, size_t dataSize){
@@ -139,6 +140,38 @@ int pqDequeue(PriorityQueue_T* queue, void* data){
 	int siftRes = pqSift(queue,0);
 	return FUNC_RESULT_SUCCESS;
 }
+
+int pqRemove(PriorityQueue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int index = -1;
+	for(int i=0;i<queue->Count; i++){
+		if(memcmp(data, queue->Storage[i].Data, queue->DataSize) == 0){
+			index = i;
+			break;
+		}
+	}
+	if(-1 == index)
+		return FUNC_RESULT_SUCCESS;
+
+	// swap with last
+	pqEntry_T tmp = queue->Storage[index];
+	queue->Storage[index] = queue->Storage[queue->Count-1];
+	queue->Storage[queue->Count-1] = tmp;
+
+	// free memory
+	free(tmp.Priority);
+	free(tmp.Data);
+	// decrement
+	queue->Count--;
+	int liftRes = pqLift(queue, index);
+	int siftRes = pqSift(queue, index);
+	return FUNC_RESULT_SUCCESS;
+}
+
 int pqTop(PriorityQueue_T* queue, void* data){
 	if(NULL == queue)
 		return FUNC_RESULT_FAILED_ARGUMENT;

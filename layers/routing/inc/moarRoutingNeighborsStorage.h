@@ -15,13 +15,6 @@ typedef struct{
 	RouteAddr_T Address;
 }RoutingNeighborInfo_T;
 
-#ifdef HASH_ENABLE_ITERATOR
-typedef struct {
-	hashIterator_T internalIterator;
-	RoutingNeighborInfo_T* Neighbor;
-}NeighborsIterator_T;
-#endif
-
 typedef struct{
 	hashTable_T Storage;
 }RoutingNeighborsStorage_T;
@@ -36,8 +29,7 @@ RoutingNeighborInfo_T* storageGetPtr(RoutingNeighborsStorage_T* storage, RouteAd
 int storageRemove(RoutingNeighborsStorage_T* storage, RouteAddr_T* address);
 
 #ifdef HASH_ENABLE_ITERATOR
-int storageIterator(RoutingNeighborsStorage_T* storage, NeighborsIterator_T* iterator);
-int storageIteratorNext(NeighborsIterator_T* iterator);
-bool storageIteratorIsLast(NeighborsIterator_T* iterator);
+int storageIterator(RoutingNeighborsStorage_T* storage, hashIterator_T* iterator);
+RoutingNeighborInfo_T*  storageIteratorData(hashIterator_T* iterator);
 #endif
 #endif //MOARSTACK_MOARROUTINGNEIGHBORSSTORAGE_H

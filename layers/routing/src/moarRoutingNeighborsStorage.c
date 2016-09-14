@@ -5,6 +5,7 @@
 #include <moarRoutingNeighborsStorage.h>
 #include <funcResults.h>
 #include <hashFunc.h>
+#include <hashTable.h>
 
 int storageInit(RoutingNeighborsStorage_T* storage){
 	if(NULL == storage)
@@ -58,8 +59,20 @@ int storageRemove(RoutingNeighborsStorage_T* storage, RouteAddr_T* address){
 	return hashRes;
 }
 #ifdef HASH_ENABLE_ITERATOR
-int storageIterator(RoutingNeighborsStorage_T* storage, NeighborsIterator_T* iterator);
-int storageIteratorNext(NeighborsIterator_T* iterator);
-bool storageIteratorIsLast(NeighborsIterator_T* iterator);
+int storageIterator(RoutingNeighborsStorage_T* storage, hashIterator_T* iterator){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int iterRes = hashIterator(&(storage->Storage), iterator);
+
+	return iterRes;
+}
+RoutingNeighborInfo_T*  storageIteratorData(hashIterator_T* iterator){
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	return (RoutingNeighborInfo_T*)hashIteratorData(iterator);
+}
 
 #endif

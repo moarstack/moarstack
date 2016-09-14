@@ -14,7 +14,10 @@ int storageInit(RoutingNeighborsStorage_T* storage){
 	return hashRes;
 }
 int storageDeinit(RoutingNeighborsStorage_T* storage){
-	// todo add code here
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int hashRes = hashFree(&(storage->Storage));
+	return hashRes;
 }
 
 int storageAdd(RoutingNeighborsStorage_T* storage, RoutingNeighborInfo_T* info){
@@ -42,9 +45,9 @@ int storageGet(RoutingNeighborsStorage_T* storage, RouteAddr_T* address, Routing
 RoutingNeighborInfo_T* storageGetPtr(RoutingNeighborsStorage_T* storage, RouteAddr_T* address)
 {
 	if(NULL == storage)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return NULL;
 	if(NULL == address)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return NULL;
 
 	RoutingNeighborInfo_T* neighbor = (RoutingNeighborInfo_T*)hashGetPtr(&(storage->Storage), address);
 	return neighbor;
@@ -71,7 +74,7 @@ int storageIterator(RoutingNeighborsStorage_T* storage, hashIterator_T* iterator
 }
 RoutingNeighborInfo_T*  storageIteratorData(hashIterator_T* iterator){
 	if(NULL == iterator)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return NULL;
 	return (RoutingNeighborInfo_T*)hashIteratorData(iterator);
 }
 

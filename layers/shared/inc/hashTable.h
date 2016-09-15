@@ -62,6 +62,7 @@ extern int hashRemoveExact(hashTable_T* table, void* key, void* value);
 extern int hashGet(hashTable_T* table, void* key, void* data);
 extern void* hashGetPtr(hashTable_T* table, void* key);
 extern bool hashContain(hashTable_T* table, void* key);
+extern bool hashContainExact(hashTable_T* table, void* key, void* data);
 #ifdef HASH_ENABLE_ITERATOR
 extern int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator);
 extern int hashIterator(hashTable_T* table, hashIterator_T* iterator);

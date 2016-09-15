@@ -206,14 +206,18 @@ int hashGet(hashTable_T* table, void* key, void* data){
 	return FUNC_RESULT_FAILED;
 }
 bool hashContain(hashTable_T* table, void* key){
+	return hashContainExact(table, key ,NULL);
+}
+
+bool hashContainExact(hashTable_T* table, void* key, void* data){
 	if(NULL == table)
 		return false;
 	if(NULL == key)
 		return false;
 
-	hashEntry_T** entry = searchEntry(table, key, NULL);
+	hashEntry_T** entry = searchEntry(table, key, data);
 	if(NULL != entry)
-			return true;
+		return true;
 	return false;
 }
 

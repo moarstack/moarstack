@@ -7,14 +7,14 @@
 #include <memory.h>
 #include <stdio.h>
 
-bool checkEquality(hashEntry_T *entry, uint32_t hash, void *key, size_t size){
+bool checkEquality(hashEntry_T *entry, hashVal_T hash, void *key, size_t size){
 	if(NULL == entry)
 		return false;
 	if(NULL == key)
 		return false;
 	if(0 == size)
 		return false;
-	uint32_t value = entry->HashValue;
+	hashVal_T value = entry->HashValue;
 	if(value == hash) {
 		// compare key
 		int compare = memcmp(entry->Key, key, size);
@@ -27,7 +27,7 @@ hashEntry_T** searchEntry(hashTable_T* table, void* key, void* data){
 		return NULL;
 	if(NULL == key)
 		return NULL;
-	uint32_t hash = table->HashFunction(key, table->KeySize);
+	hashVal_T hash = table->HashFunction(key, table->KeySize);
 	uint32_t bin = hash % table->StorageSize;
 	hashEntry_T** entry = table->Table+bin;
 	while(NULL != *entry){
@@ -109,7 +109,7 @@ int hashAdd(hashTable_T* table, void* key, void* data){
 	if(NULL == data)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	uint32_t hash = table->HashFunction(key, table->KeySize);
+	hashVal_T hash = table->HashFunction(key, table->KeySize);
 	uint32_t bin = hash % table->StorageSize;
 
 	hashEntry_T* entry = malloc(sizeof(hashEntry_T));

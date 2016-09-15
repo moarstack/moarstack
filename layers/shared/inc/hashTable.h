@@ -10,14 +10,16 @@
 #include <stdint.h>
 #define HASH_ENABLE_ITERATOR
 
+typedef uint32_t hashVal_T;
+
 // hash function proto
-typedef uint32_t (* hashFunc_T)(void* data, size_t size);
+typedef hashVal_T (* hashFunc_T)(void* data, size_t size);
 
 typedef struct hashEntry_T hashEntry_T;
 
 // hash stuct
 struct hashEntry_T{
-	uint32_t 			HashValue;
+	hashVal_T 		HashValue;
 	void* 			Key;
 	void* 			Data;
 	hashEntry_T* 	Next;
@@ -31,7 +33,7 @@ struct hashEntry_T{
 typedef struct{
 	hashEntry_T* 	Item;
 	bool 		 	Compare;
-	uint32_t		HashValue;
+	hashVal_T		HashValue;
 	void* 			Key;
 	size_t  		KeySize;
 } hashIterator_T;

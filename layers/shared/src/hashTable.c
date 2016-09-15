@@ -22,7 +22,7 @@ bool checkEquality(hashEntry_T *entry, uint32_t hash, void *key, size_t size){
 	}
 	return false;
 }
-hashEntry_T** searchEntry(hashTable_T* table, void* key){
+hashEntry_T** searchEntry(hashTable_T* table, void* key, void* data){
 	if(NULL == table)
 		return NULL;
 	if(NULL == key)
@@ -33,7 +33,12 @@ hashEntry_T** searchEntry(hashTable_T* table, void* key){
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
 		if(checkEquality(cEntry, hash, key, table->KeySize)){
-			return entry;
+			if(NULL != data) {
+				int cmp = memcmp(cEntry->Data, data, table->DataSize);
+				if(0 == cmp)
+					return entry;
+			} else
+				return entry;
 		}
 		entry = &(cEntry->Next);
 	}
@@ -68,6 +73,23 @@ int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t ke
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	memset(table->Table,0, totalStorageSize);
 
+	return FUNC_RESULT_SUCCESS;
+}
+int hashClear(hashTable_T* table){
+	if(NULL == table)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	for(int i=0; i<table->StorageSize;i++){
+		while(table->Table[i]!=NULL){
+			// remove from list
+			hashEntry_T* current = table->Table[i];
+			table->Table[i] = current->Next;
+		 	// free memory
+			free(current->Data);
+			free(current->Key);
+			free(current);
+		}
+	}
 	return FUNC_RESULT_SUCCESS;
 }
 int hashFree(hashTable_T* table){
@@ -121,11 +143,15 @@ int hashAdd(hashTable_T* table, void* key, void* data){
 	return FUNC_RESULT_SUCCESS;
 }
 int hashRemove(hashTable_T* table, void* key){
+	return hashRemoveExact(table, key, NULL);
+}
+
+int hashRemoveExact(hashTable_T* table, void* key, void* value){
 	if(NULL == table)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == key)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	hashEntry_T** entry = searchEntry(table, key);
+	hashEntry_T** entry = searchEntry(table, key, value);
 	if(NULL != entry) {
 		hashEntry_T* cEntry = *entry;
 #ifdef HASH_ENABLE_ITERATOR
@@ -154,7 +180,7 @@ void* hashGetPtr(hashTable_T* table, void* key){
 	if(NULL == key)
 		return NULL;
 
-	hashEntry_T** entry = searchEntry(table, key);
+	hashEntry_T** entry = searchEntry(table, key, NULL);
 
 	if(NULL != entry) {
 		hashEntry_T* cEntry = *entry;
@@ -170,7 +196,7 @@ int hashGet(hashTable_T* table, void* key, void* data){
 	if(NULL == data)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	hashEntry_T** entry = searchEntry(table, key);
+	hashEntry_T** entry = searchEntry(table, key, NULL);
 	if(NULL != entry) {
 			hashEntry_T* cEntry = *entry;
 			// copy
@@ -185,7 +211,7 @@ bool hashContain(hashTable_T* table, void* key){
 	if(NULL == key)
 		return false;
 
-	hashEntry_T** entry = searchEntry(table, key);
+	hashEntry_T** entry = searchEntry(table, key, NULL);
 	if(NULL != entry)
 			return true;
 	return false;
@@ -202,7 +228,7 @@ int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 	int hash = table->HashFunction(key, table->KeySize);
 	int bin = hash % table->StorageSize;
 
-	hashEntry_T** entry = searchEntry(table, key);
+	hashEntry_T** entry = searchEntry(table, key, NULL);
 	if(NULL != entry) {
 		hashEntry_T *cEntry = *entry;
 		// fill iterator

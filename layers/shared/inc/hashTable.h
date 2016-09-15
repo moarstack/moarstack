@@ -54,9 +54,11 @@ extern "C" {
 #endif
 
 extern int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t keySize, size_t dataSize);
+extern int hashClear(hashTable_T* table);
 extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
+extern int hashRemoveExact(hashTable_T* table, void* key, void* value);
 extern int hashGet(hashTable_T* table, void* key, void* data);
 extern void* hashGetPtr(hashTable_T* table, void* key);
 extern bool hashContain(hashTable_T* table, void* key);

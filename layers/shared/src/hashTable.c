@@ -245,10 +245,7 @@ int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 		memcpy(iterator->Key, key, iterator->KeySize);
 		iterator->HashValue = hash;
 		//next fill
-		if(NULL != iterator->Item)
-			iterator->NextItem = iterator->Item->Next;
-		else
-			iterator->NextItem = NULL;
+		iterator->NextItem = iterator->Item!=NULL ? iterator->Item->Next : NULL;
 		// return sucess
 		return FUNC_RESULT_SUCCESS;
 	}
@@ -264,10 +261,7 @@ int hashIterator(hashTable_T* table, hashIterator_T* iterator){
 	iterator->Key = NULL;
 	iterator->KeySize = 0;
 	iterator->Item = table->Last;
-	if(NULL != iterator->Item)
-		iterator->NextItem = iterator->Item->ListPrev;
-	else
-		iterator->NextItem = NULL;
+	iterator->NextItem = iterator->Item!=NULL ? iterator->Item->ListPrev : NULL;
 	return FUNC_RESULT_SUCCESS;
 }
 bool hashIteratorIsLast(hashIterator_T *item){
@@ -283,25 +277,15 @@ int hashIteratorNext(hashIterator_T* item){
 	if(item->Compare) {
 
 		do {
-		//while(!hashIteratorIsLast(item) && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize)){
 			item->Item = item->NextItem;
-			if(NULL != item->NextItem)
-				item->NextItem = item->NextItem->Next;
-			else
-				item->NextItem = NULL;
-		//}
-
-		//	item->Item = item->Item->Next;
+			item->NextItem = item->NextItem!=NULL ? item->NextItem->Next : NULL;
 		}while(!hashIteratorIsLast(item) && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize));
 		return FUNC_RESULT_SUCCESS;
 
 	}
 	else{
 		item->Item = item->NextItem;
-		if(NULL != item->NextItem)
-			item->NextItem = item->NextItem->ListPrev;
-		else
-			item->NextItem = NULL;
+		item->NextItem = item->NextItem!=NULL ? item->NextItem->ListPrev : NULL;
 		return FUNC_RESULT_SUCCESS;
 	}
 }

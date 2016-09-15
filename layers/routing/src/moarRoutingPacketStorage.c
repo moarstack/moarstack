@@ -10,6 +10,7 @@
 #include <moarRoutingPacketStorage.h>
 #include <memory.h>
 #include <moarRoutingStoredPacket.h>
+#include <priorityQueue.h>
 
 int timeCompareFunction(void* k1, void* k2, size_t size){
 	if(k1 == NULL)
@@ -113,7 +114,7 @@ int psAdd(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 		free(allocatedPack);
 		return FUNC_RESULT_FAILED;
 	}
-
+	storage->Count++;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -140,6 +141,36 @@ int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 	hashRemove(&(storage->MessageIds), &(allocatedPack->InternalId));
 	hashRemove(&(storage->RoutingMessageIds), &(allocatedPack->MessageId));
 	free(allocatedPack);
+	storage->Count--;
 	//
 	return FUNC_RESULT_SUCCESS;
+}
+
+RouteStoredPacket_T* psGetTop(PacketStorage_T* storage){
+	if(NULL == storage)
+		return NULL;
+	if(0 == storage->Count)
+		return NULL;
+
+	return *((RouteStoredPacket_T**)pqTopData(&(storage->NextProcessingTime)));
+
+}
+
+RouteStoredPacket_T* psGetMidPtr(PacketStorage_T* storage, MessageId_T* mid){
+	if(NULL == storage)
+		return NULL;
+	if(0 == storage->Count)
+		return NULL;
+	if(NULL == mid)
+		return NULL;
+
+}
+RouteStoredPacket_T* psGetRmidPtr(PacketStorage_T* storage, RoutingMessageId_T* rmid){
+	if(NULL == storage)
+		return NULL;
+	if(0 == storage->Count)
+		return NULL;
+	if(NULL == rmid)
+		return NULL;
+
 }

@@ -106,9 +106,7 @@ int psAdd(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 			FUNC_RESULT_SUCCESS != rmidRes){
 		//remove
 		pqRemove(&(storage->NextProcessingTime), &allocatedPack);
-		if(FUNC_RESULT_SUCCESS == destRes)
-			hashRemove(&(storage->Destinations), &(allocatedPack->Destination));
-		// TODO need remove exact function
+		hashRemoveExact(&(storage->Destinations), &(allocatedPack->Destination), &allocatedPack);
 		hashRemove(&(storage->MessageIds), &(allocatedPack->InternalId));
 		hashRemove(&(storage->RoutingMessageIds), &(allocatedPack->MessageId));
 		// free memory
@@ -127,8 +125,21 @@ int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 
 	RouteStoredPacket_T* allocatedPack;
 	// find pack by mid
-	// if can not find - search by rmid
-
+	int searchRes = hashGet(&(storage->MessageIds), &(packet->InternalId), &allocatedPack);
+	if(FUNC_RESULT_SUCCESS != searchRes){
+		// if can not find - search by rmid
+		searchRes = hashGet(&(storage->RoutingMessageIds), &(packet->MessageId), &allocatedPack);
+		if(FUNC_RESULT_SUCCESS != searchRes){
+			//not found
+			return FUNC_RESULT_FAILED_ARGUMENT;
+		}
+	}
+	// found, and remove
+	pqRemove(&(storage->NextProcessingTime), &allocatedPack);
+	hashRemoveExact(&(storage->Destinations), &(allocatedPack->Destination), &allocatedPack);
+	hashRemove(&(storage->MessageIds), &(allocatedPack->InternalId));
+	hashRemove(&(storage->RoutingMessageIds), &(allocatedPack->MessageId));
+	free(allocatedPack);
 	//
-
+	return FUNC_RESULT_SUCCESS;
 }

@@ -244,6 +244,11 @@ int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 		memcpy(iterator->Key, key, iterator->KeySize);
 		iterator->HashValue = hash;
+		//next fill
+		if(NULL != iterator->Item)
+			iterator->NextItem = iterator->Item->Next;
+		else
+			iterator->NextItem = NULL;
 		// return sucess
 		return FUNC_RESULT_SUCCESS;
 	}
@@ -259,6 +264,10 @@ int hashIterator(hashTable_T* table, hashIterator_T* iterator){
 	iterator->Key = NULL;
 	iterator->KeySize = 0;
 	iterator->Item = table->Last;
+	if(NULL != iterator->Item)
+		iterator->NextItem = iterator->Item->ListPrev;
+	else
+		iterator->NextItem = NULL;
 	return FUNC_RESULT_SUCCESS;
 }
 bool hashIteratorIsLast(hashIterator_T *item){
@@ -272,13 +281,27 @@ int hashIteratorNext(hashIterator_T* item){
 	if(NULL == item->Item)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(item->Compare) {
+
 		do {
-			item->Item = item->Item->Next;
+		//while(!hashIteratorIsLast(item) && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize)){
+			item->Item = item->NextItem;
+			if(NULL != item->NextItem)
+				item->NextItem = item->NextItem->Next;
+			else
+				item->NextItem = NULL;
+		//}
+
+		//	item->Item = item->Item->Next;
 		}while(!hashIteratorIsLast(item) && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize));
 		return FUNC_RESULT_SUCCESS;
+
 	}
 	else{
-		item->Item = item->Item->ListPrev;
+		item->Item = item->NextItem;
+		if(NULL != item->NextItem)
+			item->NextItem = item->NextItem->ListPrev;
+		else
+			item->NextItem = NULL;
 		return FUNC_RESULT_SUCCESS;
 	}
 }

@@ -32,6 +32,7 @@ struct hashEntry_T{
 // hash iterator
 typedef struct{
 	hashEntry_T* 	Item;
+	hashEntry_T* 	NextItem;
 	bool 		 	Compare;
 	hashVal_T		HashValue;
 	void* 			Key;

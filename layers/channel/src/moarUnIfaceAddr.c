@@ -12,7 +12,7 @@
 #include <memory.h>
 #include <hashFunc.h>
 
-uint32_t unAddressHash(void* address, size_t size){
+hashVal_T unAddressHash(void* address, size_t size){
 	UnIfaceAddr_T* addr = (UnIfaceAddr_T*)address;
 	if(NULL != address && addr->Length !=0) {
 		return hashBytesEx(addr->Value, addr->Length, 0xf42439);

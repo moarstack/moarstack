@@ -16,7 +16,7 @@ typedef struct {
 	uint8_t 			* Value;
 } UnIfaceAddr_T;
 
-uint32_t unAddressHash(void* address, size_t size);
+hashVal_T unAddressHash(void* address, size_t size);
 // read from socket
 int unAddressReadFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* address);
 // write to socket

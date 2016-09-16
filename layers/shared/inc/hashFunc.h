@@ -7,14 +7,15 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <hashTable.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern uint32_t hashBytesEx(void* data, size_t size, uint32_t mpc);
-extern uint32_t hashBytes(void* data, size_t size);
-extern uint32_t hashInt32(void *data, size_t size);
-extern uint32_t hashRoutingAddress(void* address, size_t size);
-extern uint32_t hashChannelAddress(void* address, size_t size);
+extern hashVal_T hashBytesEx(void* data, size_t size, uint32_t mpc);
+extern hashVal_T hashBytes(void* data, size_t size);
+extern hashVal_T hashInt32(void *data, size_t size);
+extern hashVal_T hashRoutingAddress(void* address, size_t size);
+extern hashVal_T hashChannelAddress(void* address, size_t size);
 
 #ifdef __cplusplus
 }

@@ -10,14 +10,16 @@
 #include <stdint.h>
 #define HASH_ENABLE_ITERATOR
 
+typedef uint32_t hashVal_T;
+
 // hash function proto
-typedef uint32_t (* hashFunc_T)(void* data, size_t size);
+typedef hashVal_T (* hashFunc_T)(void* data, size_t size);
 
 typedef struct hashEntry_T hashEntry_T;
 
 // hash stuct
 struct hashEntry_T{
-	uint32_t 			HashValue;
+	hashVal_T 		HashValue;
 	void* 			Key;
 	void* 			Data;
 	hashEntry_T* 	Next;
@@ -30,8 +32,9 @@ struct hashEntry_T{
 // hash iterator
 typedef struct{
 	hashEntry_T* 	Item;
+	hashEntry_T* 	NextItem;
 	bool 		 	Compare;
-	uint32_t		HashValue;
+	hashVal_T		HashValue;
 	void* 			Key;
 	size_t  		KeySize;
 } hashIterator_T;
@@ -54,12 +57,15 @@ extern "C" {
 #endif
 
 extern int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t keySize, size_t dataSize);
+extern int hashClear(hashTable_T* table);
 extern int hashFree(hashTable_T* table);
 extern int hashAdd(hashTable_T* table, void* key, void* data);
 extern int hashRemove(hashTable_T* table, void* key);
+extern int hashRemoveExact(hashTable_T* table, void* key, void* value);
 extern int hashGet(hashTable_T* table, void* key, void* data);
 extern void* hashGetPtr(hashTable_T* table, void* key);
 extern bool hashContain(hashTable_T* table, void* key);
+extern bool hashContainExact(hashTable_T* table, void* key, void* data);
 #ifdef HASH_ENABLE_ITERATOR
 extern int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator);
 extern int hashIterator(hashTable_T* table, hashIterator_T* iterator);

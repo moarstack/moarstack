@@ -56,19 +56,29 @@ int psDeinit(PacketStorage_T* storage){
 	if(NULL == storage)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	//init queue
+	// cleanup
+	while(storage->Count!=0)
+	{
+		RouteStoredPacket_T* packet = psGetTop(storage);
+		int removeRes = psRemove(storage, packet);
+		if(FUNC_RESULT_SUCCESS != removeRes)
+			return removeRes;
+	}
+	// all structs should be clean
+
+	//deinit queue
 	int queueRes = pqDeinit(&(storage->NextProcessingTime));
 	if(FUNC_RESULT_SUCCESS != queueRes)
 		return queueRes;
-	//init dest table
+	//deinit dest table
 	int destRes = hashFree(&(storage->Destinations));
 	if(FUNC_RESULT_SUCCESS != destRes)
 		return destRes;
-	//init mid table
+	//deinit mid table
 	int midRes = hashFree(&(storage->MessageIds));
 	if(FUNC_RESULT_SUCCESS != midRes)
 		return midRes;
-	//init rmid table
+	//deinit rmid table
 	int rmidRes = hashFree(&(storage->RoutingMessageIds));
 	if(FUNC_RESULT_SUCCESS != rmidRes)
 		return rmidRes;
@@ -163,7 +173,7 @@ RouteStoredPacket_T* psGetMidPtr(PacketStorage_T* storage, MessageId_T* mid){
 		return NULL;
 	if(NULL == mid)
 		return NULL;
-
+	return *((RouteStoredPacket_T**)hashGetPtr(&(storage->MessageIds), mid));
 }
 RouteStoredPacket_T* psGetRmidPtr(PacketStorage_T* storage, RoutingMessageId_T* rmid){
 	if(NULL == storage)
@@ -172,5 +182,24 @@ RouteStoredPacket_T* psGetRmidPtr(PacketStorage_T* storage, RoutingMessageId_T* 
 		return NULL;
 	if(NULL == rmid)
 		return NULL;
+	return *((RouteStoredPacket_T**)hashGetPtr(&(storage->RoutingMessageIds), rmid));
+}
 
+int psGetMid(PacketStorage_T* storage, MessageId_T* mid, RouteStoredPacket_T* packet){
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	RouteStoredPacket_T* pack = psGetMidPtr(storage, mid);
+	if(NULL == pack)
+		return FUNC_RESULT_FAILED;
+	*packet = *pack;
+	return FUNC_RESULT_SUCCESS;
+}
+int psGetRmid(PacketStorage_T* storage, RoutingMessageId_T* rmid, RouteStoredPacket_T* packet){
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	RouteStoredPacket_T* pack = psGetRmidPtr(storage, rmid);
+	if(NULL == pack)
+		return FUNC_RESULT_FAILED;
+	*packet = *pack;
+	return FUNC_RESULT_SUCCESS;
 }

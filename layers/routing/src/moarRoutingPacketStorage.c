@@ -11,6 +11,7 @@
 #include <memory.h>
 #include <moarRoutingStoredPacket.h>
 #include <priorityQueue.h>
+#include <hashTable.h>
 
 int timeCompareFunction(void* k1, void* k2, size_t size){
 	if(k1 == NULL)
@@ -128,11 +129,11 @@ int psAdd(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 	return FUNC_RESULT_SUCCESS;
 }
 
-int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
+RouteStoredPacket_T* psFindPacketPtr(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 	if(NULL == storage)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return NULL;
 	if(NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+		return NULL;
 
 	RouteStoredPacket_T* allocatedPack;
 	// find pack by mid
@@ -142,9 +143,21 @@ int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 		searchRes = hashGet(&(storage->RoutingMessageIds), &(packet->MessageId), &allocatedPack);
 		if(FUNC_RESULT_SUCCESS != searchRes){
 			//not found
-			return FUNC_RESULT_FAILED_ARGUMENT;
+			return NULL;
 		}
 	}
+	return allocatedPack;
+}
+
+int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	RouteStoredPacket_T* allocatedPack = psFindPacketPtr(storage, packet);
+	if(NULL == allocatedPack)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 	// found, and remove
 	pqRemove(&(storage->NextProcessingTime), &allocatedPack);
 	hashRemoveExact(&(storage->Destinations), &(allocatedPack->Destination), &allocatedPack);
@@ -202,4 +215,39 @@ int psGetRmid(PacketStorage_T* storage, RoutingMessageId_T* rmid, RouteStoredPac
 		return FUNC_RESULT_FAILED;
 	*packet = *pack;
 	return FUNC_RESULT_SUCCESS;
+}
+
+int psGetDestFirst(PacketStorage_T* storage, RouteAddr_T* dest, hashIterator_T* iterator){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == dest)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int res = hashGetFirst(&(storage->Destinations), dest, iterator);
+	return  res;
+}
+RouteStoredPacket_T* psIteratorData(hashIterator_T* iterator){
+	if(NULL == iterator)
+		return NULL;
+	RouteStoredPacket_T** packPtr = (RouteStoredPacket_T**)hashIteratorData(iterator);
+	if(NULL == packPtr)
+		return NULL;
+	return *packPtr;
+
+}
+
+int psUpdateTime(PacketStorage_T* storage, RouteStoredPacket_T* packet){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	
+	RouteStoredPacket_T* allocatedPack = psFindPacketPtr(storage, packet);
+	if(NULL == allocatedPack)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int res = pqChangePriority(&(storage->NextProcessingTime), &allocatedPack, &(packet->NextProcessing));
+	return res;
 }

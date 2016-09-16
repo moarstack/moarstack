@@ -74,13 +74,14 @@ int pqLift(PriorityQueue_T* queue, int index){
 }
 int pqSift(PriorityQueue_T* queue, int index){
 	pqEntry_T item = queue->Storage[index];
-	while(index<=parent(queue->Count-1)){
+	while(index <= parent(queue->Count-1)){
 		int j = child(index);
 		if(		j<queue->Count &&
 				(queue->Compare(queue->Storage[j].Priority, queue->Storage[j+1].Priority, queue->PrioritySize)<0)
 				)
 			++j;
-		if(queue->Compare(item.Priority, queue->Storage[j].Priority, queue->PrioritySize)>=0) break;
+		if(j>=queue->Count || queue->Compare(item.Priority, queue->Storage[j].Priority, queue->PrioritySize)>=0)
+			break;
 		queue->Storage[index] = queue->Storage[j];
 		index = j;
 	}

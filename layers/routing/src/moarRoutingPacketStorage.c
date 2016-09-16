@@ -53,7 +53,7 @@ int psInit(PacketStorage_T* storage){
 	return FUNC_RESULT_SUCCESS;
 }
 
-int psDeinit(PacketStorage_T* storage){
+int psClear(PacketStorage_T* storage){
 	if(NULL == storage)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -65,6 +65,16 @@ int psDeinit(PacketStorage_T* storage){
 		if(FUNC_RESULT_SUCCESS != removeRes)
 			return removeRes;
 	}
+	return FUNC_RESULT_SUCCESS;
+}
+
+int psDeinit(PacketStorage_T* storage){
+	if(NULL == storage)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int cleanRes = psClear(storage);
+	if(FUNC_RESULT_SUCCESS != cleanRes)
+		return cleanRes;
 	// all structs should be clean
 
 	//deinit queue
@@ -243,7 +253,7 @@ int psUpdateTime(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	
+
 	RouteStoredPacket_T* allocatedPack = psFindPacketPtr(storage, packet);
 	if(NULL == allocatedPack)
 		return FUNC_RESULT_FAILED_ARGUMENT;

@@ -94,8 +94,6 @@ int psDeinit(PacketStorage_T* storage){
 	if(FUNC_RESULT_SUCCESS != rmidRes)
 		return rmidRes;
 
-	storage->Count = 0;
-
 	return FUNC_RESULT_SUCCESS;
 }
 

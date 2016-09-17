@@ -148,14 +148,13 @@ int pqRemove(PriorityQueue_T* queue, void* data){
 	if(NULL == data)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	int index = -1;
-	for(int i=0;i<queue->Count; i++){
-		if(memcmp(data, queue->Storage[i].Data, queue->DataSize) == 0){
-			index = i;
+	int index;
+	for(index=0; index<queue->Count; index++){
+		if(memcmp(data, queue->Storage[index].Data, queue->DataSize) == 0){
 			break;
 		}
 	}
-	if(-1 == index)
+	if(index == queue->Count)
 		return FUNC_RESULT_SUCCESS;
 
 	// swap with last

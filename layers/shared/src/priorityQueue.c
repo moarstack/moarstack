@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <priorityQueue.h>
 
 
 int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySize, size_t dataSize){
@@ -73,13 +74,14 @@ int pqLift(PriorityQueue_T* queue, int index){
 }
 int pqSift(PriorityQueue_T* queue, int index){
 	pqEntry_T item = queue->Storage[index];
-	while(index<=parent(queue->Count-1)){
+	while(index <= parent(queue->Count-1)){
 		int j = child(index);
 		if(		j<queue->Count &&
 				(queue->Compare(queue->Storage[j].Priority, queue->Storage[j+1].Priority, queue->PrioritySize)<0)
 				)
 			++j;
-		if(queue->Compare(item.Priority, queue->Storage[j].Priority, queue->PrioritySize)>=0) break;
+		if(j>=queue->Count || queue->Compare(item.Priority, queue->Storage[j].Priority, queue->PrioritySize)>=0)
+			break;
 		queue->Storage[index] = queue->Storage[j];
 		index = j;
 	}
@@ -139,6 +141,37 @@ int pqDequeue(PriorityQueue_T* queue, void* data){
 	int siftRes = pqSift(queue,0);
 	return FUNC_RESULT_SUCCESS;
 }
+
+int pqRemove(PriorityQueue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int index;
+	for(index=0; index<queue->Count; index++){
+		if(memcmp(data, queue->Storage[index].Data, queue->DataSize) == 0){
+			break;
+		}
+	}
+	if(index == queue->Count)
+		return FUNC_RESULT_SUCCESS;
+
+	// swap with last
+	pqEntry_T tmp = queue->Storage[index];
+	queue->Storage[index] = queue->Storage[queue->Count-1];
+	queue->Storage[queue->Count-1] = tmp;
+
+	// free memory
+	free(tmp.Priority);
+	free(tmp.Data);
+	// decrement
+	queue->Count--;
+	int liftRes = pqLift(queue, index);
+	int siftRes = pqSift(queue, index);
+	return FUNC_RESULT_SUCCESS;
+}
+
 int pqTop(PriorityQueue_T* queue, void* data){
 	if(NULL == queue)
 		return FUNC_RESULT_FAILED_ARGUMENT;

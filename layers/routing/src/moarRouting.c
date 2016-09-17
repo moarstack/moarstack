@@ -12,6 +12,7 @@
 #include <moarRoutingStoredPacket.h>
 
 
+// инициализация работы с Epoll - прополка сокетов
 int initEpoll(RoutingLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -42,6 +43,8 @@ int initEpoll(RoutingLayer_T* layer){
 	//return
 	return FUNC_RESULT_SUCCESS;
 }
+
+//инит роутинга
 int routingInit(RoutingLayer_T* layer, void* arg){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;

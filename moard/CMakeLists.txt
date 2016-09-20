@@ -16,7 +16,7 @@ endif(${USE_CLION_PATH})
 
 if(${USE_NEWLM})
     message("Using NEWLM library loading")
-    add_definitions(-DUSE_NEWLNM)
+    add_definitions(-DUSE_NEWLM)
 endif(${USE_NEWLM})
 
 #add shared layers headers

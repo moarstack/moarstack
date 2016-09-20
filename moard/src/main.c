@@ -18,9 +18,9 @@
 #include <errno.h>
 #include <moarInterface.h>
 
-#define IFACE_CHANNEL_SOCKET_FILE	"IfaceChannelSocket.file"
+#define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
 #define IFACE_LOG_FILE				"/tmp/moarInterface.log"
-#define SERVICE_APP_SOCKET_FILE		"ServiceAppSocket.file"
+#define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
 
 //#define LOAD_MULTIPLE_INTERFACES
 

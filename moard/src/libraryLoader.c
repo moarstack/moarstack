@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <memory.h>
 
+#define LM_ID LM_ID_BASE //use in debug, not support multiple loads of single library, soft/hard links does`t work
+
 #ifdef USE_NEWLNM
     #define LM_ID LM_ID_NEWLM //use in release
-#else
-    #define LM_ID LM_ID_BASE //use in debug, not support multiple loads of single library, soft/hard links does`t work
 #endif
 
 

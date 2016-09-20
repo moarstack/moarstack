@@ -16,6 +16,12 @@ else(DEFINED OPT)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 endif(DEFINED OPT)
 
+if(${WARNINGS})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+else(${WARNINGS})
+
+endif(${WARNINGS})
+
 #if(DEFINED DEBUG)
     #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g" ${DEBUG})
     #add_definitions(-DDEBUG)

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(libmoar_interface) 
 
-set(LIBRARY_OUTPUT_PATH ../../lib)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
+#set(LIBRARY_OUTPUT_PATH ../../lib)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -g3 -fPIC")
 
 file(GLOB SRC_FILES
     "src/*.c"

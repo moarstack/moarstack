@@ -15,9 +15,14 @@ if(${USE_CLION_PATH})
 endif(${USE_CLION_PATH})
 
 if(${USE_NEWLM})
-    message("Using NEWLM library loading")
-    add_definitions(-DUSE_NEWLM)
+    if(${DEBUG})
+        message("DEBUG and USE_NEWLM switchs not compatible, ignoring USE_NEWLM")
+    else(${DEBUG})
+        message("Using NEWLM library loading")
+        add_definitions(-DUSE_NEWLM)
+    endif(${DEBUG})
 endif(${USE_NEWLM})
+
 
 #add shared layers headers
 include_directories(../layers/shared/inc)

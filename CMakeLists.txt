@@ -16,13 +16,14 @@ else(DEFINED OPT)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 endif(DEFINED OPT)
 
-#
 #if(DEFINED DEBUG)
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g" ${DEBUG})
-#    add_definitions(-DDEBUG)
+    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g" ${DEBUG})
+    #add_definitions(-DDEBUG)
 #else(DEFINED DEBUG)
-#
+
 #endif(DEFINED DEBUG)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g3 -fPIC")
 
 add_subdirectory(layers)
 add_subdirectory(moard)

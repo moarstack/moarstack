@@ -28,6 +28,7 @@ typedef struct{
 	int 					EpollTimeout;
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
+	RouteAddr_T				LocalAddress;
 } RoutingLayer_T;
 
 

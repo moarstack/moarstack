@@ -9,6 +9,11 @@ file(GLOB SRC_FILES
     "src/*.c"
 )
 
+if(${USE_CLION_PATH})
+    message("Used clion path")
+    add_definitions(-DUSE_CLION_PATH)
+endif(${USE_CLION_PATH})
+
 #add shared layers headers
 include_directories(../layers/shared/inc)
 

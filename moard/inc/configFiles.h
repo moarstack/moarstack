@@ -5,9 +5,9 @@
 #ifndef MOARSTACK_CONFIGFILES_H
 #define MOARSTACK_CONFIGFILES_H
 
-#define USE_CLION
+//#define USE_CLION
 
-#ifdef USE_CLION
+#ifdef USE_CLION_PATH
 //clion files
 #define LIBRARY_PATH_INTERFACE "../layers/interface/libmoar_interface.so";
 #define LIBRARY_PATH_CHANNEL "../layers/channel/libmoar_channel.so";

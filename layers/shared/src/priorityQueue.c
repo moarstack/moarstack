@@ -62,7 +62,7 @@ static inline int child(int index){
 
 int pqLift(PriorityQueue_T* queue, int index){
 	pqEntry_T item = queue->Storage[index];
-	while(	index>0 &&
+	while(	index>0 && index<queue->Count &&
 			queue->Compare(item.Priority, queue->Storage[parent(index)].Priority, queue->PrioritySize)>0
 			){
 		int prnt = parent(index);

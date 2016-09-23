@@ -90,6 +90,7 @@ int hashClear(hashTable_T* table){
 			free(current);
 		}
 	}
+	table->Count = 0;
 	return FUNC_RESULT_SUCCESS;
 }
 int hashFree(hashTable_T* table){

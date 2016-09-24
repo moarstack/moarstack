@@ -194,7 +194,10 @@ RouteStoredPacket_T* psGetMidPtr(PacketStorage_T* storage, MessageId_T* mid){
 		return NULL;
 	if(NULL == mid)
 		return NULL;
-	return *((RouteStoredPacket_T**)hashGetPtr(&(storage->MessageIds), mid));
+	void* pack = hashGetPtr(&(storage->MessageIds), mid);
+	if(pack!=NULL)
+		return *((RouteStoredPacket_T**)pack);
+	return NULL;
 }
 RouteStoredPacket_T* psGetRmidPtr(PacketStorage_T* storage, RoutingMessageId_T* rmid){
 	if(NULL == storage)
@@ -203,7 +206,10 @@ RouteStoredPacket_T* psGetRmidPtr(PacketStorage_T* storage, RoutingMessageId_T* 
 		return NULL;
 	if(NULL == rmid)
 		return NULL;
-	return *((RouteStoredPacket_T**)hashGetPtr(&(storage->RoutingMessageIds), rmid));
+	void* pack = hashGetPtr(&(storage->RoutingMessageIds), rmid);
+	if(pack!=NULL)
+		return *((RouteStoredPacket_T**)pack);
+	return NULL;
 }
 
 int psGetMid(PacketStorage_T* storage, MessageId_T* mid, RouteStoredPacket_T* packet){

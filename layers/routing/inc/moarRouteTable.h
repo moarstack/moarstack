@@ -31,22 +31,22 @@ typedef struct {
 } RouteDataTable_T;
 
 bool RouteTableInit( RouteDataTable_T * table, RouteTableSize_T tableSize );
-inline RouteDataTable_T * RouteTableCreate( RouteTableSize_T tableSize );
+static inline RouteDataTable_T * RouteTableCreate( RouteTableSize_T tableSize );
 bool RouteTableClear( RouteDataTable_T * table );
 bool RouteTableDestroy( RouteDataTable_T * table );
 bool RouteTableRenew( RouteDataTable_T * table, moarTime_T tick );
 bool RouteTableAdd( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest );
 bool RouteTableDelAll( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest ); // add RouteTableDelOne() TODO
-inline void RouteTableUpdate( RouteDataRecord_T * row );
+static inline void RouteTableUpdate( RouteDataRecord_T * row );
 RouteDataRecord_T * RouteTableGetDest( RouteDataTable_T * table, RouteAddr_T relay );
 RouteDataRecord_T * RouteTableGetRelayFirst( RouteDataTable_T * table, RouteAddr_T dest );
 RouteDataRecord_T * RouteTableGetRelayNext( RouteDataTable_T * table, RouteDataRecord_T * row );
 RouteDataRecord_T * RouteTableGetRelayBest( RouteDataTable_T * table, RouteAddr_T dest );
 RouteDataRecord_T * RouteTableGetRecord( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest );
 bool Bump( RouteDataTable_T * table, RouteAddr_T relay, RouteChance_T newP );
-inline RouteDataRecord_T * RouteTableRowFirst( RouteDataTable_T * table );
-inline RouteDataRecord_T * RouteTableRowNext( RouteDataTable_T * table, RouteDataRecord_T * prevRow );
-inline RouteDataRecord_T * RouteTableRowIndexed( RouteDataTable_T * table, RouteTableSize_T index );
+static inline RouteDataRecord_T * RouteTableRowFirst( RouteDataTable_T * table );
+static inline RouteDataRecord_T * RouteTableRowNext( RouteDataTable_T * table, RouteDataRecord_T * prevRow );
+static inline RouteDataRecord_T * RouteTableRowIndexed( RouteDataTable_T * table, RouteTableSize_T index );
 
 
 

@@ -23,7 +23,7 @@ typedef struct{
 }Queue_T;
 
 int queueInit(Queue_T* queue, size_t dataSize);
-int queueDenit(Queue_T* queue);
+int queueDeinit(Queue_T* queue);
 int queueClear(Queue_T* queue);
 int queueEnqueue(Queue_T* queue, void* data);
 int queueDequeue(Queue_T* queue, void* data);

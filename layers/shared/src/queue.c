@@ -16,7 +16,7 @@ int queueInit(Queue_T* queue, size_t dataSize){
 	queue->Tail = NULL;
 	return FUNC_RESULT_SUCCESS;
 }
-int queueDenit(Queue_T* queue){
+int queueDeinit(Queue_T* queue){
 	if(NULL == queue)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = queueClear(queue);

@@ -4,6 +4,7 @@
 
 #include <funcResults.h>
 #include <queue.h>
+#include <memory.h>
 
 int queueInit(Queue_T* queue, size_t dataSize){
 	if(NULL == queue)
@@ -32,7 +33,34 @@ int queueClear(Queue_T* queue){
 	}
 	return FUNC_RESULT_SUCCESS;
 }
-int queueEnqueue(Queue_T* queue, void* data){}
-int queueDequeue(Queue_T* queue, void* data){}
+int queueEnqueue(Queue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	QueueListEntry_T* entry = (QueueListEntry_T*)malloc(sizeof(QueueListEntry_T));
+	if(NULL == entry)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	entry->Data = malloc(queue->DataSize);
+	if(NULL == entry->Data)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	memcpy(entry->Data, data, queue->DataSize);
+
+	entry->Next = queue->Tail;
+	queue->Tail = entry;
+	if(NULL == queue->Head)
+		queue->Head = entry;
+
+	queue->Count++;
+
+	return FUNC_RESULT_SUCCESS;
+}
+int queueDequeue(Queue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	//return FUNC_RESULT_SUCCESS;
+}
 int queuePeek(Queue_T* queue, void* data){}
 void* queuePeekPtr(Queue_T* queue){}

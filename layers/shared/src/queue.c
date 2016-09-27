@@ -83,5 +83,24 @@ int queueDequeue(Queue_T* queue, void* data) {
 	queue->Count--;
 	return FUNC_RESULT_SUCCESS;
 }
-int queuePeek(Queue_T* queue, void* data){}
-void* queuePeekPtr(Queue_T* queue){}
+int queuePeek(Queue_T* queue, void* data){
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	void* ptr = queuePeekPtr(queue);
+
+	if(NULL == ptr)
+		return FUNC_RESULT_FAILED;
+	memcpy(data, ptr, queue->DataSize);
+
+	return FUNC_RESULT_SUCCESS;
+}
+void* queuePeekPtr(Queue_T* queue){
+	if (NULL == queue)
+		return NULL;
+	if (queue->Count == 0)
+		return NULL;
+	if(NULL == queue->Head)
+		return NULL;
+	return queue->Head->Data;
+}

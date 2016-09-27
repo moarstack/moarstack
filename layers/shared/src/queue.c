@@ -152,8 +152,24 @@ int queueIteratorNext(QueueIterator_T* iterator){
 		iterator->Entry = *(iterator->Entry.Next);
 	return FUNC_RESULT_SUCCESS;
 }
-int queueIteratorData(QueueIterator_T* iterator, void* data){}
-void* queueIteratorDataPtr(QueueIterator_T* iterator){}
+int queueIteratorData(QueueIterator_T* iterator, void* data){
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == iterator->DataSize)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	void* val = queueIteratorDataPtr(iterator);
+	if(NULL == val)
+		return FUNC_RESULT_FAILED;
+	memcpy(data,val,iterator->DataSize);
+	
+	return FUNC_RESULT_SUCCESS;
+}
+void* queueIteratorDataPtr(QueueIterator_T* iterator){
+	if(NULL == iterator)
+		return NULL;
+	return iterator->Entry.Data;
+}
 bool queueIteratorIsEnd(QueueIterator_T* iterator){
 	if(NULL == iterator)
 		return true;

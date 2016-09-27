@@ -17,7 +17,7 @@ struct QueueListEntry_T {
 };
 
 typedef struct{
-	struct QueueListEntry_T;
+	QueueListEntry_T Entry;
 	size_t DataSize;
 }QueueIterator_T;
 
@@ -40,6 +40,6 @@ int queuePushToFront(Queue_T* queue, void* data);
 int queueIterator(Queue_T* queue, QueueIterator_T* iterator);
 int queueIteratorNext(QueueIterator_T* iterator);
 int queueIteratorData(QueueIterator_T* iterator, void* data);
-int queueIteratorDataPtr(QueueIterator_T* iterator);
+void* queueIteratorDataPtr(QueueIterator_T* iterator);
 bool queueIteratorIsEnd(QueueIterator_T* iterator);
 #endif //MOARSTACK_QUEUE_H

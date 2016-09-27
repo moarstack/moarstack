@@ -127,8 +127,37 @@ int queuePushToFront(Queue_T* queue, void* data){
 	queue->Count++;
 	return FUNC_RESULT_SUCCESS;
 }
-int queueIterator(Queue_T* queue, QueueIterator_T* iterator){}
-int queueIteratorNext(QueueIterator_T* iterator){}
+int queueIterator(Queue_T* queue, QueueIterator_T* iterator){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(0 == queue->Count || NULL == queue->Head) {
+		iterator->Entry.Data = NULL;
+		iterator->Entry.Next= NULL;
+		return FUNC_RESULT_SUCCESS;
+	}
+	iterator->DataSize = queue->DataSize;
+	iterator->Entry = *queue->Head;
+	return FUNC_RESULT_SUCCESS;
+}
+int queueIteratorNext(QueueIterator_T* iterator){
+	if(NULL == iterator)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == iterator->Entry.Data)
+		return FUNC_RESULT_FAILED;
+	if(NULL == iterator->Entry.Next)
+		iterator->Entry.Data = NULL;
+	else
+		iterator->Entry = *(iterator->Entry.Next);
+	return FUNC_RESULT_SUCCESS;
+}
 int queueIteratorData(QueueIterator_T* iterator, void* data){}
-int queueIteratorDataPtr(QueueIterator_T* iterator){}
-bool queueIteratorIsEnd(QueueIterator_T* iterator){}
+void* queueIteratorDataPtr(QueueIterator_T* iterator){}
+bool queueIteratorIsEnd(QueueIterator_T* iterator){
+	if(NULL == iterator)
+		return true;
+	if(NULL == iterator->Entry.Data)
+		return true;
+	return false;
+}

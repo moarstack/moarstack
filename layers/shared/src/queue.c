@@ -47,20 +47,41 @@ int queueEnqueue(Queue_T* queue, void* data){
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	memcpy(entry->Data, data, queue->DataSize);
 
-	entry->Next = queue->Tail;
+	entry->Next = NULL;
+	//if(NULL == queue->Head)
+	//	queue->Head = entry;
+	if(NULL != queue->Tail)
+		queue->Tail->Next = entry;
+
 	queue->Tail = entry;
+
 	if(NULL == queue->Head)
 		queue->Head = entry;
 
 	queue->Count++;
-
 	return FUNC_RESULT_SUCCESS;
 }
-int queueDequeue(Queue_T* queue, void* data){
-	if(NULL == queue)
+int queueDequeue(Queue_T* queue, void* data) {
+	if (NULL == queue)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (queue->Count == 0)
+		return FUNC_RESULT_FAILED;
 
-	//return FUNC_RESULT_SUCCESS;
+	if(NULL == queue->Head)
+		return FUNC_RESULT_FAILED;
+	QueueListEntry_T *entry = queue->Head;
+
+	queue->Head = entry->Next;
+	if(NULL == queue->Head)
+		queue->Tail = NULL;
+
+	if(NULL != data)
+		memcpy(data, entry->Data, queue->DataSize);
+	free(entry->Data);
+	free(entry);
+
+	queue->Count--;
+	return FUNC_RESULT_SUCCESS;
 }
 int queuePeek(Queue_T* queue, void* data){}
 void* queuePeekPtr(Queue_T* queue){}

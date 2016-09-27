@@ -5,7 +5,7 @@
 #ifndef MOARSTACK_QUEUE_H
 #define MOARSTACK_QUEUE_H
 
-#endif //MOARSTACK_QUEUE_H
+
 #include <stdlib.h>
 
 typedef struct QueueListEntry_T QueueListEntry_T;
@@ -29,3 +29,5 @@ int queueEnqueue(Queue_T* queue, void* data);
 int queueDequeue(Queue_T* queue, void* data);
 int queuePeek(Queue_T* queue, void* data);
 void* queuePeekPtr(Queue_T* queue);
+
+#endif //MOARSTACK_QUEUE_H

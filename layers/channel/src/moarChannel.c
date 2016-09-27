@@ -131,7 +131,7 @@ int channelInit(ChannelLayer_T* layer, void* arg){
 	if(FUNC_RESULT_SUCCESS != neighborsRes)
 		return neighborsRes;
 
-	int messageInitRes = queueInit(layer);
+	int messageInitRes = messageQueueInit(layer);
 	if(FUNC_RESULT_SUCCESS != messageInitRes){
 		return messageInitRes;
 	}

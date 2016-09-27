@@ -104,3 +104,31 @@ void* queuePeekPtr(Queue_T* queue){
 		return NULL;
 	return queue->Head->Data;
 }
+
+int queuePushToFront(Queue_T* queue, void* data){
+	if(NULL == queue)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == data)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	QueueListEntry_T* entry = (QueueListEntry_T*)malloc(sizeof(QueueListEntry_T));
+	if(NULL == entry)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	entry->Data = malloc(queue->DataSize);
+	if(NULL == entry->Data)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	memcpy(entry->Data, data, queue->DataSize);
+
+	entry->Next = queue->Head;
+	queue->Head = entry;
+	if(NULL == queue->Tail)
+		queue->Tail = entry;
+
+	queue->Count++;
+	return FUNC_RESULT_SUCCESS;
+}
+int queueIterator(Queue_T* queue, QueueIterator_T* iterator){}
+int queueIteratorNext(QueueIterator_T* iterator){}
+int queueIteratorData(QueueIterator_T* iterator, void* data){}
+int queueIteratorDataPtr(QueueIterator_T* iterator){}
+bool queueIteratorIsEnd(QueueIterator_T* iterator){}

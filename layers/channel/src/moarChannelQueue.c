@@ -50,3 +50,9 @@ int messagePeek(ChannelLayer_T* layer, ChannelMessageEntry_T** entry){
 	*entry = top;
 	return FUNC_RESULT_SUCCESS;
 }
+int messageQueueDeinit(ChannelLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = pqDeinit(&(layer->MessageQueue));
+	return res;
+}

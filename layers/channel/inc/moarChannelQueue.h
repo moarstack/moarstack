@@ -12,5 +12,6 @@ int messageQueueInit(ChannelLayer_T* layer);
 int messageDequeue(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 int messageEnqueue(ChannelLayer_T* layer, ChannelMessageEntry_T* entry);
 int messagePeek(ChannelLayer_T* layer, ChannelMessageEntry_T** entry);
+int messageQueueDeinit(ChannelLayer_T* layer);
 
 #endif //MOARSTACK_MOARCHANNELMESSAGEQUEUE_H

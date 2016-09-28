@@ -80,7 +80,7 @@ typedef struct {
 	ChannelAddr_T 			LocalAddress;
 	int 					UpSocket;
 	int 					DownSocket;
-	int 				InterfacesCount;
+	int 					InterfacesCount;
 	hashTable_T		 		Interfaces;
 	LinkedListItem_T 		Neighbors;
 	LinkedListItem_T 		NonResolvedNeighbors;

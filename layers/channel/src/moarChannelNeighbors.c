@@ -27,6 +27,9 @@ int neighborsInit(ChannelLayer_T* layer){
 		return nonresolvedres;
 	return FUNC_RESULT_SUCCESS;
 }
+int neighborsDeinit(ChannelLayer_T* layer){
+	return FUNC_RESULT_SUCCESS;
+}
 
 ChannelNeighbor_T* neighborFind(ChannelLayer_T* layer, ChannelAddr_T* address){
 	if(NULL == layer)

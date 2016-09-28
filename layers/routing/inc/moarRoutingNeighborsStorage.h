@@ -17,6 +17,7 @@ typedef struct{
 
 typedef struct{
 	hashTable_T Storage;
+	int Count;
 }RoutingNeighborsStorage_T;
 
 int storageInit(RoutingNeighborsStorage_T* storage);

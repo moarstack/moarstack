@@ -11,11 +11,16 @@ int storageInit(RoutingNeighborsStorage_T* storage){
 	if(NULL == storage)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int hashRes = hashInit(&(storage->Storage),hashRoutingAddress, STORAGE_HASH_SIZE, sizeof(RouteAddr_T), sizeof(RoutingNeighborInfo_T));
+	storage->Count = storage->Storage.Count;
 	return hashRes;
 }
 int storageDeinit(RoutingNeighborsStorage_T* storage){
 	if(NULL == storage)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	int clearRes = hashClear(storage);
+	if(FUNC_RESULT_SUCCESS != clearRes)
+		return clearRes;
+	storage->Count = storage->Storage.Count;
 	int hashRes = hashFree(&(storage->Storage));
 	return hashRes;
 }
@@ -27,6 +32,7 @@ int storageAdd(RoutingNeighborsStorage_T* storage, RoutingNeighborInfo_T* info){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	int hashRes = hashAdd(&(storage->Storage), &(info->Address), info);
+	storage->Count = storage->Storage.Count;
 	return hashRes;
 }
 
@@ -59,6 +65,7 @@ int storageRemove(RoutingNeighborsStorage_T* storage, RouteAddr_T* address){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	int hashRes = hashRemove(&(storage->Storage), address);
+	storage->Count = storage->Storage.Count;
 	return hashRes;
 }
 #ifdef HASH_ENABLE_ITERATOR

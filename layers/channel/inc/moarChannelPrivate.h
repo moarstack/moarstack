@@ -32,6 +32,7 @@
 #define INTERFACE_PROCESSING_RULES_COUNT	8
 #define ROUTING_PROCESSING_RULES_COUNT		2
 #define MESSAGE_QUEUE_SIZE					32
+#define INTERFACES_SIZE						MAX_INTERFACE_COUNT
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
@@ -79,8 +80,8 @@ typedef struct {
 	ChannelAddr_T 			LocalAddress;
 	int 					UpSocket;
 	int 					DownSocket;
-	uint8_t 				InterfacesCount;
-	LinkedListItem_T 		Interfaces;
+	int 				InterfacesCount;
+	hashTable_T		 		Interfaces;
 	LinkedListItem_T 		Neighbors;
 	LinkedListItem_T 		NonResolvedNeighbors;
 	PriorityQueue_T			MessageQueue;

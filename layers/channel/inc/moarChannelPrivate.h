@@ -13,6 +13,7 @@
 #include <linkedList.h>
 #include <moarChannelRouting.h>
 #include <moarTime.h>
+#include <queue.h>
 
 #define LISTEN_COUNT						10
 #define EPOLL_INTERFACE_SOCKET_EVENTS 		EPOLLIN
@@ -80,7 +81,7 @@ typedef struct {
 	LinkedListItem_T 		Interfaces;
 	LinkedListItem_T 		Neighbors;
 	LinkedListItem_T 		NonResolvedNeighbors;
-	LinkedListItem_T		MessageQueue;
+	Queue_T					MessageQueue;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
 	int 					EpollCount;

@@ -200,7 +200,7 @@ int processInterfaceState(void* layerRef, int fd, LayerCommandStruct_T *command)
 			case IfacePackState_UnknownDest:
 			case IfacePackState_Timeouted:
 			case IfacePackState_Notsent:
-				res = enqueueMessage(layer, &entry);
+				res = messageEnqueue(layer, &entry);
 				break;
 			case IfacePackState_Sent:
 			case IfacePackState_Responsed:
@@ -329,7 +329,7 @@ int processSendMessage(void* layerRef, int fd, LayerCommandStruct_T *command){
 			entry.SendTrys = 0;
 			entry.ProcessingTime = timeGetCurrent();
 			entry.Metadata = *((RouteSendMetadata_T *) command->MetaData);
-			res = enqueueMessage(layer, &entry);
+			res = messageEnqueue(layer, &entry);
 			if(FUNC_RESULT_SUCCESS != res)
 				free(newMessage);
 		}
@@ -391,7 +391,7 @@ int processQueueEntry(ChannelLayer_T* layer, ChannelMessageEntry_T* entry) {
 	}
 	// if not found | not pushed
 	entry->ProcessingTime = timeAddInterval(entry->ProcessingTime, PROCESSING_TIMEOUT);
-	int res = enqueueMessage(layer, entry);
+	int res = messageEnqueue(layer, entry);
 	return res;
 }
 // process channel message queue
@@ -403,7 +403,7 @@ int processQueue(ChannelLayer_T* layer){
 	bool done = true;
 	moarTime_T currentTime = timeGetCurrent();
 	while(done) {
-		int peekRes = peekMessage(layer, &entry);
+		int peekRes = messagePeek(layer, &entry);
 		//if no data in queue
 		if (FUNC_RESULT_SUCCESS != peekRes)
 			return FUNC_RESULT_SUCCESS;
@@ -414,7 +414,7 @@ int processQueue(ChannelLayer_T* layer){
 			if (FUNC_RESULT_SUCCESS != processRes)
 				done = false;
 			//remove from queue
-			dequeueMessage(layer, NULL);
+			messageDequeue(layer, NULL);
 		}
 		else
 			done = false;

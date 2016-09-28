@@ -14,6 +14,7 @@
 #include <moarChannelRouting.h>
 #include <moarTime.h>
 #include <queue.h>
+#include <priorityQueue.h>
 
 #define LISTEN_COUNT						10
 #define EPOLL_INTERFACE_SOCKET_EVENTS 		EPOLLIN
@@ -30,6 +31,7 @@
 #define HELLO_NEED_RESPONSE					false
 #define INTERFACE_PROCESSING_RULES_COUNT	8
 #define ROUTING_PROCESSING_RULES_COUNT		2
+#define MESSAGE_QUEUE_SIZE					32
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
@@ -81,7 +83,7 @@ typedef struct {
 	LinkedListItem_T 		Interfaces;
 	LinkedListItem_T 		Neighbors;
 	LinkedListItem_T 		NonResolvedNeighbors;
-	Queue_T					MessageQueue;
+	PriorityQueue_T			MessageQueue;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
 	int 					EpollCount;

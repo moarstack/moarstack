@@ -11,7 +11,9 @@ int interfaceInit(ChannelLayer_T* layer){
 	int initRes = CreateList(&(layer->Interfaces));
 	return initRes;
 }
-
+int interfaceDeinit(ChannelLayer_T* layer){
+	return FUNC_RESULT_SUCCESS;
+}
 InterfaceDescriptor_T* interfaceFind(ChannelLayer_T *layer, int fd){
 	if(NULL == layer)
 		return NULL;

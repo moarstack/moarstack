@@ -11,6 +11,7 @@
 #include <moarChannelRouting.h>
 #include <moarChannelHello.h>
 #include <moarChannelNeighbors.h>
+#include <hashTable.h>
 
 #define COMPARE_EQUAL 		1
 #define COMPARE_DIFFERENT 	0
@@ -19,15 +20,45 @@ typedef int(*compareFunc_T)(RemoteInterface_T* , RemoteInterface_T*);
 int neighborsInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = CreateList(&(layer->Neighbors));
+	int res = hashInit(&(layer->Neighbors), hashChannelAddress, NEIGHBORS_TABLE_SIZE, sizeof(ChannelAddr_T),sizeof(ChannelNeighbor_T));
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
+	int backRes = hashInit(&(layer->NeighborsBackTranslation), unAddressHash, NEIGHBORS_BACK_TABLE_SIZE, sizeof(UnIfaceAddr_T),sizeof(ChannelAddr_T));
+	if(FUNC_RESULT_SUCCESS != backRes)
+		return backRes;
+
 	int nonresolvedres = CreateList(&(layer->NonResolvedNeighbors));
 	if(FUNC_RESULT_SUCCESS != nonresolvedres)
 		return nonresolvedres;
 	return FUNC_RESULT_SUCCESS;
 }
 int neighborsDeinit(ChannelLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	// remove neighbors table
+	{
+		// for each item remove internal channel neighbor data
+	}
+	// remove neighbors back table
+	{
+		hashIterator_T iterator = {0};
+		int iterRes = hashIterator(&(layer->NeighborsBackTranslation), &iterator);
+		if(FUNC_RESULT_SUCCESS != iterRes)
+			return iterRes;
+		while(!hashIteratorIsLast(&iterator)){
+			// for each item remove key
+			UnIfaceAddr_T addr = *(UnIfaceAddr_T*)hashIteratorKey(&iterator);
+			int removeRes = hashRemove(&(layer->NeighborsBackTranslation), &addr);
+			unAddressFree(&addr);
+			if(FUNC_RESULT_SUCCESS != removeRes)
+				return removeRes;
+			hashIteratorNext(&iterator);
+		}
+		int freeRes = hashFree(&(layer->NeighborsBackTranslation));
+		if(FUNC_RESULT_SUCCESS != freeRes)
+			return freeRes;
+	}
 	return FUNC_RESULT_SUCCESS;
 }
 

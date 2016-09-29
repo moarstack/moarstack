@@ -33,6 +33,9 @@
 #define ROUTING_PROCESSING_RULES_COUNT		2
 #define MESSAGE_QUEUE_SIZE					32
 #define INTERFACES_SIZE						MAX_INTERFACE_COUNT
+#define NEIGHBORS_TABLE_SIZE				151
+#define NEIGHBORS_BACK_TABLE_SIZE			151
+
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
@@ -82,7 +85,8 @@ typedef struct {
 	int 					DownSocket;
 	int 					InterfacesCount;
 	hashTable_T		 		Interfaces;
-	LinkedListItem_T 		Neighbors;
+	hashTable_T		 		Neighbors;
+	hashTable_T		 		NeighborsBackTranslation;
 	LinkedListItem_T 		NonResolvedNeighbors;
 	PriorityQueue_T			MessageQueue;
 	int 					EpollHandler;

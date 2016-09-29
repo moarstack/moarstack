@@ -35,6 +35,7 @@
 #define INTERFACES_SIZE						MAX_INTERFACE_COUNT
 #define NEIGHBORS_TABLE_SIZE				151
 #define NEIGHBORS_BACK_TABLE_SIZE			151
+#define NEIGHBORS_NONRES_TABLE_SIZE			151
 
 typedef struct {
 	UnIfaceAddr_T 	Address;
@@ -87,7 +88,7 @@ typedef struct {
 	hashTable_T		 		Interfaces;
 	hashTable_T		 		Neighbors;
 	hashTable_T		 		NeighborsBackTranslation;
-	LinkedListItem_T 		NonResolvedNeighbors;
+	hashTable_T 			NonResolvedNeighbors;
 	PriorityQueue_T			MessageQueue;
 	int 					EpollHandler;
 	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];

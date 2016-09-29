@@ -271,7 +271,7 @@ int processLostNeighbor(void* layerRef, int fd, LayerCommandStruct_T *command){
 	int res = readNeighborMetadata(fd, command, interface->Address.Length, &neighborMetadata);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
-	int removeRes = neighborRemove(layer, neighborMetadata.Address);
+	int removeRes = neighborRemove(layer, &(neighborMetadata.Address));
 	unAddressFree(&(neighborMetadata.Address));
 	return removeRes;
 }

@@ -206,6 +206,7 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 			notifyRouting(layer,LayerCommandType_LostNeighbor, address);
 		}
 		//free remote
+		free(remoteInterface);
 	}
 	if(isNew)
 		free(neighbor); // stored in hash table

@@ -57,7 +57,7 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 	}
 	ifaceDesc->Socket = fd;
 	ifaceDesc->Address = registerMetadata.IfaceAddress;
-	ifaceDesc->Neighbors = NULL;
+	//ifaceDesc->Neighbors = NULL;
 	ifaceDesc->Ready = true;
 
 	int addRes = interfaceAdd(layer, ifaceDesc);

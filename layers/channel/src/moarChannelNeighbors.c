@@ -49,17 +49,28 @@ int freeNonResolved(void* ngbr){
 	free(neighbor);
 	return freeRes;
 }
+int freeChannelNeighbor(void* ngbr){
+	ChannelNeighbor_T* neighbor = (ChannelNeighbor_T*)ngbr;
+	hashClear(&(neighbor->Interfaces));
+	hashFree(&(neighbor->Interfaces));
+	free(neighbor);
+	return 0;
+}
+
 int neighborsInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = hashInit(&(layer->Neighbors), hashChannelAddress, NEIGHBORS_TABLE_SIZE, sizeof(ChannelAddr_T),sizeof(ChannelNeighbor_T));
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
+	layer->Neighbors.DataFreeFunction = freeChannelNeighbor;
+
 	int backRes = hashInit(&(layer->NeighborsBackTranslation), unAddressHash, NEIGHBORS_BACK_TABLE_SIZE, sizeof(UnIfaceAddr_T),sizeof(ChannelAddr_T));
 	if(FUNC_RESULT_SUCCESS != backRes)
 		return backRes;
 	layer->NeighborsBackTranslation.EqualFunction = compareUnAddrs;
 	layer->NeighborsBackTranslation.KeyFreeFunction = freeUnAddress;
+
 	int nonRes = hashInit(&(layer->NonResolvedNeighbors), unAddressHash, NEIGHBORS_NONRES_TABLE_SIZE, sizeof(UnIfaceAddr_T),sizeof(NonResolvedNeighbor_T));
 	if(FUNC_RESULT_SUCCESS != nonRes)
 		return backRes;
@@ -71,7 +82,9 @@ int neighborsInit(ChannelLayer_T* layer){
 int neighborsTableDeinit(ChannelLayer_T* layer) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
+	int clearRes = hashClear(&(layer->Neighbors));
+	if(FUNC_RESULT_SUCCESS != clearRes)
+		return clearRes;
 	int freeRes = hashFree(&(layer->Neighbors));
 	return freeRes;
 }
@@ -120,14 +133,21 @@ ChannelNeighbor_T* neighborFind(ChannelLayer_T* layer, ChannelAddr_T* address){
 RemoteInterface_T* neighborIfaceFind(ChannelNeighbor_T* neighbor){
 	if(NULL == neighbor)
 		return NULL;
-
+	hashIterator_T iterator = {0};
+	hashIterator(&(neighbor->Interfaces),&iterator);
+	while(!hashIteratorIsLast(&iterator)){
+		RemoteInterface_T* iface = (RemoteInterface_T*)hashIteratorData(&iterator);
+		if(NULL != iface->BridgeInterface && iface->BridgeInterface->Ready)
+			return iface;
+		hashIteratorNext(&iterator);
+	}
 	return NULL;
 }
 RemoteInterface_T* neighborIfaceFindAddr(ChannelNeighbor_T* neighbor, UnIfaceAddr_T* remoteAddress){
 	if(NULL == neighbor)
 		return NULL;
-
-	return NULL;
+	RemoteInterface_T* iface = (RemoteInterface_T*)hashGetPtr(&(neighbor->Interfaces), remoteAddress);
+	return iface;
 }
 int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* remoteAddress, int localSocket){
 	if(NULL == layer)
@@ -149,6 +169,19 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	ChannelNeighbor_T* neighbor = neighborFind(layer, address);
 	if(NULL == neighbor){
 		// add new
+		neighbor = (ChannelNeighbor_T*)malloc(sizeof(ChannelNeighbor_T));
+		if(NULL == neighbor)
+			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+		neighbor->RemoteAddress = *address;
+		//init interfaces store
+		int res = hashInit(&(neighbor->Interfaces),unAddressHash,
+						   NEIGHBORS_INTERFACES_TABLE_SIZE, sizeof(UnIfaceAddr_T),sizeof(RemoteInterface_T));
+		neighbor->Interfaces.EqualFunction = compareUnAddrs;
+		neighbor->Interfaces.KeyFreeFunction = freeUnAddress;
+		if(FUNC_RESULT_SUCCESS != res) {
+			free(neighbor);
+			return res;
+		}
 		isNew = true;
 	}
 	//search interface in neighbor interfaces table
@@ -156,39 +189,91 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	//if not found
 	if(NULL == remoteInterface) {
 		// add interface here
+		remoteInterface = (RemoteInterface_T*) malloc(sizeof(RemoteInterface_T));
 		//copy address
+		unAddressClone(remoteAddress, &(remoteInterface->Address));
+		//add descriptor pointer
+		remoteInterface->BridgeInterface = interfaceFind(layer,localSocket);
 		// add to list
+		hashAdd(&(neighbor->Interfaces),&(remoteInterface->Address),remoteInterface);
+		// add to back translation
+		UnIfaceAddr_T addr = {0};
+		unAddressClone(remoteAddress, &(addr));
+		hashAdd(&(layer->NeighborsBackTranslation),&addr,address);
 		if (isNew) {
 			int addNeighborRes = hashAdd(&(layer->Neighbors), address, neighbor);
-			free(neighbor); // stored in hash table
 			// inform routing
 			notifyRouting(layer,LayerCommandType_LostNeighbor, address);
 		}
+		//free remote
 	}
+	if(isNew)
+		free(neighbor); // stored in hash table
 	return FUNC_RESULT_SUCCESS;
 }
 int neighborRemove(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	RemoteInterface_T refInterface;
-	refInterface.Address = *remoteAddress;
-	int cleanRes = 0;
-	return cleanRes;
+	// get channel address by back translation
+	ChannelAddr_T* address = (ChannelAddr_T*)hashGetPtr(&(layer->NeighborsBackTranslation),remoteAddress);
+	if(NULL == address)
+		return FUNC_RESULT_SUCCESS;
+	ChannelNeighbor_T* neighbor = (ChannelNeighbor_T*)hashGetPtr(&(layer->Neighbors),address);
+	if(NULL == neighbor)
+		return FUNC_RESULT_SUCCESS;
+	// remove from channel neighbor interfaces
+	int removeRemoteRes = hashRemove(&(neighbor->Interfaces), remoteAddress);
+	// if no more - remove channel neighbor
+	if(0 == neighbor->Interfaces.Count){
+		int removeNeighborRes = hashRemove(&(layer->Neighbors),address);
+		// and notify
+		notifyRouting(layer,LayerCommandType_LostNeighbor, address);
+	}
+	// remove from back translation
+	int removeBackRes = hashRemove(&(layer->NeighborsBackTranslation), remoteAddress);
+	return FUNC_RESULT_SUCCESS;
 }
 int neighborsRemoveAssociated(ChannelLayer_T* layer, int localSocket){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	RemoteInterface_T refInterface;
-	refInterface.BridgeInterface = interfaceFind(layer,localSocket);
-	if(NULL == refInterface.BridgeInterface)
+
+	InterfaceDescriptor_T* iface = interfaceFind(layer,localSocket);
+	if(NULL == iface)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int cleanRes = 0;
-	return cleanRes;
+
+	hashIterator_T neighborsIterator = {0};
+	hashIterator(&(layer->Neighbors), &neighborsIterator);
+	while(!hashIteratorIsLast(&neighborsIterator)){
+		ChannelNeighbor_T* neighbor = (ChannelNeighbor_T*)hashIteratorData(&neighborsIterator);
+		//foreach interface
+		hashIterator_T interfaceIterator = {0};
+		hashIterator(&(neighbor->Interfaces), &interfaceIterator);
+		while(!hashIteratorIsLast(&interfaceIterator)){
+			RemoteInterface_T* remote = (RemoteInterface_T*)hashIteratorData(&interfaceIterator);
+			//check socket
+			if(NULL != remote && NULL != remote->BridgeInterface && localSocket == remote->BridgeInterface->Socket)
+			{
+				//remove
+				// remove from channel neighbor interfaces
+				int removeRemoteRes = hashRemove(&(neighbor->Interfaces), &(remote->Address));
+				int removeBackRes = hashRemove(&(layer->NeighborsBackTranslation), &(remote->Address));
+			}
+			hashIteratorNext(&interfaceIterator);
+		}
+		if(0 == neighbor->Interfaces.Count){
+			int removeNeighborRes = hashRemove(&(layer->Neighbors), &neighbor->RemoteAddress);
+			ChannelAddr_T addr = neighbor->RemoteAddress;
+			// and notify
+			notifyRouting(layer,LayerCommandType_LostNeighbor, &addr);
+		}
+		//check for interfaces count
+		hashIteratorNext(&neighborsIterator);
+	}
+
+	return FUNC_RESULT_SUCCESS;
 }
-
-
 
 // non resolved processing
 int neighborNonResAdd(ChannelLayer_T* layer, UnIfaceAddr_T* remoteAddress, int localSocket){

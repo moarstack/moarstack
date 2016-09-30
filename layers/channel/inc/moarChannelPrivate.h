@@ -33,9 +33,10 @@
 #define ROUTING_PROCESSING_RULES_COUNT		2
 #define MESSAGE_QUEUE_SIZE					32
 #define INTERFACES_SIZE						MAX_INTERFACE_COUNT
-#define NEIGHBORS_TABLE_SIZE				151
+#define NEIGHBORS_TABLE_SIZE				151 //numbers? add it to config later
 #define NEIGHBORS_BACK_TABLE_SIZE			151
-#define NEIGHBORS_NONRES_TABLE_SIZE			151
+#define NEIGHBORS_NONRES_TABLE_SIZE			23
+#define NEIGHBORS_INTERFACES_TABLE_SIZE		17
 
 typedef struct {
 	UnIfaceAddr_T 	Address;
@@ -56,7 +57,7 @@ typedef struct {
 	bool Ready;
 	//PackStateIface_T CurrentState;
 	int Socket;
-	InterfaceNeighbor_T* Neighbors;
+	//InterfaceNeighbor_T* Neighbors;
 	// pointer to channel neighbor
 	ChannelMessageEntry_T CurrentMessage;
 } InterfaceDescriptor_T;
@@ -76,7 +77,7 @@ typedef struct{
 typedef struct{
 	ChannelAddr_T 	RemoteAddress;
 	time_t 			LastSeen;
-	LinkedListItem_T Interfaces;
+	hashTable_T 	Interfaces;
 } ChannelNeighbor_T;
 
 

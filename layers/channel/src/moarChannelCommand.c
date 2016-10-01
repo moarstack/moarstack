@@ -50,17 +50,17 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
 
-	InterfaceDescriptor_T* ifaceDesc = (InterfaceDescriptor_T*)malloc(sizeof(InterfaceDescriptor_T));
-	if(NULL == ifaceDesc) {
-		unAddressFree(&(registerMetadata.IfaceAddress));
-		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-	}
-	ifaceDesc->Socket = fd;
-	ifaceDesc->Address = registerMetadata.IfaceAddress;
-	//ifaceDesc->Neighbors = NULL;
-	ifaceDesc->Ready = true;
+//	InterfaceDescriptor_T* ifaceDesc = (InterfaceDescriptor_T*)malloc(sizeof(InterfaceDescriptor_T));
+//	if(NULL == ifaceDesc) {
+//		unAddressFree(&(registerMetadata.IfaceAddress));
+//		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+//	}
+//	ifaceDesc->Socket = fd;
+//	ifaceDesc->Address = registerMetadata.IfaceAddress;
+//	//ifaceDesc->Neighbors = NULL;
+//	ifaceDesc->Ready = true;
 
-	int addRes = interfaceAdd(layer, ifaceDesc);
+	int addRes = interfaceAdd(layer, &(registerMetadata.IfaceAddress), fd);
 
 	// write registration result to interface
 	ChannelRegisterResultMetadata_T resultMetadata;
@@ -74,8 +74,8 @@ int processRegisterInterface(void* layerRef, int fd, LayerCommandStruct_T *comma
 
 	if(FUNC_RESULT_SUCCESS != addRes) {
 		// if can not add interface
-		unAddressFree(&(ifaceDesc->Address));
-		free(ifaceDesc);
+//		unAddressFree(&(ifaceDesc->Address));
+//		free(ifaceDesc);
 		return addRes;
 	}
 	//here interface added  to table

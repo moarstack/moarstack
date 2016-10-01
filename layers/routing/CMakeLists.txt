@@ -15,5 +15,5 @@ include_directories(../shared/inc)
 include_directories(inc)
 
 #add library
-add_library(moar_routing SHARED ${SRC_FILES} src/moarRouteTable.c)
+add_library(moar_routing SHARED ${SRC_FILES})
 target_link_libraries(moar_routing moar_shared)

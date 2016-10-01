@@ -4,65 +4,75 @@
 
 #include "moarRouteTable.h"
 
-bool RouteTableInit(RouteDataTable_T *table, RouteTableSize_T tableSize) {
-    if( NULL == table )
-        return false;
 
-    table->Table = ( RouteDataRecord_T * )malloc( SzRouteDataRecord * tableSize );
+int RouteTableInit(RouteDataTable_T * table, RouteTableSettings_T* settings) {
+    if( NULL == table )
+        return FUNC_RESULT_FAILED_ARGUMENT;
+
+    table->Table = ( RouteDataRecord_T * )malloc( SzRouteDataRecord * settings->TableSize );
 
     if( NULL == table->Table )
-        return false;
+        return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
     table->Count = 0;
-    table->Capacity = tableSize;
+    table->Capacity = settings->TableSize;
     table->LastTimeUpdated = 0;
-    return true;
-
+    table->Settings = settings;
+    return FUNC_RESULT_SUCCESS;
 }
 
-bool RouteTableClear(RouteDataTable_T *table) {
+RouteDataTable_T * RouteTableCreate( RouteTableSettings_T* settings) {
+    RouteDataTable_T * table = ( RouteDataTable_T * )malloc( sizeof( RouteDataTable_T ) );
+    RouteTableInit( table, settings );
+    return table;
+}
+
+int RouteTableClear( RouteDataTable_T * table ) {
     if( NULL == table )
-        return false;
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     free( table->Table );
 
     table->Count = 0;
     table->Capacity = 0;
     table->LastTimeUpdated = 0;
-    return true;
-
+    return FUNC_RESULT_SUCCESS;
 }
 
-bool RouteTableDestroy(RouteDataTable_T *table) {
+int RouteTableDestroy( RouteDataTable_T * table ) {
     if( RouteTableClear( table ) ) {
         free( table );
-        return true;
+        return FUNC_RESULT_SUCCESS;
     }
-    return false;
+    return FUNC_RESULT_FAILED;
 }
 
-bool RouteTableRenew(RouteDataTable_T *table, moarTime_T tick) {
-    RouteTableSize_T	index,
-            count;
-    RouteDataRecord_T	* read,
-            * write;
-    uint32_t			interval;
+int RouteTableRenew( RouteDataTable_T * table, moarTime_T tick ) {
+    moarTimeInterval_T	    renewRate;
+    RouteTableSize_T        index,
+                            count;
+    RouteDataRecord_T	    *read,
+                            *write;
 
-    if( NULL == table )
-        return false;
+    if( NULL == table || NULL == table->Settings )
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     read = write = table->Table;
     count = index = 0;
-    interval = ( uint32_t )( tick - table->LastTimeUpdated );
 
     while( index < table->Count ) {
-        if( read->P < QualityThreshold ){
+        if( read->P < table->Settings->RouteQualityThreshold )
             count++;
-            read = NULL;
-        }
+
         else {
             *write = *read;
-            write->P = ( write->P >> 1 );// - ( RouteChance_T )( interval / ( uint32_t )( write->P ) );
+            renewRate = ( 0 == write->Relay ) ? table->Settings->FinderMarkerRenewRate : table->Settings->RouteRenewRate;
+            if( 0 == renewRate )
+                write->P >>= 1;
+            else if( write->P > renewRate )
+                write->P -= renewRate;
+            else
+                write->P = 0;
             write++;
         }
         read++;
@@ -74,26 +84,26 @@ bool RouteTableRenew(RouteDataTable_T *table, moarTime_T tick) {
     return ( count > 0 );
 }
 
-bool RouteTableAdd(RouteDataTable_T *table, RouteAddr_T relay, RouteAddr_T dest) {
-    if( NULL == table || table->Count >= table->Capacity )
-        return false;
+int RouteTableAdd( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest ) {
+    if( NULL == table || table->Count == table->Capacity )
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     table->Table[ table->Count ].Dest = dest;
     table->Table[ table->Count ].Relay = relay;
-    table->Table[ table->Count ].P = ( ~( RouteChance_T )0 ) >> 1;
+    table->Table[ table->Count ].P = ( 0 == relay ) ? table->Settings->FinderMarkerDefaultMetric : table->Settings->RouteDefaultMetric;
     table->Count++;
     //table->LastTimeUpdated = tick; //add this line! TODO
-    return true;
+    return FUNC_RESULT_SUCCESS;
 }
 
-bool RouteTableDelAll(RouteDataTable_T *table, RouteAddr_T relay, RouteAddr_T dest) {
+int RouteTableDelAll( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest ) {
     RouteTableSize_T	index,
             count;
     RouteDataRecord_T	* read,
             * write;
 
     if( NULL == table )
-        return false;
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     read = write = table->Table;
     count = index = 0;
@@ -115,29 +125,28 @@ bool RouteTableDelAll(RouteDataTable_T *table, RouteAddr_T relay, RouteAddr_T de
     return ( count > 0 );
 }
 
-void RouteTableUpdate(RouteDataRecord_T *row) {
+inline void RouteTableUpdate( RouteDataRecord_T * row ) {
     const RouteChance_T	half = ( ~( RouteChance_T )0 ) >> 1; // this way we find half of maximum value for P assuming it is not negative
     row->P = ( row->P >> 1 ) + half;
     //table->LastTimeUpdated = tick; //add this line! TODO
-
 }
 
-RouteDataRecord_T *RouteTableGetDest(RouteDataTable_T *table, RouteAddr_T relay) {
-    	RouteTableSize_T	index;
-	RouteDataRecord_T	* row,
-						* ret;
-	RouteChance_T		maxP = 0;
+RouteDataRecord_T * RouteTableGetDest( RouteDataTable_T * table, RouteAddr_T relay ) {
+    RouteTableSize_T	index;
+    RouteDataRecord_T	* row,
+            * ret;
+    RouteChance_T		maxP = 0;
 
-	for( ret = NULL, row = table->Table, index = 0; index < table->Count; row++, index++ )
-		if( relay == row->Relay && maxP < row->P ) {
-			ret = row;
-			maxP = row->P;
-		}
+    for( ret = NULL, row = table->Table, index = 0; index < table->Count; row++, index++ )
+        if( relay == row->Relay && maxP < row->P ) {
+            ret = row;
+            maxP = row->P;
+        }
 
-	return ret;
+    return ret;
 }
 
-RouteDataRecord_T *RouteTableGetRelayFirst(RouteDataTable_T *table, RouteAddr_T dest) {
+RouteDataRecord_T * RouteTableGetRelayFirst( RouteDataTable_T * table, RouteAddr_T dest ) {
     RouteTableSize_T	index = 0;
 
     if( NULL != table )
@@ -162,10 +171,9 @@ RouteDataRecord_T * RouteTableGetRelayNext( RouteDataTable_T * table, RouteDataR
             return row;
 
     return NULL;
-
 }
 
-RouteDataRecord_T *RouteTableGetRelayBest(RouteDataTable_T *table, RouteAddr_T dest) {
+RouteDataRecord_T * RouteTableGetRelayBest( RouteDataTable_T * table, RouteAddr_T dest ) {
     RouteDataRecord_T	* row = RouteTableGetRelayFirst( table, dest ),
             * ret = row;
 
@@ -179,7 +187,7 @@ RouteDataRecord_T *RouteTableGetRelayBest(RouteDataTable_T *table, RouteAddr_T d
     return ret;
 }
 
-RouteDataRecord_T *RouteTableGetRecord(RouteDataTable_T *table, RouteAddr_T relay, RouteAddr_T dest) {
+RouteDataRecord_T * RouteTableGetRecord( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest ) {
     RouteTableSize_T	index;
     RouteDataRecord_T	* row;
 
@@ -190,7 +198,7 @@ RouteDataRecord_T *RouteTableGetRecord(RouteDataTable_T *table, RouteAddr_T rela
     return NULL;
 }
 
-bool Bump(RouteDataTable_T *table, RouteAddr_T relay, RouteChance_T newP) {
+int Bump( RouteDataTable_T * table, RouteAddr_T relay, RouteChance_T newP ) {
     RouteTableSize_T	index, count;
     RouteDataRecord_T	* row;
 
@@ -203,23 +211,21 @@ bool Bump(RouteDataTable_T *table, RouteAddr_T relay, RouteChance_T newP) {
     return ( count > 0 );
 }
 
-RouteDataRecord_T *RouteTableRowFirst(RouteDataTable_T *table) {
+inline RouteDataRecord_T * RouteTableRowFirst( RouteDataTable_T * table ) {
     return ( NULL == table || 0 == table->Count ) ? NULL : table->Table;
 }
 
-RouteDataRecord_T *RouteTableRowNext(RouteDataTable_T *table, RouteDataRecord_T *prevRow) {
+inline RouteDataRecord_T * RouteTableRowNext( RouteDataTable_T * table, RouteDataRecord_T * prevRow ) {
     if( NULL == table || 0 == table->Count || NULL == prevRow )
         return NULL;
     else
         return ( ++prevRow >= ( table->Table + table->Count ) ) ? NULL : prevRow;
 }
 
-RouteDataRecord_T *RouteTableRowIndexed(RouteDataTable_T *table, RouteTableSize_T index) {
+inline RouteDataRecord_T * RouteTableRowIndexed( RouteDataTable_T * table, RouteTableSize_T index ) {
     return ( NULL == table || index >= table->Count ) ? NULL : ( table->Table + index );
 }
 
-RouteDataTable_T *RouteTableCreate(RouteTableSize_T tableSize) {
-    RouteDataTable_T * table = ( RouteDataTable_T * )malloc( sizeof( RouteDataTable_T ) );
-    RouteTableInit( table, tableSize );
-    return table;
+inline RouteTableSize_T RouteTableCount( RouteDataTable_T * table ) {
+    return table->Count;
 }

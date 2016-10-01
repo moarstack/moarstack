@@ -125,7 +125,7 @@ int RouteTableDelAll( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T d
     return ( count > 0 );
 }
 
-inline void RouteTableUpdate( RouteDataRecord_T * row ) {
+void RouteTableUpdate( RouteDataRecord_T * row ) {
     const RouteChance_T	half = ( ~( RouteChance_T )0 ) >> 1; // this way we find half of maximum value for P assuming it is not negative
     row->P = ( row->P >> 1 ) + half;
     //table->LastTimeUpdated = tick; //add this line! TODO
@@ -211,21 +211,21 @@ int Bump( RouteDataTable_T * table, RouteAddr_T relay, RouteChance_T newP ) {
     return ( count > 0 );
 }
 
-inline RouteDataRecord_T * RouteTableRowFirst( RouteDataTable_T * table ) {
+RouteDataRecord_T * RouteTableRowFirst( RouteDataTable_T * table ) {
     return ( NULL == table || 0 == table->Count ) ? NULL : table->Table;
 }
 
-inline RouteDataRecord_T * RouteTableRowNext( RouteDataTable_T * table, RouteDataRecord_T * prevRow ) {
+RouteDataRecord_T * RouteTableRowNext( RouteDataTable_T * table, RouteDataRecord_T * prevRow ) {
     if( NULL == table || 0 == table->Count || NULL == prevRow )
         return NULL;
     else
         return ( ++prevRow >= ( table->Table + table->Count ) ) ? NULL : prevRow;
 }
 
-inline RouteDataRecord_T * RouteTableRowIndexed( RouteDataTable_T * table, RouteTableSize_T index ) {
+RouteDataRecord_T * RouteTableRowIndexed( RouteDataTable_T * table, RouteTableSize_T index ) {
     return ( NULL == table || index >= table->Count ) ? NULL : ( table->Table + index );
 }
 
-inline RouteTableSize_T RouteTableCount( RouteDataTable_T * table ) {
+RouteTableSize_T RouteTableCount( RouteDataTable_T * table ) {
     return table->Count;
 }

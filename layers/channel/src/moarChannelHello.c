@@ -3,12 +3,6 @@
 //
 
 #include "moarChannelHello.h"
-#include <funcResults.h>
-#include <moarChannelPrivate.h>
-#include <stdlib.h>
-#include <moarChannel.h>
-#include <moarCommons.h>
-#include <moarChannelNeighbors.h>
 #include <moarChannelMetadata.h>
 
 
@@ -47,14 +41,15 @@ int channelHelloUpdateInterface(ChannelLayer_T* layer){
 	updateCommand.Data = layer->HelloMessage;
 	updateCommand.DataSize = layer->HelloMessageSize;
 	//foreach interface
-	LinkedListItem_T* iterator = NextElement(&(layer->Interfaces));
-	while(NULL != iterator){
-		InterfaceDescriptor_T* interface = (InterfaceDescriptor_T*)iterator->Data;
+	hashIterator_T iterator = {0};
+	hashIterator(&(layer->Interfaces), &iterator);
+	while(!hashIteratorIsLast(&iterator)){
+		InterfaceDescriptor_T* interface = (InterfaceDescriptor_T*)hashIteratorData(&iterator);
 		//send
 		int res = WriteCommand(interface->Socket, &updateCommand);
 		if(FUNC_RESULT_SUCCESS != res)
 			return res;
-		iterator = NextElement(iterator);
+		hashIteratorNext(&iterator);
 	}
 	return FUNC_RESULT_SUCCESS;
 }

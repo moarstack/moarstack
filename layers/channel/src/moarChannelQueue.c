@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "moarChannelQueue.h"
 
-int queueInit(ChannelLayer_T* layer){
+int messageQueueInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = CreateList(&(layer->MessageQueue));

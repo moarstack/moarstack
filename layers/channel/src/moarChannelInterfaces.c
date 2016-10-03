@@ -21,7 +21,7 @@ int freeIfaceDescriptor(void* desc){
 int interfaceInit(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int initRes = hashInit(&(layer->Interfaces),intHash, INTERFACES_SIZE, sizeof(int), sizeof(InterfaceDescriptor_T));
+	int initRes = hashInit(&(layer->Interfaces),intHash, INTERFACES_TABLE_SIZE, sizeof(int), sizeof(InterfaceDescriptor_T));
 	layer->Interfaces.DataFreeFunction = freeIfaceDescriptor;
 	return initRes;
 }
@@ -53,7 +53,6 @@ int interfaceAdd(ChannelLayer_T* layer, UnIfaceAddr_T* address, int socket){
 	int res = hashAdd(&(layer->Interfaces),&socket, &iface);
 	if(FUNC_RESULT_SUCCESS != res)
 		return res;
-	layer->InterfacesCount = layer->Interfaces.Count;
 	return FUNC_RESULT_SUCCESS;
 }
 // remove interface
@@ -63,6 +62,5 @@ int interfaceRemove(ChannelLayer_T* layer, int fd){
 	if(0 >= fd)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int removeRes = hashRemove(&(layer->Interfaces),&fd);
-	layer->InterfacesCount = layer->Interfaces.Count;
 	return removeRes;
 }

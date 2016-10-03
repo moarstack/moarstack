@@ -18,10 +18,7 @@ bool checkEquality(hashEntry_T *entry, hashVal_T hash, void *key, size_t size, e
 	if(value == hash) {
 		// compare key
 		int compare;
-		if(NULL != equal)
-			compare = equal(entry->Key, key, size);
-		else
-			compare = memcmp(entry->Key, key, size);
+		compare = equal(entry->Key, key, size);
 		return (0 == compare);
 	}
 	return false;
@@ -66,9 +63,9 @@ int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t ke
 	table->HashFunction = function;
 	table->StorageSize = storageSize;
 	table->Count = 0;
-	table->EqualFunction = NULL;
-	table->DataFreeFunction = NULL;
-	table->KeyFreeFunction = NULL;
+	table->EqualFunction = memcmp;
+	table->DataFreeFunction = free;
+	table->KeyFreeFunction = free;
 #ifdef HASH_ENABLE_ITERATOR
 	table->Last = NULL;
 #endif
@@ -91,17 +88,8 @@ int hashClear(hashTable_T* table){
 			hashEntry_T* current = table->Table[i];
 			table->Table[i] = current->Next;
 		 	// free memory
-			if(NULL != table->KeyFreeFunction)
-				table->KeyFreeFunction(current->Key);
-			else
-				free(current->Key);
-
-			if(NULL != table->DataFreeFunction)
-				table->DataFreeFunction(current->Data);
-			else
-				free(current->Data);
-//			free(current->Data);
-//			free(current->Key);
+			table->KeyFreeFunction(current->Key);
+			table->DataFreeFunction(current->Data);
 			free(current);
 		}
 	}
@@ -180,15 +168,8 @@ int hashRemoveExact(hashTable_T* table, void* key, void* value){
 			table->Last = cEntry->ListPrev;
 #endif
 		//remove
-		if(NULL != table->KeyFreeFunction)
-			table->KeyFreeFunction(cEntry->Key);
-		else
-			free(cEntry->Key);
-
-		if(NULL != table->DataFreeFunction)
-			table->DataFreeFunction(cEntry->Data);
-		else
-			free(cEntry->Data);
+		table->KeyFreeFunction(cEntry->Key);
+		table->DataFreeFunction(cEntry->Data);
 
 		*entry = cEntry->Next;
 		free(cEntry);

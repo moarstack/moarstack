@@ -14,8 +14,8 @@ typedef uint32_t hashVal_T;
 
 // hash function proto
 typedef hashVal_T (* hashFunc_T)(void* data, size_t size);
-typedef int (* equalFunc_T)(void* key1, void* key2, size_t size);
-typedef int (* freeFunc_T)(void* data);
+typedef int (* equalFunc_T)(const void* key1, const void* key2, size_t size);
+typedef void (* freeFunc_T)(void* data);
 
 typedef struct hashEntry_T hashEntry_T;
 

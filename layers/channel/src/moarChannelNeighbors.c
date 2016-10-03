@@ -3,15 +3,9 @@
 //
 
 #include <moarChannelPrivate.h>
-#include <funcResults.h>
-#include <stdlib.h>
-#include <memory.h>
 #include <moarChannelInterfaces.h>
-#include <moarCommons.h>
-#include <moarChannelRouting.h>
 #include <moarChannelHello.h>
 #include <moarChannelNeighbors.h>
-#include <hashTable.h>
 
 int notifyRouting(ChannelLayer_T* layer, LayerCommandType_T type, ChannelAddr_T* address){
 	if(NULL == layer)
@@ -32,29 +26,26 @@ int notifyRouting(ChannelLayer_T* layer, LayerCommandType_T type, ChannelAddr_T*
 	return commandRes;
 }
 
-int compareUnAddrs(void* key1, void* key2, size_t size){
+int compareUnAddrs(const void* key1, const void* key2, size_t size){
 	if(NULL == key1 || NULL == key2 || 0 == size)
 		return 1;
 	return unAddressCompare(key1, key2)?0:1;
 }
-int freeUnAddress(void* addr){
+void freeUnAddress(void* addr){
 	UnIfaceAddr_T* address = (UnIfaceAddr_T*)addr;
-	int freeRes = unAddressFree(address);
+	unAddressFree(address);
 	free(address);
-	return freeRes;
 }
-int freeNonResolved(void* ngbr){
+void freeNonResolved(void* ngbr){
 	NonResolvedNeighbor_T* neighbor = (NonResolvedNeighbor_T*)ngbr;
-	int freeRes = unAddressFree(&(neighbor->Address));
+	unAddressFree(&(neighbor->Address));
 	free(neighbor);
-	return freeRes;
 }
-int freeChannelNeighbor(void* ngbr){
+void freeChannelNeighbor(void* ngbr){
 	ChannelNeighbor_T* neighbor = (ChannelNeighbor_T*)ngbr;
 	hashClear(&(neighbor->Interfaces));
 	hashFree(&(neighbor->Interfaces));
 	free(neighbor);
-	return 0;
 }
 
 int neighborsInit(ChannelLayer_T* layer){

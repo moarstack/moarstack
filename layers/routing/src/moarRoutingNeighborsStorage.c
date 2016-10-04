@@ -17,7 +17,7 @@ int storageInit(RoutingNeighborsStorage_T* storage){
 int storageDeinit(RoutingNeighborsStorage_T* storage){
 	if(NULL == storage)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int clearRes = hashClear(storage);
+	int clearRes = hashClear(&(storage->Storage));
 	if(FUNC_RESULT_SUCCESS != clearRes)
 		return clearRes;
 	storage->Count = storage->Storage.Count;

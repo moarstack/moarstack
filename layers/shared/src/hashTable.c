@@ -7,7 +7,7 @@
 #include <memory.h>
 #include <stdio.h>
 
-bool checkEquality(hashEntry_T *entry, hashVal_T hash, void *key, size_t size){
+bool checkEquality(hashEntry_T *entry, hashVal_T hash, void *key, size_t size, equalFunc_T equal){
 	if(NULL == entry)
 		return false;
 	if(NULL == key)
@@ -17,7 +17,8 @@ bool checkEquality(hashEntry_T *entry, hashVal_T hash, void *key, size_t size){
 	hashVal_T value = entry->HashValue;
 	if(value == hash) {
 		// compare key
-		int compare = memcmp(entry->Key, key, size);
+		int compare;
+		compare = equal(entry->Key, key, size);
 		return (0 == compare);
 	}
 	return false;
@@ -32,7 +33,7 @@ hashEntry_T** searchEntry(hashTable_T* table, void* key, void* data){
 	hashEntry_T** entry = table->Table+bin;
 	while(NULL != *entry){
 		hashEntry_T* cEntry = *entry;
-		if(checkEquality(cEntry, hash, key, table->KeySize)){
+		if(checkEquality(cEntry, hash, key, table->KeySize, table->EqualFunction)){
 			if(NULL != data) {
 				int cmp = memcmp(cEntry->Data, data, table->DataSize);
 				if(0 == cmp)
@@ -62,7 +63,9 @@ int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t ke
 	table->HashFunction = function;
 	table->StorageSize = storageSize;
 	table->Count = 0;
-
+	table->EqualFunction = memcmp;
+	table->DataFreeFunction = free;
+	table->KeyFreeFunction = free;
 #ifdef HASH_ENABLE_ITERATOR
 	table->Last = NULL;
 #endif
@@ -85,8 +88,8 @@ int hashClear(hashTable_T* table){
 			hashEntry_T* current = table->Table[i];
 			table->Table[i] = current->Next;
 		 	// free memory
-			free(current->Data);
-			free(current->Key);
+			table->KeyFreeFunction(current->Key);
+			table->DataFreeFunction(current->Data);
 			free(current);
 		}
 	}
@@ -165,8 +168,9 @@ int hashRemoveExact(hashTable_T* table, void* key, void* value){
 			table->Last = cEntry->ListPrev;
 #endif
 		//remove
-		free(cEntry->Key);
-		free(cEntry->Data);
+		table->KeyFreeFunction(cEntry->Key);
+		table->DataFreeFunction(cEntry->Data);
+
 		*entry = cEntry->Next;
 		free(cEntry);
 		table->Count--;
@@ -241,6 +245,7 @@ int hashGetFirst(hashTable_T* table, void* key, hashIterator_T* iterator){
 		iterator->Compare = true;
 		iterator->KeySize = table->KeySize;
 		iterator->Key = malloc(iterator->KeySize);
+		iterator->EqualFunction = table->EqualFunction;
 		if (NULL == iterator->Key)
 			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 		memcpy(iterator->Key, key, iterator->KeySize);
@@ -262,6 +267,7 @@ int hashIterator(hashTable_T* table, hashIterator_T* iterator){
 	iterator->Key = NULL;
 	iterator->KeySize = 0;
 	iterator->Item = table->Last;
+	iterator->EqualFunction = table->EqualFunction;
 	iterator->NextItem = iterator->Item!=NULL ? iterator->Item->ListPrev : NULL;
 	return FUNC_RESULT_SUCCESS;
 }
@@ -280,7 +286,8 @@ int hashIteratorNext(hashIterator_T* item){
 		do {
 			item->Item = item->NextItem;
 			item->NextItem = item->NextItem!=NULL ? item->NextItem->Next : NULL;
-		}while(!hashIteratorIsLast(item) && !checkEquality(item->Item, item->HashValue, item->Key, item->KeySize));
+		}while(!hashIteratorIsLast(item) &&
+				!checkEquality(item->Item, item->HashValue, item->Key, item->KeySize, item->EqualFunction));
 		return FUNC_RESULT_SUCCESS;
 
 	}

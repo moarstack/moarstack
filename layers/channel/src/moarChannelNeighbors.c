@@ -189,10 +189,13 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 			// add to back translation
 			UnIfaceAddr_T addr = {0};
 			int internalCloneRes = unAddressClone(remoteAddress, &(addr));
+
 			if(FUNC_RESULT_SUCCESS == cloneRes && FUNC_RESULT_SUCCESS == internalCloneRes) {
+				// add to back translation
 				int backAddRes = hashAdd(&(layer->NeighborsBackTranslation), &addr, address);
 				// add to list
 				int addRes = hashAdd(&(neighbor->Interfaces), &(remoteInterface->Address), remoteInterface);
+				//remove if failed
 				if(FUNC_RESULT_SUCCESS != addRes || FUNC_RESULT_SUCCESS != backAddRes){
 					hashRemove(&(layer->NeighborsBackTranslation), &addr);
 					hashRemove(&(neighbor->Interfaces), &(remoteInterface->Address));

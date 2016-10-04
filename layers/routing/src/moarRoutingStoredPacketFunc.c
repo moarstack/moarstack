@@ -6,6 +6,7 @@
 #include <moarRoutingPrivate.h>
 #include <moarChannelRouting.h>
 #include <moarRoutingStoredPacket.h>
+#include <moarRoutingStoredPacketFunc.h>
 #include <funcResults.h>
 #include <stdlib.h>
 #include <memory.h>

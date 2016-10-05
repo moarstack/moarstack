@@ -9,6 +9,7 @@
 #include <memory.h>
 #include <moarRoutingCommand.h>
 #include <moarRoutingPacketStorage.h>
+#include <moarRoutingStoredPacket.h>
 
 
 int initEpoll(RoutingLayer_T* layer){
@@ -71,6 +72,21 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	return FUNC_RESULT_SUCCESS;
 }
 
+int updateEpollTimeout(RoutingLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	RouteStoredPacket_T* pack = psGetTop(&(layer->PacketStorage));
+	moarTimeInterval_T interval = EPOLL_TIMEOUT;
+	if(NULL != pack){
+		moarTime_T nextProcessing = pack->NextProcessing;
+		interval = timeGetDifference(nextProcessing, timeGetCurrent());
+		if(interval < 0)
+			interval = 0;
+	}
+	layer->EpollTimeout = (int)interval;
+	return FUNC_RESULT_SUCCESS;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	RoutingLayer_T layer = {0};
 	int initRes = routingInit(&layer, arg);
@@ -116,6 +132,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		// try to process message queue
 		// calculate optimal sleep time
 		// change pool timeout
+		updateEpollTimeout(&layer);
 	}
 	return NULL;
 }

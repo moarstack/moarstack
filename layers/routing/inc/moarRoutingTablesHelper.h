@@ -9,11 +9,11 @@
 #include <moarRouting.h>
 #include <moarRoutingPrivate.h>
 
-int helperAddRoute(RouteAddr_T* dest, RouteAddr_T* relay);
-int helperAddNeighbor(ChannelAddr_T* address);
-int helperRemoveRoute(RouteAddr_T* dest, RouteAddr_T* relay);
-int helperRemoveNeighbor(ChannelAddr_T* address);
-int helperUpdateRoute();
-int helperUpdateNeighbor();
+int helperAddRoute(RoutingLayer_T* layer, RouteAddr_T* dest, RouteAddr_T* relay);
+int helperAddNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address);
+int helperRemoveRoute(RoutingLayer_T* layer, RouteAddr_T* dest, RouteAddr_T* relay);
+int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address);
+int helperUpdateRoute(RoutingLayer_T* layer);
+int helperUpdateNeighbor(RoutingLayer_T* layer);
 
 #endif //MOARSTACK_MOARROUTINGTABLESHANDLER_H

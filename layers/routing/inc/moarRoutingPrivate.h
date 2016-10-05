@@ -9,6 +9,7 @@
 #include <moarChannelRouting.h>
 #include <moarRoutingPresentation.h>
 #include <sys/epoll.h>
+#include <moarRoutingPacketStorage.h>
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
@@ -29,6 +30,7 @@ typedef struct{
 	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
 	RouteAddr_T				LocalAddress;
+	PacketStorage_T			PacketStorage;
 } RoutingLayer_T;
 
 

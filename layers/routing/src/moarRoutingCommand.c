@@ -7,6 +7,8 @@
 #include <moarRoutingCommand.h>
 #include <moarRoutingStoredPacket.h>
 #include <moarCommons.h>
+#include <moarRoutingPacketStorage.h>
+#include <moarRoutingStoredPacketFunc.h>
 
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
@@ -17,7 +19,16 @@ int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RoutingLayer_T* layer = (RoutingLayer_T*)layerRef;
 	//logic here
-	return FUNC_RESULT_SUCCESS;
+	RouteStoredPacket_T packet = {0};
+	int prepareRes = prepareReceivedPacket(&packet, command->MetaData, command->Data, command->DataSize);
+	if(FUNC_RESULT_SUCCESS != prepareRes)
+		return prepareRes;
+
+	packet.NextProcessing = timeGetCurrent();
+	int storeRes = psAdd(&(layer->PacketStorage), &packet);
+	if(FUNC_RESULT_SUCCESS != storeRes)
+		clearStoredPacket(&packet);
+	return storeRes;
 }
 
 int processMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
@@ -79,7 +90,10 @@ int processSendCommand( void * layerRef, int fd, LayerCommandStruct_T * command 
 	layer = ( RoutingLayer_T * )layerRef;
 	result = prepareSentPacket( &storedPacket, command->MetaData, command->Data, command->DataSize );
 
-	// some logic here: informing presentation or adding to packet store TODO implement
+	storedPacket.NextProcessing = timeGetCurrent();
+	int storeRes = psAdd(&(layer->PacketStorage), &storedPacket);
+	if(FUNC_RESULT_SUCCESS != storeRes)
+		clearStoredPacket(&storedPacket);
 
 	return result;
 }

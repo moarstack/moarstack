@@ -4,14 +4,8 @@
 
 #include "moarRoutingPacketStorage.h"
 #include <funcResults.h>
-#include <hashFunc.h>
-#include <moarMessageId.h>
-#include <moarRoutingMessageId.h>
-#include <moarRoutingPacketStorage.h>
 #include <memory.h>
 #include <moarRoutingStoredPacket.h>
-#include <priorityQueue.h>
-#include <hashTable.h>
 
 int timeCompareFunction(void* k1, void* k2, size_t size){
 	if(k1 == NULL)
@@ -171,6 +165,7 @@ int psRemove(PacketStorage_T* storage, RouteStoredPacket_T* packet){
 	hashRemoveExact(&(storage->Destinations), &(allocatedPack->Destination), &allocatedPack);
 	hashRemove(&(storage->MessageIds), &(allocatedPack->InternalId));
 	hashRemove(&(storage->RoutingMessageIds), &(allocatedPack->MessageId));
+	free(allocatedPack->Payload); //todo confirm that is bug or feature
 	free(allocatedPack);
 	storage->Count--;
 	//

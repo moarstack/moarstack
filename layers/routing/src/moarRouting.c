@@ -8,6 +8,7 @@
 #include <funcResults.h>
 #include <memory.h>
 #include <moarRoutingCommand.h>
+#include <moarRoutingPacketStorage.h>
 
 
 int initEpoll(RoutingLayer_T* layer){
@@ -47,6 +48,8 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
+	// init packet storege
+	int initRes = psInit(&layer->PacketStorage);
 	//setup socket to channel
 	if(params->DownSocketHandler <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;

@@ -54,6 +54,10 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
 	// init packet storege
 	int initRes = psInit(&layer->PacketStorage);
+	if(FUNC_RESULT_SUCCESS != initRes)
+		return initRes;
+	//init neighbors storage
+	// TODO init routing table
 	//setup socket to channel
 	if(params->DownSocketHandler <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -72,6 +76,18 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	//again
 	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
 	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
+	return FUNC_RESULT_SUCCESS;
+}
+int routingDeinit(RoutingLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int initRes = psDeinit(&layer->PacketStorage);
+	if(FUNC_RESULT_SUCCESS != initRes)
+		return initRes;
+	//init neighbors storage
+	// TODO init routing table
+	//setup socket to channel
+
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -137,5 +153,6 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		// change pool timeout
 		updateEpollTimeout(&layer);
 	}
+	routingDeinit(&layer);
 	return NULL;
 }

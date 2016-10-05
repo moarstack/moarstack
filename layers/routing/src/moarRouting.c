@@ -10,6 +10,7 @@
 #include <moarRoutingCommand.h>
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingStoredPacket.h>
+#include <moarRoutingNeighborsStorage.h>
 
 
 // инициализация работы с Epoll - прополка сокетов
@@ -57,6 +58,9 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	if(FUNC_RESULT_SUCCESS != initRes)
 		return initRes;
 	//init neighbors storage
+	int neighborsInitRes = storageInit(&(layer->NeighborsStorage));
+	if(FUNC_RESULT_SUCCESS != neighborsInitRes)
+		return neighborsInitRes;
 	// TODO init routing table
 	//setup socket to channel
 	if(params->DownSocketHandler <= 0)
@@ -81,13 +85,14 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 int routingDeinit(RoutingLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int initRes = psDeinit(&layer->PacketStorage);
-	if(FUNC_RESULT_SUCCESS != initRes)
-		return initRes;
-	//init neighbors storage
-	// TODO init routing table
-	//setup socket to channel
-
+	int deinitRes = psDeinit(&layer->PacketStorage);
+	if(FUNC_RESULT_SUCCESS != deinitRes)
+		return deinitRes;
+	// deinit neighbors storage
+	int neighborsDeinitRes = storageDeinit(&(layer->NeighborsStorage));
+	if(FUNC_RESULT_SUCCESS != neighborsDeinitRes)
+		return neighborsDeinitRes;
+	// TODO deinit routing table
 	return FUNC_RESULT_SUCCESS;
 }
 

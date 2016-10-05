@@ -38,6 +38,7 @@ typedef struct {
 	MessageId_T Id;
 	PackStateChannel_T State;
 	SendTrys_T SentTrys;
+	ChannelAddr_T NeighborAddress;
 } ChannelMessageStateMetadata_T;
 
 typedef struct {

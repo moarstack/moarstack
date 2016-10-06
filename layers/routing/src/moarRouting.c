@@ -11,6 +11,7 @@
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingNeighborsStorage.h>
+#include <moarRoutingPacketProcessing.h>
 #include <moarRouteTable.h>
 
 
@@ -167,6 +168,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
+		int res = processPacketStorage(&layer);
 		//timeout | end of command processing
 		// if need to send probes
 		// add probe to queue | send probe to channel layer

@@ -21,7 +21,10 @@ typedef ChannelAddr_T RouteAddr_T;
 
 typedef enum{
 	RoutePackType_Data,
-	RoutePackType_Service,
+	RoutePackType_Ack,
+	RoutePackType_FinderAck,
+	RoutePackType_Finder,
+	RoutePackType_Probe,
 }RoutePackType_T;
 
 typedef struct{

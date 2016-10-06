@@ -9,6 +9,7 @@
 #include <moarCommons.h>
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingStoredPacketFunc.h>
+#include <moarChannelRouting.h>
 
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
@@ -39,7 +40,30 @@ int processMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RoutingLayer_T* layer = (RoutingLayer_T*)layerRef;
+	ChannelMessageStateMetadata_T* metadata = (ChannelMessageStateMetadata_T*)command->MetaData;
 	//logic here
+	RouteStoredPacket_T* pack = psGetTop(&(layer->PacketStorage));
+	if(NULL != pack) {
+		// todo review logic of neighbors/routetable update not send
+		switch (metadata->State) {
+			case PackStateChannel_Sent:
+				// add timeout of ack waiting
+				pack->State = StoredPackState_WaitAck;
+				// change state
+				pack->NextProcessing = timeAddInterval(timeGetCurrent(), ACK_WAITING_TIMEOUT); // todo calculate timeout from stats
+				break;
+			case PackStateChannel_NotSent:
+			case PackStateChannel_UnknownDest:
+				// set to processing
+				pack->State = StoredPackState_InProcessing;
+				// set next processing to current
+				pack->NextProcessing = timeGetCurrent();
+				break;
+			default:
+				return FUNC_RESULT_FAILED;
+		}
+		int updateRes = psUpdateTime(&(layer->PacketStorage), pack);
+	}
 	return FUNC_RESULT_SUCCESS;
 }
 

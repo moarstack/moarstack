@@ -7,6 +7,88 @@
 #include <moarRoutingPrivate.h>
 #include "moarRoutingPacketProcessing.h"
 
+int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (RoutePackType_Data != packet->PackType)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = FUNC_RESULT_FAILED;
+	// if destination
+	//// forward up
+	//// create ack
+	//// add ack with processing state
+	//// dispose packet
+	// else
+	//// change state to processing
+	return res;
+}
+int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (RoutePackType_Ack != packet->PackType)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = FUNC_RESULT_FAILED;
+	// if destination
+	//// forward up event
+	//// dispose packet
+	// else
+	//// change state to processing
+	return res;
+}
+int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (RoutePackType_FinderAck != packet->PackType)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = FUNC_RESULT_FAILED;
+	// process content
+	// if destination
+	//// dispose packet
+	// else
+	//// create new packet
+	//// add with processing state
+	return res;
+}
+int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (RoutePackType_Finder != packet->PackType)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = FUNC_RESULT_FAILED;
+	// process content
+	// if destination
+	//// create finder ack
+	//// add finder ack with procesing state
+	//// dispose packet
+	// else
+	//// create new packet
+	//// try to send
+	// also multiple stage finders process here
+	return res;
+}
+int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
+	if (NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (NULL == packet)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if (RoutePackType_Probe != packet->PackType)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = FUNC_RESULT_FAILED;
+	// update tables
+	// create new probe
+	// send probe
+	// dispose packet
+	return res;
+}
+
 int processReceivedPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -18,48 +100,22 @@ int processReceivedPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	int res = FUNC_RESULT_FAILED;
 	switch (packet->PackType) {
 		case RoutePackType_Data:
-			// if destination
-			//// forward up
-			//// create ack
-			//// add ack with processing state
-			//// dispose packet
-			// else
-			//// change state to processing
+			res = processReceivedDataPacket(layer, packet);
 			break;
 		case RoutePackType_Ack:
-			// if destination
-			//// forward up event
-			//// dispose packet
-			// else
-			//// change state to processing
+			res = processReceivedAckPacket(layer, packet);
 			break;
 		case RoutePackType_Finder:
-			// process content
-			// if destination
-			//// create finder ack
-			//// add finder ack with procesing state
-			//// dispose packet
-			// else
-			//// create new packet
-			//// try to send
-			// also multiple stage finders process here
+			res = processReceivedFinderPacket(layer, packet);
 			break;
 		case RoutePackType_FinderAck:
-			// process content
-			// if destination
-			//// dispose packet
-			// else
-			//// create new packet
-			//// add with processing state
+			res = processReceivedFinderAckPacket(layer, packet);
 			break;
 		case RoutePackType_Probe:
-			// update tables
-			// create new probe
-			// send probe
-			// dispose packet
+			res = processReceivedProbePacket(layer, packet);
 			break;
 		default:
-			res = FUNC_RESULT_FAILED;
+			res = FUNC_RESULT_FAILED_ARGUMENT;
 	}
 	return res;
 }
@@ -119,6 +175,7 @@ int processDisposedPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	res = psRemove(&layer->PacketStorage,packet);
 	return res;
 }
+
 int processPacketStorage(RoutingLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;

@@ -5,6 +5,8 @@
 #include <funcResults.h>
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingPrivate.h>
+#include <memory.h>
+#include <moarRoutingStoredPacketFunc.h>
 #include "moarRoutingPacketProcessing.h"
 
 int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
@@ -16,12 +18,18 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
 	// if destination
-	//// forward up
-	//// create ack
-	//// add ack with processing state
-	//// dispose packet
-	// else
-	//// change state to processing
+	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
+		//// forward up
+		res = sendPacketToPresentation(layer, packet);
+		//// todo create ack
+		//// todo add ack with processing state
+		//// dispose packet
+		psRemove(&layer->PacketStorage, packet);
+	} else {// else
+		//// change state to processing
+		packet->State = StoredPackState_InProcessing;
+		res = FUNC_RESULT_SUCCESS;
+	}
 	return res;
 }
 int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {

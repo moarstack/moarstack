@@ -35,7 +35,7 @@ typedef struct{
 	MessageId_T			InternalId;
 	RoutingMessageId_T 	MessageId;
 	// ttl/htl
-	// trys left
+	int 				TrysLeft;
 }RouteStoredPacket_T;
 
 #endif //MOARSTACK_MOARROUTINGPACKETMETADATA_H

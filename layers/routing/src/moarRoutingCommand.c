@@ -126,7 +126,7 @@ int processSendCommand( void * layerRef, int fd, LayerCommandStruct_T * command 
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	layer = ( RoutingLayer_T * )layerRef;
-	result = prepareSentPacket( &storedPacket, command->MetaData, command->Data, command->DataSize );
+	result = prepareSentPacket(layer, &storedPacket, command->MetaData, command->Data, command->DataSize );
 
 	storedPacket.NextProcessing = timeGetCurrent();
 	int storeRes = psAdd(&(layer->PacketStorage), &storedPacket);

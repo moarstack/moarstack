@@ -138,15 +138,16 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	// additional
 	packet->NextProcessing = timeGetCurrent();
 	packet->State = StoredPackState_Received;
+	packet->TrysLeft = DEFAULT_ROUTE_TRYS;
 	// TODO add metrics here
 	return FUNC_RESULT_SUCCESS;
 }
 
-// обработка пакета, упавшего сверху
-int prepareSentPacket( RouteStoredPacket_T * packet, PresentSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
+int prepareSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T * packet, PresentSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
+
 	int	result;
 
-	if( NULL == packet || NULL == metadata || NULL == data || 0 == dataSize )
+	if( NULL == packet || NULL == metadata || NULL == data || 0 == dataSize || NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	memset( packet, 0, sizeof( RouteStoredPacket_T ) );
@@ -167,7 +168,8 @@ int prepareSentPacket( RouteStoredPacket_T * packet, PresentSendMetadata_T * met
 	packet->Destination = metadata->Destination;
 	packet->InternalId = metadata->Id;
 	packet->State = StoredPackState_Received; // received (=got) by routing from its input
-		// no Source due to no way to find out own address (yet) TODO implement
+	packet->TrysLeft = DEFAULT_ROUTE_TRYS;
+	packet->Source = layer->LocalAddress;
 		// no LastHop due to current hop being first
 		// no NextHop because its routing work to know such things
 

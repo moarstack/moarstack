@@ -10,6 +10,22 @@
 #include <moarCommons.h>
 #include "moarRoutingPacketProcessing.h"
 
+int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	if(NULL == id)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	RouteMessageStateMetadata_T metadata = {0};
+	metadata.Id = *id;
+	metadata.State = state;
+	LayerCommandStruct_T command = {0};
+	command.Command = LayerCommandType_MessageState;
+	command.MetaData = &metadata;
+	command.MetaSize = sizeof(metadata);
+	return WriteCommand(layer->PresentationSocket, &command);
+}
+
 int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -45,16 +61,7 @@ int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet)
 	// if destination
 	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
 		//// forward up event
-		{
-			RouteMessageStateMetadata_T metadata = {0};
-			metadata.Id = packet->InternalId;
-			metadata.State = PackStateRoute_Sent;
-			LayerCommandStruct_T command = {0};
-			command.Command = LayerCommandType_MessageState;
-			command.MetaData = &metadata;
-			command.MetaSize = sizeof(metadata);
-			res = WriteCommand(layer->PresentationSocket, &command);
-		}
+		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent);
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		//res = FUNC_RESULT_SUCCESS;
@@ -82,7 +89,7 @@ int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* p
 		//// todo add with processing state
 	}
 	//// dispose packet
-	psRemove(&layer->PacketStorage, packet);
+	res = psRemove(&layer->PacketStorage, packet);
 	return res;
 }
 int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
@@ -104,7 +111,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 		// also multiple stage finders process here
 	}
 	// dispose packet
-	psRemove(&layer->PacketStorage, packet);
+	res = psRemove(&layer->PacketStorage, packet);
 	return res;
 }
 int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
@@ -161,8 +168,17 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	int res = FUNC_RESULT_FAILED;
 	if(StoredPackState_InProcessing != packet->State)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	packet->TrysLeft--;
 	// if no trys left
-	//// dispose packet
+	if(packet->TrysLeft<=0){
+		if(RoutePackType_Data == packet->PackType  && 0 == memcmp(&layer->LocalAddress, &packet->Source, sizeof(RouteAddr_T))) {
+			//// notify
+			notifyPresentation(layer, &packet->InternalId, PackStateRoute_NotSent);
+		}
+		//// dispose packet
+		res = psRemove(&layer->PacketStorage, packet);
+		return res;
+	}
 	// try to find route || neighbor
 	// if found
 	//// send to relay

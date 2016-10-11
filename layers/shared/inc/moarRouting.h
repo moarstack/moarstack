@@ -37,8 +37,9 @@ typedef struct{
 #define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
 
 __BEGIN_DECLS
-bool routeAddrComparePtr(RouteAddr_T* first, RouteAddr_T* second);
-bool routeAddrCompare(RouteAddr_T first, RouteAddr_T second);
+extern bool routeAddrComparePtr(RouteAddr_T* first, RouteAddr_T* second);
+
 __END_DECLS
+#define routeAddrCompare(first, second) routeAddrComparePtr(&(first),&(second))
 
 #endif //MOARSTACK_MOARROUTING_H

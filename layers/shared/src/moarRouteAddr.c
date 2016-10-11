@@ -10,7 +10,3 @@ bool routeAddrComparePtr(RouteAddr_T* first, RouteAddr_T* second){
 	int res = memcmp(first, second, sizeof(RouteAddr_T));
 	return 0==res;
 }
-
-bool routeAddrCompare(RouteAddr_T first, RouteAddr_T second){
-	return routeAddrComparePtr(&first, &second);
-}

@@ -3,6 +3,7 @@
 //
 
 #include "moarRouteTable.h"
+#include <moarRouting.h>
 
 const RouteAddr_T zeroAddress = {0};
 

@@ -13,6 +13,7 @@
 #include <moarCommons.h>
 
 
+// отчистка пакета
 int clearStoredPacket(RouteStoredPacket_T* packet){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -22,6 +23,8 @@ int clearStoredPacket(RouteStoredPacket_T* packet){
 	packet->State = StoredPackState_Disposed;
 	return FUNC_RESULT_SUCCESS;
 }
+
+// убийство пакета
 int disposeStoredPacket(RouteStoredPacket_T** packet){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -33,6 +36,7 @@ int disposeStoredPacket(RouteStoredPacket_T** packet){
 	return res;
 }
 
+// отправка пакета вниз
 int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -74,6 +78,7 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	return sendRes;
 }
 
+// отправка наверх
 int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	int						result;
 	LayerCommandStruct_T	command = { 0 };
@@ -97,7 +102,7 @@ int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 	return result;
 }
 
-
+// обработка принятого снизу пакета
 int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
 	if(NULL == packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -137,6 +142,7 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	return FUNC_RESULT_SUCCESS;
 }
 
+// обработка пакета, упавшего сверху
 int prepareSentPacket( RouteStoredPacket_T * packet, PresentSendMetadata_T * metadata, void * data, PayloadSize_T dataSize ) {
 	int	result;
 

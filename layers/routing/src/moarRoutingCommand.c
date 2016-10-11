@@ -11,6 +11,7 @@
 #include <moarRoutingStoredPacketFunc.h>
 #include <moarChannelRouting.h>
 
+// прилетело сообщение снизу
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -32,6 +33,7 @@ int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command)
 	return storeRes;
 }
 
+// состояние сообщения(отправлено/не отправлено)
 int processMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -67,6 +69,7 @@ int processMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	return FUNC_RESULT_SUCCESS;
 }
 
+// новый сосед появился
 int processNewNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -79,6 +82,7 @@ int processNewNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* comm
 	return FUNC_RESULT_SUCCESS;
 }
 
+// сосед пропал
 int processLostNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -91,6 +95,7 @@ int processLostNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	return FUNC_RESULT_SUCCESS;
 }
 
+// сосед изменился
 int processUpdateNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 	if(NULL == layerRef)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -103,6 +108,7 @@ int processUpdateNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* c
 	return FUNC_RESULT_SUCCESS;
 }
 
+// обработка команды "послать" от верхнего уровня
 int processSendCommand( void * layerRef, int fd, LayerCommandStruct_T * command ) {
 	int						result;
 	RoutingLayer_T			* layer;

@@ -4,6 +4,7 @@
 
 #include "moarRouteTable.h"
 
+const RouteAddr_T zeroAddress = {0};
 
 int RouteTableInit(RouteDataTable_T * table, RouteTableSettings_T* settings) {
     if( NULL == table )
@@ -66,7 +67,7 @@ int RouteTableRenew( RouteDataTable_T * table, moarTime_T tick ) {
 
         else {
             *write = *read;
-            renewRate = ( 0 == write->Relay ) ? table->Settings->FinderMarkerRenewRate : table->Settings->RouteRenewRate;
+            renewRate = ( routeAddrCompare(write->Relay,zeroAddress) ) ? table->Settings->FinderMarkerRenewRate : table->Settings->RouteRenewRate;
             if( 0 == renewRate )
                 write->P >>= 1;
             else if( write->P > renewRate )
@@ -90,7 +91,7 @@ int RouteTableAdd( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest
 
     table->Table[ table->Count ].Dest = dest;
     table->Table[ table->Count ].Relay = relay;
-    table->Table[ table->Count ].P = ( 0 == relay ) ? table->Settings->FinderMarkerDefaultMetric : table->Settings->RouteDefaultMetric;
+    table->Table[ table->Count ].P = ( routeAddrCompare(relay,zeroAddress) ) ? table->Settings->FinderMarkerDefaultMetric : table->Settings->RouteDefaultMetric;
     table->Count++;
     //table->LastTimeUpdated = tick; //add this line! TODO
     return FUNC_RESULT_SUCCESS;
@@ -109,7 +110,7 @@ int RouteTableDelAll( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T d
     count = index = 0;
 
     while( index < table->Count ) {
-        if( read->Relay == relay && read->Dest == dest )
+        if( routeAddrCompare(read->Relay, relay) && routeAddrCompare(read->Dest, dest) )
             count++;
 
         else {
@@ -138,7 +139,7 @@ RouteDataRecord_T * RouteTableGetDest( RouteDataTable_T * table, RouteAddr_T rel
     RouteChance_T		maxP = 0;
 
     for( ret = NULL, row = table->Table, index = 0; index < table->Count; row++, index++ )
-        if( relay == row->Relay && maxP < row->P ) {
+        if( routeAddrCompare(relay, row->Relay) && maxP < row->P ) {
             ret = row;
             maxP = row->P;
         }
@@ -151,7 +152,7 @@ RouteDataRecord_T * RouteTableGetRelayFirst( RouteDataTable_T * table, RouteAddr
 
     if( NULL != table )
         while( index < table->Count )
-            if( table->Table[ index ].Dest != dest )
+            if( !routeAddrCompare(table->Table[ index ].Dest, dest) )
                 index++;
             else
                 return table->Table + index;
@@ -167,7 +168,7 @@ RouteDataRecord_T * RouteTableGetRelayNext( RouteDataTable_T * table, RouteDataR
     RouteAddr_T			dest = row->Dest;
 
     while( ++row != end )
-        if( row->Dest == dest )
+        if( routeAddrCompare(row->Dest, dest))
             return row;
 
     return NULL;
@@ -192,7 +193,7 @@ RouteDataRecord_T * RouteTableGetRecord( RouteDataTable_T * table, RouteAddr_T r
     RouteDataRecord_T	* row;
 
     for( row = table->Table, index = 0; index < table->Count; row++, index++ )
-        if( dest == row->Dest && relay == row->Relay )
+        if( routeAddrCompare(dest, row->Dest) && routeAddrCompare(relay, row->Relay))
             return row;
 
     return NULL;
@@ -203,7 +204,7 @@ int Bump( RouteDataTable_T * table, RouteAddr_T relay, RouteChance_T newP ) {
     RouteDataRecord_T	* row;
 
     for( row = table->Table, count = 0, index = 0; index < table->Count; row++, index++ )
-        if( relay == row->Relay ) {
+        if( routeAddrCompare(relay, row->Relay)) {
             row->P = newP;
             count++;
         }

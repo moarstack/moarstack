@@ -10,11 +10,11 @@
 #include <moarCommons.h>
 #include <moarTime.h>
 #include <funcResults.h>
+#include <moarRouting.h>
 
 #define QualityThreshold	10
 #define SzRouteDataRecord	sizeof(RouteDataRecord_T)
 
-typedef uint32_t RouteAddr_T;
 typedef uint16_t RouteTableSize_T;
 typedef char	 RouteChance_T;
 

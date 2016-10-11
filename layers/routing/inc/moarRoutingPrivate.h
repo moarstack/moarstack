@@ -11,6 +11,7 @@
 #include <sys/epoll.h>
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingNeighborsStorage.h>
+#include <moarRouteTable.h>
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
@@ -34,6 +35,7 @@ typedef struct{
 	RouteAddr_T					LocalAddress;
 	PacketStorage_T				PacketStorage;
 	RoutingNeighborsStorage_T 	NeighborsStorage;
+	RouteDataTable_T			RouteTable;
 } RoutingLayer_T;
 
 

@@ -11,6 +11,7 @@
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingNeighborsStorage.h>
+#include <moarRouteTable.h>
 
 
 // инициализация работы с Epoll - прополка сокетов
@@ -61,7 +62,6 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	int neighborsInitRes = storageInit(&(layer->NeighborsStorage));
 	if(FUNC_RESULT_SUCCESS != neighborsInitRes)
 		return neighborsInitRes;
-	// TODO init routing table
 	//setup socket to channel
 	if(params->DownSocketHandler <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -80,6 +80,19 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	//again
 	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
 	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
+
+	// todo write correct params here
+	RouteTableSettings_T tableSettings = {0};
+	tableSettings.TableSize = 10;
+	tableSettings.FinderMarkerRenewRate = 27;
+	tableSettings.FinderMarkerDefaultMetric = 128;
+	tableSettings.RouteRenewRate = 1;
+	tableSettings.RouteDefaultMetric = 138;
+	tableSettings.RouteQualityThreshold = 10;
+	// init table
+	int tableInitRes = RouteTableInit(&layer->RouteTable, &tableSettings);
+	if(FUNC_RESULT_SUCCESS != tableInitRes)
+		return tableInitRes;
 	return FUNC_RESULT_SUCCESS;
 }
 int routingDeinit(RoutingLayer_T* layer){
@@ -92,7 +105,11 @@ int routingDeinit(RoutingLayer_T* layer){
 	int neighborsDeinitRes = storageDeinit(&(layer->NeighborsStorage));
 	if(FUNC_RESULT_SUCCESS != neighborsDeinitRes)
 		return neighborsDeinitRes;
-	// TODO deinit routing table
+	//deinit route table
+	int tableDeinitRes = RouteTableClear(&layer->RouteTable);
+	//int tableDeinitRes = RouteTableDestroy(&layer->RouteTable);
+	if(FUNC_RESULT_SUCCESS != tableDeinitRes)
+		return tableDeinitRes;
 	return FUNC_RESULT_SUCCESS;
 }
 

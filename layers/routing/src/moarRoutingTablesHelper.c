@@ -2,8 +2,10 @@
 // Created by svalov on 10/5/16.
 //
 
-#include "moarRoutingTablesHelper.h"
+#include <moarRoutingTablesHelper.h>
 #include <funcResults.h>
+#include <moarRouteTable.h>
+#include <moarRoutingPrivate.h>
 
 int resetTimeForDest(RoutingLayer_T* layer, ChannelAddr_T* dest){
 	if(NULL == layer)
@@ -23,9 +25,9 @@ int resetTimeForDest(RoutingLayer_T* layer, ChannelAddr_T* dest){
 	return FUNC_RESULT_SUCCESS;
 }
 int helperAddRoute(RoutingLayer_T* layer, RouteAddr_T* dest, RouteAddr_T* relay){
-	// todo add table work
+	int addRes = RouteTableAdd(&layer->RouteTable, *relay, *dest);
 	int resetRes = resetTimeForDest(layer, dest);
-	return FUNC_RESULT_FAILED;
+	return addRes;
 }
 int helperAddNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 	if(NULL == layer)
@@ -42,8 +44,8 @@ int helperAddNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 	return res;
 }
 int helperRemoveRoute(RoutingLayer_T* layer, RouteAddr_T* dest, RouteAddr_T* relay){
-	// todo add table work
-	return FUNC_RESULT_FAILED;
+	int delRes = RouteTableDelAll(&layer->RouteTable, *relay, *dest);
+	return delRes;
 }
 int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 	if(NULL == layer)

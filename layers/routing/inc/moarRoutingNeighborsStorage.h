@@ -5,7 +5,7 @@
 #ifndef MOARSTACK_MOARROUTINGNEIGHBORSSTORAGE_H
 #define MOARSTACK_MOARROUTINGNEIGHBORSSTORAGE_H
 
-#include <moarRoutingPrivate.h>
+#include <moarRouting.h>
 #include <hashTable.h>
 
 #define STORAGE_HASH_SIZE 41

@@ -10,6 +10,8 @@
 #include <moarRoutingPresentation.h>
 #include <sys/epoll.h>
 #include <moarRoutingPacketStorage.h>
+#include <moarRoutingNeighborsStorage.h>
+#include <moarRouteTable.h>
 
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_CHANNEL_EVENTS 				EPOLLIN
@@ -21,17 +23,19 @@
 #define ACK_WAITING_TIMEOUT					10000
 
 typedef struct{
-	int 					ChannelSocket;
-	int 					PresentationSocket;
-	int 					EpollHandler;
-	struct epoll_event 		EpollEvent[EPOLL_EVENTS_COUNT];
-	int 					EpollCount;
-	bool 					Running;
-	int 					EpollTimeout;
-	CommandProcessingRule_T ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
-	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
-	RouteAddr_T				LocalAddress;
-	PacketStorage_T			PacketStorage;
+	int 						ChannelSocket;
+	int 						PresentationSocket;
+	int 						EpollHandler;
+	struct epoll_event 			EpollEvent[EPOLL_EVENTS_COUNT];
+	int 						EpollCount;
+	bool 						Running;
+	int 						EpollTimeout;
+	CommandProcessingRule_T 	ChannelProcessingRules[CHANNEL_PROCESSING_RULES_COUNT];
+	CommandProcessingRule_T		PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
+	RouteAddr_T					LocalAddress;
+	PacketStorage_T				PacketStorage;
+	RoutingNeighborsStorage_T 	NeighborsStorage;
+	RouteDataTable_T			RouteTable;
 } RoutingLayer_T;
 
 

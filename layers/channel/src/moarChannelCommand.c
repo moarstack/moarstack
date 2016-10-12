@@ -12,6 +12,7 @@
 #include <moarChannelQueue.h>
 #include <moarChannelTable.h>
 #include <moarChannelHello.h>
+#include <moarChannelRouting.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata, SendTrys_T sendTrys){
@@ -26,6 +27,7 @@ int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, Route
 	messageStateMetadata.State = state;
 	messageStateMetadata.SentTrys = sendTrys;
 	messageStateMetadata.Id = metadata->Id;
+	messageStateMetadata.NeighborAddress = metadata->Bridge;
 	// create command
 	LayerCommandStruct_T stateCommand = {0};
 	stateCommand.MetaData = &messageStateMetadata;

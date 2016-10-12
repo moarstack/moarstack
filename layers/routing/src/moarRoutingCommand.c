@@ -10,6 +10,7 @@
 #include <moarRoutingPacketStorage.h>
 #include <moarRoutingStoredPacketFunc.h>
 #include <moarChannelRouting.h>
+#include <moarRoutingTablesHelper.h>
 
 // прилетело сообщение снизу
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
@@ -78,8 +79,10 @@ int processNewNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* comm
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RoutingLayer_T* layer = (RoutingLayer_T*)layerRef;
+	ChannelNeighborMetadata_T* metadata = (ChannelNeighborMetadata_T*)command->MetaData;
 	//logic here
-	return FUNC_RESULT_SUCCESS;
+	int res = helperAddNeighbor(layer,&(metadata->Address));
+	return res;
 }
 
 // сосед пропал
@@ -91,8 +94,11 @@ int processLostNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* com
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RoutingLayer_T* layer = (RoutingLayer_T*)layerRef;
+	ChannelNeighborMetadata_T* metadata = (ChannelNeighborMetadata_T*)command->MetaData;
 	//logic here
-	return FUNC_RESULT_SUCCESS;
+	int res = helperRemoveNeighbor(layer,&(metadata->Address));
+	return res;
+
 }
 
 // сосед изменился
@@ -104,7 +110,9 @@ int processUpdateNeighborCommand(void* layerRef, int fd, LayerCommandStruct_T* c
 	if(NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	RoutingLayer_T* layer = (RoutingLayer_T*)layerRef;
+	ChannelNeighborMetadata_T* metadata = (ChannelNeighborMetadata_T*)command->MetaData;
 	//logic here
+	//todo add update here
 	return FUNC_RESULT_SUCCESS;
 }
 

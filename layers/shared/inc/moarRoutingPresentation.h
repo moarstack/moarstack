@@ -24,6 +24,11 @@ typedef struct {
 	RouteAddr_T	From;	// source node of this packet
 } RouteReceivedMetadata_T;
 
+typedef struct {
+	MessageId_T	Id;
+	PackStateRoute_T State;
+} RouteMessageStateMetadata_T;
+
 // metadata of packet moving from presentation to routing
 typedef struct {
 	MessageId_T	Id;

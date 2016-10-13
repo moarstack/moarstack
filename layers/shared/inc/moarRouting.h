@@ -21,7 +21,10 @@ typedef ChannelAddr_T RouteAddr_T;
 
 typedef enum{
 	RoutePackType_Data,
-	RoutePackType_Service,
+	RoutePackType_Ack,
+	RoutePackType_FinderAck,
+	RoutePackType_Finder,
+	RoutePackType_Probe,
 }RoutePackType_T;
 
 typedef struct{
@@ -37,9 +40,9 @@ typedef struct{
 #define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
 
 __BEGIN_DECLS
-extern bool routeAddrComparePtr(RouteAddr_T* first, RouteAddr_T* second);
+extern bool routeAddrEqualPtr(RouteAddr_T* first, RouteAddr_T* second);
 
 __END_DECLS
-#define routeAddrCompare(first, second) routeAddrComparePtr(&(first),&(second))
+#define routeAddrEqual(first, second) routeAddrEqualPtr(&(first),&(second))
 
 #endif //MOARSTACK_MOARROUTING_H

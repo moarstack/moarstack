@@ -21,6 +21,8 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		6
 #define PRESENTATION_PROCESSING_RULES_COUNT	2
 #define ACK_WAITING_TIMEOUT					10000
+#define SENT_WAITING_TIMEOUT				10000
+#define DEFAULT_ROUTE_TRYS					3
 
 typedef struct{
 	int 						ChannelSocket;

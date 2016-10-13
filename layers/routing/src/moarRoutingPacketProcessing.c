@@ -35,7 +35,7 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
 	// if destination
-	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
+	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up
 		res = sendPacketToPresentation(layer, packet);
 		//// todo create ack
@@ -59,7 +59,7 @@ int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
 	// if destination
-	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
+	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up event
 		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent);
 		//// dispose packet
@@ -82,7 +82,7 @@ int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* p
 	int res = FUNC_RESULT_FAILED;
 	// todo process content
 	// if destination
-	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
+	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		res = FUNC_RESULT_SUCCESS;
 	}else {// else
 		//// todo create new packet
@@ -102,7 +102,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	int res = FUNC_RESULT_FAILED;
 	// todo process content
 	// if destination
-	if(0 == memcmp(&layer->LocalAddress, &packet->Destination, sizeof(RouteAddr_T))) {
+	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// todo create finder ack
 		//// todo add finder ack with procesing state
 	}else {// else
@@ -171,7 +171,7 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	packet->TrysLeft--;
 	// if no trys left
 	if(packet->TrysLeft<=0){
-		if(RoutePackType_Data == packet->PackType  && 0 == memcmp(&layer->LocalAddress, &packet->Source, sizeof(RouteAddr_T))) {
+		if(RoutePackType_Data == packet->PackType  && routeAddrEqualPtr(&layer->LocalAddress, &packet->Source)) {
 			//// notify
 			notifyPresentation(layer, &packet->InternalId, PackStateRoute_NotSent);
 		}

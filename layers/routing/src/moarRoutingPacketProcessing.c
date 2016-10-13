@@ -58,10 +58,11 @@ int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet)
 	if (RoutePackType_Ack != packet->PackType)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
+	// todo update routes if needed
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up event
-		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent);
+		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent); // todo review this logic
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		//res = FUNC_RESULT_SUCCESS;
@@ -174,7 +175,8 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 		if(RoutePackType_Data == packet->PackType  && routeAddrEqualPtr(&layer->LocalAddress, &packet->Source)) {
 			//// notify
 			notifyPresentation(layer, &packet->InternalId, PackStateRoute_NotSent);
-		}
+		} //else	
+		// todo possible nack sending here
 		//// dispose packet
 		res = psRemove(&layer->PacketStorage, packet);
 		return res;

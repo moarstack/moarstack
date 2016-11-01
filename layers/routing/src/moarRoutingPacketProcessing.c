@@ -62,7 +62,7 @@ int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet)
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up event
-		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent); // todo review this logic
+		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent); // todo review this logic !!! YES! Not by MID of ACK packet, but by source packet MID, which should be found by its RMID, retrieved from ACK packet payload
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		//res = FUNC_RESULT_SUCCESS;
@@ -169,9 +169,12 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	int res = FUNC_RESULT_FAILED;
 	if(StoredPackState_InProcessing != packet->State)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	packet->XTL--;
 	packet->TrysLeft--;
-	// if no trys left
-	if(packet->TrysLeft<=0){
+
+	// if no trys left or X To Live exposed
+	if(packet->TrysLeft<=0 || 0 >= packet->XTL ) {
 		if(RoutePackType_Data == packet->PackType  && routeAddrEqualPtr(&layer->LocalAddress, &packet->Source)) {
 			//// notify
 			notifyPresentation(layer, &packet->InternalId, PackStateRoute_NotSent);

@@ -23,6 +23,7 @@
 #define ACK_WAITING_TIMEOUT					10000
 #define SENT_WAITING_TIMEOUT				10000
 #define DEFAULT_ROUTE_TRYS					3
+#define	DEFAULT_XTL							1024
 
 typedef struct{
 	int 						ChannelSocket;

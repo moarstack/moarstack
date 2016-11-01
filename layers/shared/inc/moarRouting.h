@@ -17,7 +17,8 @@
 //	uint8_t		Address[ ROUTE_ADDR_SIZE ];
 //} RouteAddr_T;
 
-typedef ChannelAddr_T RouteAddr_T;
+typedef ChannelAddr_T	RouteAddr_T;
+typedef uint16_t 		RouteXTL_T;
 
 typedef enum{
 	RoutePackType_Data,
@@ -33,6 +34,7 @@ typedef struct{
 	RouteAddr_T 		Source;
 	RouteAddr_T 		Destination;
 	RoutingMessageId_T 	Id;
+	RouteXTL_T			XTL;		// something To Live - hops or time or something similiar (now supposed to be HOPS)
 }RoutingHeader_T;
 
 #pragma pack(pop)

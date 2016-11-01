@@ -58,6 +58,7 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	header->Destination = packet->Destination;
 	header->Source = packet->Source;
 	header->Id = packet->MessageId;
+	header->XTL = packet->XTL;
 	// make send metadata
 	RouteSendMetadata_T metadata = {0};
 	metadata.Id = packet->InternalId;
@@ -135,6 +136,7 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	packet->Source = header->Source;
 	packet->MessageId = header->Id;
 	packet->PackType = header->PacketType;
+	packet->XTL = header->XTL;
 	// additional
 	packet->NextProcessing = timeGetCurrent();
 	packet->State = StoredPackState_Received;

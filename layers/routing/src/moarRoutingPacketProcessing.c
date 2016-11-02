@@ -131,59 +131,55 @@ int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packe
 	return res;
 }
 
-int processReceivedPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == packet)
-		return  FUNC_RESULT_FAILED_ARGUMENT;
-	if(StoredPackState_Received != packet->State)
+int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	if( NULL == layer || NULL == packet || StoredPackState_Received != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	int res = FUNC_RESULT_FAILED;
-	switch (packet->PackType) {
+
+	switch( packet->PackType ) {
 		case RoutePackType_Data:
-			res = processReceivedDataPacket(layer, packet);
+			res = processReceivedDataPacket( layer, packet );
 			break;
 		case RoutePackType_Ack:
-			res = processReceivedAckPacket(layer, packet);
+			res = processReceivedAckPacket( layer, packet );
 			break;
 		case RoutePackType_Finder:
-			res = processReceivedFinderPacket(layer, packet);
+			res = processReceivedFinderPacket( layer, packet );
 			break;
 		case RoutePackType_FinderAck:
-			res = processReceivedFinderAckPacket(layer, packet);
+			res = processReceivedFinderAckPacket( layer, packet );
 			break;
 		case RoutePackType_Probe:
-			res = processReceivedProbePacket(layer, packet);
+			res = processReceivedProbePacket( layer, packet );
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;
 	}
+
 	return res;
 }
-int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
-	if(NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == packet)
-		return  FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	if(StoredPackState_InProcessing != packet->State)
+
+int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	int res = FUNC_RESULT_FAILED;
+
 	if( DEC_XTL_ON_TRYS && DEFAULT_ROUTE_TRYS > packet->TrysLeft )
-		packet->XTL--;	// will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
+		packet->XTL--;    // will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
 
 	packet->TrysLeft--;
 
-	// if no trys left or X To Live exposed
-	if(packet->TrysLeft<=0 || 0 >= packet->XTL ) {
-		if(RoutePackType_Data == packet->PackType  && routeAddrEqualPtr(&layer->LocalAddress, &packet->Source)) {
+	// if no trys left
+	if( packet->TrysLeft <= 0 ) {
+		if( RoutePackType_Data == packet->PackType && routeAddrEqualPtr( &layer->LocalAddress, &packet->Source ) ) {
 			//// notify
-			notifyPresentation(layer, &packet->InternalId, PackStateRoute_NotSent);
+			notifyPresentation( layer, &packet->InternalId, PackStateRoute_NotSent );
 		} //else	
 		// todo possible nack sending here
 		//// dispose packet
-		res = psRemove(&layer->PacketStorage, packet);
+		res = psRemove( &layer->PacketStorage, packet );
 		return res;
 	}
 	// try to find route || neighbor
@@ -196,6 +192,7 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	//// send finder
 	return res;
 }
+
 int processWaitSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;

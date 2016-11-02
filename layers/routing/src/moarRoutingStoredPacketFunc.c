@@ -38,12 +38,9 @@ int disposeStoredPacket(RouteStoredPacket_T** packet){
 
 // отправка пакета вниз
 int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
-	if(NULL == layer)
+	if(NULL == layer|| NULL == packet || 0 >= layer->ChannelSocket || 0 >= packet->XTL ) // won`t send if XTL exposed, but lets processing be done (all routine before calling that function)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(layer->ChannelSocket <=0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	// allocate memory for data
 	void* newData = malloc(packet->PayloadSize + ROUTING_HEADER_SIZE);
 	if(NULL == newData)

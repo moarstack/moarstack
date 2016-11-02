@@ -170,8 +170,8 @@ int processInProcessingPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	if(StoredPackState_InProcessing != packet->State)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	if( DEFAULT_ROUTE_TRYS == packet->TrysLeft || DEC_XTL_ON_TRYS )
-		packet->XTL--;	// will decrease XTL only once ( when TrysLeft are full ) or on every attempt, if setting is chosen TRUE
+	if( DEC_XTL_ON_TRYS && DEFAULT_ROUTE_TRYS > packet->TrysLeft )
+		packet->XTL--;	// will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
 
 	packet->TrysLeft--;
 

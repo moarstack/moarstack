@@ -136,7 +136,7 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	packet->Source = header->Source;
 	packet->MessageId = header->Id;
 	packet->PackType = header->PacketType;
-	packet->XTL = header->XTL;
+	packet->XTL = header->XTL - DEFAULT_XTL_STEP; // decreasing packet`s XTL due to being receiver of that packet => it made hop
 	// additional
 	packet->NextProcessing = timeGetCurrent();
 	packet->State = StoredPackState_Received;

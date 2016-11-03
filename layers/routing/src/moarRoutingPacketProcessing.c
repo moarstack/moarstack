@@ -34,6 +34,7 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	if (RoutePackType_Data != packet->PackType)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
+	// todo update routes if needed (like for ack)
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up
@@ -43,7 +44,7 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		res = FUNC_RESULT_SUCCESS;
-	} else {// else
+	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
 		res = FUNC_RESULT_SUCCESS;
@@ -66,7 +67,7 @@ int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet)
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		//res = FUNC_RESULT_SUCCESS;
-	}else {// else
+	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
 		res = FUNC_RESULT_SUCCESS;
@@ -85,7 +86,7 @@ int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* p
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		res = FUNC_RESULT_SUCCESS;
-	}else {// else
+	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// todo create new packet
 		//// todo add with processing state
 	}
@@ -106,7 +107,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// todo create finder ack
 		//// todo add finder ack with procesing state
-	}else {// else
+	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// todo create new packet
 		//// todo try to send
 		// also multiple stage finders process here
@@ -124,8 +125,10 @@ int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packe
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
 	// todo update tables
-	// todo create new probe
-	// todo send probe
+	if( 0 < packet->XTL ) { // if will be sent according to XTL
+		// todo create new probe
+		// todo send probe
+	}
 	// dispose packet
 	res = psRemove(&layer->PacketStorage, packet);
 	return res;
@@ -167,7 +170,7 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 	int res = FUNC_RESULT_FAILED;
 
 	if( DEC_XTL_ON_TRYS && DEFAULT_ROUTE_TRYS > packet->TrysLeft )
-		packet->XTL--;    // will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
+		packet->XTL -= DEFAULT_XTL_STEP;    // will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
 
 	packet->TrysLeft--;
 

@@ -101,20 +101,15 @@ int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 }
 
 // обработка принятого снизу пакета
-int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
-	if(NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == metadata)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == data)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(dataSize < ROUTING_HEADER_SIZE)
+int prepareReceivedPacket( RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
+	if(NULL == packet || NULL == metadata || NULL == data || dataSize < ROUTING_HEADER_SIZE)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//get header
 	RoutingHeader_T* header = (RoutingHeader_T*)data;
 	//check for size
 	if(header->PayloadSize + ROUTING_HEADER_SIZE != dataSize)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	// clean
 	memset(packet, 0, sizeof(RouteStoredPacket_T));
 	// allocate payload

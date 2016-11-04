@@ -185,10 +185,11 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 }
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	ChannelAddr_T 	relayAddr;
+	int				res = FUNC_RESULT_FAILED;
+
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	int res = FUNC_RESULT_FAILED;
 
 	if( DEC_XTL_ON_TRYS && DEFAULT_ROUTE_TRYS > packet->TrysLeft )
 		packet->XTL -= DEFAULT_XTL_STEP;    // will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
@@ -206,18 +207,21 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 		res = psRemove( &layer->PacketStorage, packet );
 		return res;
 	}
-	// try to find route || neighbor
-	// if found
-	//// send to relay
-	//// change state to wait sent
-	//// update timeout
-	// else
-	//// update timeout
-	//// send finder
-	// todo make it started by if-else
 
-	//todo fill stub local adresses, replace with actual addrs.
-	produceRouteFinder(layer,  layer->LocalAddress, layer->LocalAddress);
+	res = helperFindRelay( layer, &( packet->Destination ), &relayAddr ); // try to find route || neighbor
+
+	if( FUNC_RESULT_SUCCESS == res ) {// if found
+		packet->NextHop = relayAddr;
+		sendPacketToChannel( layer, packet );	// send to relay
+		packet->State = StoredPackState_WaitSent;	// change state to wait sent
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
+		psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
+	} else {// else
+		RouteAddr_T	nextHop;
+		// todo make it started by if-else
+		// todo fill stub local adresses, replace with actual addrs. (actually send to [almost] every neighbor and use its address as nextHop )
+		res = produceRouteFinder( layer, &( packet->Destination ), &nextHop );
+	}
 
 	return res;
 }

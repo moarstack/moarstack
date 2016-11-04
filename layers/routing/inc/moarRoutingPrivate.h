@@ -23,6 +23,9 @@
 #define ACK_WAITING_TIMEOUT					10000
 #define SENT_WAITING_TIMEOUT				10000
 #define DEFAULT_ROUTE_TRYS					3
+#define	DEFAULT_XTL							((RouteXTL_T)1024)
+#define DEFAULT_XTL_STEP					((RouteXTL_T)1)
+#define DEC_XTL_ON_TRYS						false
 
 typedef struct{
 	int 						ChannelSocket;

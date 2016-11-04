@@ -38,12 +38,9 @@ int disposeStoredPacket(RouteStoredPacket_T** packet){
 
 // отправка пакета вниз
 int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
-	if(NULL == layer)
+	if(NULL == layer|| NULL == packet || 0 >= layer->ChannelSocket || 0 >= packet->XTL ) // won`t send if XTL exposed, but lets processing be done (all routine before calling that function)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(layer->ChannelSocket <=0)
-		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	// allocate memory for data
 	void* newData = malloc(packet->PayloadSize + ROUTING_HEADER_SIZE);
 	if(NULL == newData)
@@ -58,6 +55,7 @@ int sendPacketToChannel(RoutingLayer_T* layer, RouteStoredPacket_T* packet){
 	header->Destination = packet->Destination;
 	header->Source = packet->Source;
 	header->Id = packet->MessageId;
+	header->XTL = packet->XTL;
 	// make send metadata
 	RouteSendMetadata_T metadata = {0};
 	metadata.Id = packet->InternalId;
@@ -103,20 +101,15 @@ int sendPacketToPresentation( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 }
 
 // обработка принятого снизу пакета
-int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
-	if(NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == metadata)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(NULL == data)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if(dataSize < ROUTING_HEADER_SIZE)
+int prepareReceivedPacket( RouteStoredPacket_T* packet, ChannelReceiveMetadata_T* metadata, void* data, PayloadSize_T dataSize){
+	if(NULL == packet || NULL == metadata || NULL == data || dataSize < ROUTING_HEADER_SIZE)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//get header
 	RoutingHeader_T* header = (RoutingHeader_T*)data;
 	//check for size
 	if(header->PayloadSize + ROUTING_HEADER_SIZE != dataSize)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	// clean
 	memset(packet, 0, sizeof(RouteStoredPacket_T));
 	// allocate payload
@@ -135,6 +128,7 @@ int prepareReceivedPacket(RouteStoredPacket_T* packet, ChannelReceiveMetadata_T*
 	packet->Source = header->Source;
 	packet->MessageId = header->Id;
 	packet->PackType = header->PacketType;
+	packet->XTL = header->XTL - DEFAULT_XTL_STEP; // decreasing packet`s XTL due to being receiver of that packet => it made hop
 	// additional
 	packet->NextProcessing = timeGetCurrent();
 	packet->State = StoredPackState_Received;
@@ -170,6 +164,7 @@ int prepareSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T * packet, Prese
 	packet->State = StoredPackState_Received; // received (=got) by routing from its input
 	packet->TrysLeft = DEFAULT_ROUTE_TRYS;
 	packet->Source = layer->LocalAddress;
+	packet->XTL = DEFAULT_XTL;
 		// no LastHop due to current hop being first
 		// no NextHop because its routing work to know such things
 

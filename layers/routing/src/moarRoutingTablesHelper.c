@@ -78,7 +78,7 @@ int helperUpdateNeighbor( RoutingLayer_T * layer ) {
 }
 
 int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr ) {
-	if( channelAddr == NULL || routeAddr == NULL )
+	if( NULL == channelAddr || NULL == routeAddr )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	*routeAddr = *( RouteAddr_T * )channelAddr; // edit when types become different
@@ -86,10 +86,25 @@ int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr ) 
 }
 
 int helperRoute2Channel( RouteAddr_T * routeAddr, ChannelAddr_T * channelAddr ) {
-	if( channelAddr == NULL || routeAddr == NULL )
+	if( NULL == channelAddr || NULL == routeAddr )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	*channelAddr = *( ChannelAddr_T * )routeAddr; // edit when types become different
 	return FUNC_RESULT_SUCCESS;
 
+}
+
+int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T * relay ) {
+	RouteDataRecord_T	* row;
+
+	if( NULL == layer || NULL == dest || NULL == relay )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	row = RouteTableGetRelayBest( &( layer->RouteTable ), *dest );
+
+	if( NULL == row )
+		return FUNC_RESULT_FAILED;
+
+	*relay = row->Relay;
+	return FUNC_RESULT_SUCCESS;
 }

@@ -56,9 +56,21 @@ int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 	int res = storageRemove(&(layer->NeighborsStorage), address);
 	return res;
 }
-int helperUpdateRoute(RoutingLayer_T* layer){
-	// todo add table work
-	return FUNC_RESULT_FAILED;
+
+int helperUpdateRoute( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T * relay ) {
+	RouteDataRecord_T	* row;
+
+	if( NULL == layer || NULL == dest || NULL == relay )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	row = RouteTableGetRecord( &( layer->RouteTable ), *relay, *dest );
+
+	if( NULL == row )
+		RouteTableAdd( &( layer->RouteTable ), *relay, *dest );
+	else
+		RouteTableUpdate( row );
+
+	return FUNC_RESULT_SUCCESS;
 }
 
 int helperUpdateNeighbor( RoutingLayer_T * layer ) {

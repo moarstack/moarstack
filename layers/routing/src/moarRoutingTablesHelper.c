@@ -60,6 +60,24 @@ int helperUpdateRoute(RoutingLayer_T* layer){
 	// todo add table work
 	return FUNC_RESULT_FAILED;
 }
-int helperUpdateNeighbor(RoutingLayer_T* layer){
+
+int helperUpdateNeighbor( RoutingLayer_T * layer ) {
 	return FUNC_RESULT_FAILED;
+}
+
+int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr ) {
+	if( channelAddr == NULL || routeAddr == NULL )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	*routeAddr = *( RouteAddr_T * )channelAddr; // edit when types become different
+	return FUNC_RESULT_SUCCESS;
+}
+
+int helperRoute2Channel( RouteAddr_T * routeAddr, ChannelAddr_T * channelAddr ) {
+	if( channelAddr == NULL || routeAddr == NULL )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	*channelAddr = *( ChannelAddr_T * )routeAddr; // edit when types become different
+	return FUNC_RESULT_SUCCESS;
+
 }

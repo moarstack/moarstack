@@ -15,5 +15,7 @@ int helperRemoveRoute(RoutingLayer_T* layer, RouteAddr_T* dest, RouteAddr_T* rel
 int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address);
 int helperUpdateRoute(RoutingLayer_T* layer);
 int helperUpdateNeighbor(RoutingLayer_T* layer);
+int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr );
+int helperRoute2Channel( RouteAddr_T * routeAddr, ChannelAddr_T * channelAddr );
 
 #endif //MOARSTACK_MOARROUTINGTABLESHANDLER_H

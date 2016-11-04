@@ -10,6 +10,7 @@
 #include <moarCommons.h>
 #include <moarRouteAck.h>
 #include <moarRouteFinder.h>
+#include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
@@ -28,23 +29,30 @@ int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T 
 	return WriteCommand(layer->PresentationSocket, &command);
 }
 
-int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Data != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo update routes if needed (like for ack)
-	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
-		//// forward up
-		res = sendPacketToPresentation(layer, packet);
-		produceAck(layer,packet); // todo check function result
+int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	RouteAddr_T routeAddr;
+	int res;
 
+	if( NULL == layer || NULL == packet || RoutePackType_Data != packet->PackType )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	res = helperChannel2Route( &( packet->LastHop ), &routeAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
+	res = helperUpdateRoute( layer, &( packet->Source ), &routeAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
+	// if destination
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
+		//// forward up
+		res = sendPacketToPresentation( layer, packet );
+		produceAck(layer,packet); // todo check function result
 		//// dispose packet
-		psRemove(&layer->PacketStorage, packet);
+		psRemove( &layer->PacketStorage, packet );
 		res = FUNC_RESULT_SUCCESS;
 	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
@@ -53,29 +61,40 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	}
 	return res;
 }
-int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
+
+int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	RouteAddr_T routeAddr;
+	int res;
+
+	if( NULL == layer || NULL == packet || RoutePackType_Ack != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Ack != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo update routes if needed
+
+	res = helperChannel2Route( &( packet->LastHop ), &routeAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
+	res = helperUpdateRoute( layer, &( packet->Source ), &routeAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
 	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
 		//// forward up event
-		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent); // todo review this logic !!! YES! Not by MID of ACK packet, but by source packet MID, which should be found by its RMID, retrieved from ACK packet payload
+		res = notifyPresentation( layer, &packet->InternalId,
+								  PackStateRoute_Sent ); // todo review this logic !!! YES! Not by MID of ACK packet, but by source packet MID, which should be found by its RMID, retrieved from ACK packet payload
 		//// dispose packet
-		psRemove(&layer->PacketStorage, packet);
+		psRemove( &layer->PacketStorage, packet );
 		//res = FUNC_RESULT_SUCCESS;
-	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
+	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
 		res = FUNC_RESULT_SUCCESS;
 	}
 	return res;
 }
+
 int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;

@@ -30,18 +30,18 @@ int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T 
 }
 
 int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
-	RouteAddr_T routeAddr;
+	RouteAddr_T relayAddr;
 	int res;
 
 	if( NULL == layer || NULL == packet || RoutePackType_Data != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	res = helperChannel2Route( &( packet->LastHop ), &routeAddr );
+	res = helperChannel2Route( &( packet->LastHop ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != res )
 		return res;
 
-	res = helperUpdateRoute( layer, &( packet->Source ), &routeAddr );
+	res = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != res )
 		return res;
@@ -63,18 +63,18 @@ int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 }
 
 int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
-	RouteAddr_T routeAddr;
+	RouteAddr_T relayAddr;
 	int res;
 
 	if( NULL == layer || NULL == packet || RoutePackType_Ack != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	res = helperChannel2Route( &( packet->LastHop ), &routeAddr );
+	res = helperChannel2Route( &( packet->LastHop ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != res )
 		return res;
 
-	res = helperUpdateRoute( layer, &( packet->Source ), &routeAddr );
+	res = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != res )
 		return res;

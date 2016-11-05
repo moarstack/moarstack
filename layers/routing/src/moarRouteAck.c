@@ -29,6 +29,7 @@ int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original) {
     RoutePayloadAck_T* payload = (RoutePayloadAck_T*)packet.Payload;
     payload->originalDestination = layer->LocalAddress;
     payload->originalSource = original->Source;
-    
+    payload->messageId = original->MessageId;
+
     return psAdd(&layer->PacketStorage, &packet);
 }

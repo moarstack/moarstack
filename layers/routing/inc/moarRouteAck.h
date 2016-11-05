@@ -16,8 +16,9 @@
 
 typedef struct
 {
-    RouteAddr_T     originalSource;
-    RouteAddr_T     originalDestination;
+    RouteAddr_T             originalSource;
+    RouteAddr_T             originalDestination;
+    RoutingMessageId_T      messageId;
 } RoutePayloadAck_T;
 
 int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original);

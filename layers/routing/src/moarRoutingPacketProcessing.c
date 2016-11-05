@@ -12,6 +12,7 @@
 #include <moarRouteFinder.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
+#include "moarRouteFinder.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -185,8 +186,9 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 }
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
-	ChannelAddr_T 	relayAddr;
-	int				res;
+	ChannelAddr_T 		relayAddr;
+	int					result;
+	moarTimeInterval_T	waitInterval;
 
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -204,30 +206,36 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 		} //else	
 		// todo possible nack sending here
 		//// dispose packet
-		res = psRemove( &layer->PacketStorage, packet );
-		return res;
+		result = psRemove( &layer->PacketStorage, packet );
+		return result;
 	}
 
-	res = helperFindRelay( layer, &( packet->Destination ), &relayAddr ); // try to find route || neighbor
+	result = helperFindRelay( layer, &( packet->Destination ), &relayAddr ); // try to find route || neighbor
 
-	if( FUNC_RESULT_SUCCESS == res ) {// if found
+	if( FUNC_RESULT_SUCCESS == result ) {// if found
 		packet->NextHop = relayAddr;
-		res = sendPacketToChannel( layer, packet );	// send to relay
+		result = sendPacketToChannel( layer, packet );	// send to relay
 
-		if( FUNC_RESULT_SUCCESS != res )
-			return res;
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
 
 		packet->State = StoredPackState_WaitSent;	// change state to wait sent
 		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
-		res = psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
 	} else {// else
 		RouteAddr_T	nextHop;
 		// todo make it started by if-else
 		// todo fill stub local adresses, replace with actual addrs. (actually send to [almost] every neighbor and use its address as nextHop )
-		res = produceRouteFinder( layer, &( packet->Destination ), &nextHop );
+		result = produceRouteFinder( layer, &( packet->Destination ), &nextHop );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), FACK_WAITING_TIMEOUT );
 	}
 
-	return res;
+	result = psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
+
+	return result;
 }
 
 int processWaitSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){

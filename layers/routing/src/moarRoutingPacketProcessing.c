@@ -186,7 +186,7 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	ChannelAddr_T 	relayAddr;
-	int				res = FUNC_RESULT_FAILED;
+	int				res;
 
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -212,10 +212,14 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 
 	if( FUNC_RESULT_SUCCESS == res ) {// if found
 		packet->NextHop = relayAddr;
-		sendPacketToChannel( layer, packet );	// send to relay
+		res = sendPacketToChannel( layer, packet );	// send to relay
+
+		if( FUNC_RESULT_SUCCESS != res )
+			return res;
+
 		packet->State = StoredPackState_WaitSent;	// change state to wait sent
 		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
-		psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
+		res = psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
 	} else {// else
 		RouteAddr_T	nextHop;
 		// todo make it started by if-else

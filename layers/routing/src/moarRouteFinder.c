@@ -32,4 +32,3 @@ int produceRouteFinder( RoutingLayer_T * layer, RouteAddr_T * destination, Route
 
 	return send_result;
 }
-

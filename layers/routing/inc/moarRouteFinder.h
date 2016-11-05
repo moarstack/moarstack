@@ -12,9 +12,10 @@
 #include <funcResults.h>
 #include <moarRouting.h>
 #include <moarRoutingStoredPacket.h>
+
 #include <moarRoutingPrivate.h>
-#include "moarRouteFinder.h"
 #include <string.h>
+#include <moarRoutingStoredPacketFunc.h>
 
 #define StartRouteFinderPacketSize 1
 #define MaxRouteFinderPacketSize 10
@@ -22,8 +23,8 @@
 
 typedef struct
 {
-    int                Size;
-    RouteAddr_T        NodeList[];
+    uint8_t            Size;
+    RouteAddr_T        NodeList[1];
 } RoutePayloadFinder_T;
 
-int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination);
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr_T next_hop);

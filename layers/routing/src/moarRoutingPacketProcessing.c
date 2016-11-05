@@ -196,7 +196,9 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 	//// update timeout
 	//// send finder
 	// todo make it started by if-else
-	produceRouteFinder(layer);
+
+	//todo fill stub local adresses, replace with actual addrs.
+	produceRouteFinder(layer,  layer->LocalAddress, layer->LocalAddress);
 
 	return res;
 }

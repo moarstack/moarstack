@@ -3,10 +3,8 @@
 //
 
 #include <moarRouteFinder.h>
-#include <moarRoutingStoredPacket.h>
 
-
-int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination){
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr_T next_hop){
     if (NULL == layer)
         return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -21,16 +19,21 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination){
     packet.PackType = RoutePackType_Ack;
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
+    packet.NextHop = next_hop;
     RouteAddr_T nodes_list[1];
     nodes_list[0] = layer->LocalAddress;
 
-    packet.PayloadSize = sizeof(RouteAddr_T) + sizeof(int);
+    packet.PayloadSize = sizeof(RouteAddr_T) + sizeof(uint32_t);
     packet.Payload = malloc(packet.PayloadSize);
     if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
     RoutePayloadFinder_T* payload = (RoutePayloadFinder_T*)packet.Payload;
-    memcpy(payload->NodeList, nodes_list, sizeof(nodes_list));
+    memcpy(&payload->NodeList, nodes_list, sizeof(RouteAddr_T));
     payload->Size = 1;
 
-    return psAdd(&layer->PacketStorage, &packet);
+
+    int send_result = sendPacketToChannel(layer, &packet);
+    free(payload);
+
+    return send_result;
 }

@@ -14,8 +14,8 @@ int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original) {
 
     RouteStoredPacket_T packet = {0};
     packet.Destination = original->Source;
-    packet.MessageId = original->MessageId;
     midGenerate(&packet.InternalId, MoarLayer_Routing);
+    rmidGenerate(&packet.MessageId);
 
     packet.Source = layer->LocalAddress;
     packet.NextProcessing = 0;

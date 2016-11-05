@@ -14,6 +14,12 @@
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingPrivate.h>
 
+typedef struct
+{
+    RouteAddr_T     originalSource;
+    RouteAddr_T     originalDestination;
+} RoutePayloadAck_T;
+
 int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original);
 
 

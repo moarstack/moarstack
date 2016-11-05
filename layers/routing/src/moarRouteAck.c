@@ -4,6 +4,7 @@
 
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingPrivate.h>
+#include <moarRouteAck.h>
 #include "moarRouteAck.h"
 
 
@@ -21,9 +22,13 @@ int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original) {
     packet.PackType = RoutePackType_Ack;
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
-    packet.PayloadSize = sizeof(RouteAddr_T)*2;
+    packet.PayloadSize = sizeof(RoutePayloadAck_T);
     packet.Payload = malloc(packet.PayloadSize);
     if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
+    RoutePayloadAck_T* payload = (RoutePayloadAck_T*)packet.Payload;
+    payload->originalDestination = layer->LocalAddress;
+    payload->originalSource = original->Source;
+    
     return psAdd(&layer->PacketStorage, &packet);
 }

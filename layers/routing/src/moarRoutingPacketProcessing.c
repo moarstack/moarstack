@@ -12,7 +12,6 @@
 #include <moarRouteFinder.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
-#include "moarRouteFinder.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -32,35 +31,42 @@ int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T 
 
 int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	RouteAddr_T relayAddr;
-	int res;
+	int 		result;
 
 	if( NULL == layer || NULL == packet || RoutePackType_Data != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	res = helperChannel2Route( &( packet->LastHop ), &relayAddr );
+	result = helperChannel2Route( &( packet->LastHop ), &relayAddr );
 
-	if( FUNC_RESULT_SUCCESS != res )
-		return res;
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
-	res = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
+	result = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
 
-	if( FUNC_RESULT_SUCCESS != res )
-		return res;
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
 
 	// if destination
 	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
 		//// forward up
-		res = sendPacketToPresentation( layer, packet );
-		produceAck(layer,packet); // todo check function result
+		result = sendPacketToPresentation( layer, packet );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		result = produceAck( layer, packet );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
 		//// dispose packet
-		psRemove( &layer->PacketStorage, packet );
-		res = FUNC_RESULT_SUCCESS;
+		result = psRemove( &layer->PacketStorage, packet );
 	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
-		res = FUNC_RESULT_SUCCESS;
+		result = FUNC_RESULT_SUCCESS;
 	}
-	return res;
+	return result;
 }
 
 int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {

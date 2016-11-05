@@ -1,0 +1,8 @@
+//
+// Created by spiralis on 05.11.16.
+//
+
+#ifndef MOARSTACK_MOARROUTEFINDER_H
+#define MOARSTACK_MOARROUTEFINDER_H
+
+#endif //MOARSTACK_MOARROUTEFINDER_H

@@ -8,6 +8,7 @@
 #include <memory.h>
 #include <moarRoutingStoredPacketFunc.h>
 #include <moarCommons.h>
+#include <moarRouteAck.h>
 #include "moarRoutingPacketProcessing.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
@@ -39,8 +40,8 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		//// forward up
 		res = sendPacketToPresentation(layer, packet);
-		//// todo create ack
-		//// todo add ack with processing state
+		produceAck(layer,packet); // todo check function result
+
 		//// dispose packet
 		psRemove(&layer->PacketStorage, packet);
 		res = FUNC_RESULT_SUCCESS;

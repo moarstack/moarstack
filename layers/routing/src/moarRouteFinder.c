@@ -3,9 +3,10 @@
 //
 
 #include <moarRouteFinder.h>
+#include <moarRoutingStoredPacket.h>
 
 
-int produceRouteFinder(RoutingLayer_T *layer){
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination){
     if (NULL == layer)
         return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -15,6 +16,7 @@ int produceRouteFinder(RoutingLayer_T *layer){
     rmidGenerate(&packet.MessageId);
 
     packet.Source = layer->LocalAddress;
+    packet.Destination = destination;
     packet.NextProcessing = 0;
     packet.PackType = RoutePackType_Ack;
     packet.State = StoredPackState_InProcessing;

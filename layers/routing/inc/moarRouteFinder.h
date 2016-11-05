@@ -26,4 +26,4 @@ typedef struct
     RouteAddr_T        NodeList[];
 } RoutePayloadFinder_T;
 
-int produceRouteFinder(RoutingLayer_T *layer);
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination);

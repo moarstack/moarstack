@@ -17,15 +17,11 @@
 #include <string.h>
 #include <moarRoutingStoredPacketFunc.h>
 
-
-
 #define StartRouteFinderPacketSize 1
 #define MaxRouteFinderPacketSize 10
 
-
-typedef struct
-{
-    uint8_t            MaxSize;
+typedef struct {
+	uint8_t	MaxSize;
 } RouteInitialPayloadFinder_T;
 
 int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop);

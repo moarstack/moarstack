@@ -12,7 +12,6 @@
 #include <funcResults.h>
 #include <moarRouting.h>
 #include <moarRoutingStoredPacket.h>
-
 #include <moarRoutingPrivate.h>
 #include <string.h>
 #include <moarRoutingStoredPacketFunc.h>

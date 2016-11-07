@@ -192,9 +192,8 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 }
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
-	ChannelAddr_T 		relayAddr;
-	int					result;
-	moarTimeInterval_T	waitInterval;
+	ChannelAddr_T 	relayAddr;
+	int				result;
 
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -228,10 +227,8 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 		packet->State = StoredPackState_WaitSent;	// change state to wait sent
 		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
 	} else {// else
-		RouteAddr_T	nextHop;
-		// todo make it started by if-else
-		// todo fill stub local adresses, replace with actual addrs. (actually send to [almost] every neighbor and use its address as nextHop )
-		result = produceRouteFinder( layer, &( packet->Destination ), &nextHop );
+		// todo make it started by if-else (kryvashek: ???)
+		result = sendFindersFirst( layer, &( packet->Destination ) ); // send finders
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return result;

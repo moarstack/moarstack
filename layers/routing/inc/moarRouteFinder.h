@@ -24,5 +24,6 @@ typedef struct {
 } RouteInitialPayloadFinder_T;
 
 int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop);
+int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest );
 
 #endif //MOARSTACK_MOARROUTEFINDER_H

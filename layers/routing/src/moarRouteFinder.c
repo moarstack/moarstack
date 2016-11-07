@@ -33,3 +33,32 @@ int produceRouteFinder( RoutingLayer_T * layer, RouteAddr_T * destination, Route
 	return send_result;
 }
 
+int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
+	hashIterator_T			iterator = { 0 };
+	RoutingNeighborInfo_T	* neInfo;
+	int 					result,
+							count;
+
+	if( NULL == layer || NULL == dest )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	count = 0;
+
+	while( !hashIteratorIsLast( &iterator ) ) {
+		neInfo = storageIteratorData( &iterator );
+		hashIteratorNext( &iterator );
+		result = produceRouteFinder( layer, dest, &( neInfo->Address ) );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			count++;
+	}
+
+	hashIteratorFree( &iterator );
+
+	return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED_IO );
+}

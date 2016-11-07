@@ -17,14 +17,19 @@
 #include <string.h>
 #include <moarRoutingStoredPacketFunc.h>
 
+
+
 #define StartRouteFinderPacketSize 1
 #define MaxRouteFinderPacketSize 10
-#endif //MOARSTACK_MOARROUTEFINDER_H
+
 
 typedef struct
 {
     uint8_t            Size;
+    uint8_t            MaxSize;
     RouteAddr_T        NodeList[1];
 } RoutePayloadFinder_T;
 
 int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr_T next_hop);
+
+#endif //MOARSTACK_MOARROUTEFINDER_H

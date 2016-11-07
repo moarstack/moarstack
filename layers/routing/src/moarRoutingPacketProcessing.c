@@ -144,22 +144,22 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	res = psRemove(&layer->PacketStorage, packet);
 	return res;
 }
-int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
+
+int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	int result;
+
+	if( NULL == layer || NULL == packet || RoutePackType_Probe != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Probe != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
+
+	result = FUNC_RESULT_FAILED;
 	// todo update tables
 	if( 0 < packet->XTL ) { // if will be sent according to XTL
 		// todo create new probe
 		// todo send probe
 	}
 	// dispose packet
-	res = psRemove(&layer->PacketStorage, packet);
-	return res;
+	result = psRemove( &layer->PacketStorage, packet );
+	return result;
 }
 
 int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {

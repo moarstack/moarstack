@@ -4,6 +4,8 @@
 
 #include <moarRoutingPrivate.h>
 #include <moarRouteProbe.h>
+#include <moarRoutingStoredPacket.h>
+#include <memory.h>
 #include "moarRoutingTablesHelper.h"
 #include "moarRoutingStoredPacketFunc.h"
 
@@ -51,10 +53,49 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 }
 
 int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next, RouteStoredPacket_T * newPacket ) {
+	RoutePayloadProbe_T	* newPayload,
+						* oldPayload;
+	int 				result;
+
 	if( NULL == layer || NULL == oldPacket || NULL == next || NULL == newPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	return FUNC_RESULT_FAILED; // not implemented yet
+	oldPayload = ( RoutePayloadProbe_T * )( oldPacket->Payload );
+	newPacket->PayloadSize = sizeof( RoutePayloadProbe_T ) + oldPayload->DepthCurrent * sizeof( RouteAddr_T );
+	newPacket->Payload = malloc( newPacket->PayloadSize );
+
+	if( NULL == newPacket->Payload )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	result = midGenerate( &( newPacket->InternalId ), MoarLayer_Routing );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = rmidGenerate( &( newPacket->MessageId ) );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = helperRoute2Channel( next, &( newPacket->NextHop ) );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	newPayload = ( RoutePayloadProbe_T * )( newPacket->Payload );
+	newPayload->DepthCurrent = oldPayload->DepthCurrent + ( RouteProbeDepth_T )1;
+	newPayload->DepthMax = oldPayload->DepthMax;
+	memcpy( newPayload->List, oldPayload->List, oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
+	newPayload->List[ oldPayload->DepthCurrent ] = *next;
+	newPacket->PackType = RoutePackType_Probe;
+	newPacket->Source = oldPacket->Source;
+	newPacket->Destination = *next;
+	newPacket->NextProcessing = timeGetCurrent();
+	newPacket->State = StoredPackState_WaitSent; // packet should be sent immediately, but supposed to be sent from another function
+	newPacket->TrysLeft = DEFAULT_ROUTE_TRYS;
+	newPacket->XTL = oldPacket->XTL;
+
+	return FUNC_RESULT_SUCCESS;
 }
 
 int sendProbeFirst( RoutingLayer_T * layer ) {

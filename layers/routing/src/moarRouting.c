@@ -96,7 +96,7 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	if(FUNC_RESULT_SUCCESS != tableInitRes)
 		return tableInitRes;
 	// probe sending
-	layer->NextProbeSentMoment = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
+	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
 	return FUNC_RESULT_SUCCESS;
 }
 int routingDeinit(RoutingLayer_T* layer){
@@ -131,10 +131,10 @@ int updateEpollTimeout( RoutingLayer_T * layer ) {
 		moarTime_T	nextProcessing = pack->NextProcessing,
 					now = timeGetCurrent();
 
-		if( -1 == timeCompare( nextProcessing, layer->NextProbeSentMoment ) )
+		if( -1 == timeCompare( nextProcessing, layer->NextProbeSentTime ) )
 			interval = timeGetDifference( nextProcessing, now );
 		else
-			interval = timeGetDifference( layer->NextProbeSentMoment, now );
+			interval = timeGetDifference( layer->NextProbeSentTime, now );
 
 		if( 0 > interval )
 			interval = 0;
@@ -186,7 +186,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		int res = processPacketStorage(&layer); // try to process message queue
 		//timeout | end of command processing
 
-		if( -1 == timeCompare( layer.NextProbeSentMoment, timeGetCurrent() ) ) // if need to send probes
+		if( -1 == timeCompare( layer.NextProbeSentTime, timeGetCurrent() ) ) // if need to send probes
 			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
 
 		// calculate optimal sleep time

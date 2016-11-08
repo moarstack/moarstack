@@ -97,7 +97,7 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
 
-	layer->NextProbeSentMoment = timeGetCurrent();
+	layer->NextProbeSentTime = timeGetCurrent();
 
 	return FUNC_RESULT_SUCCESS;
 }

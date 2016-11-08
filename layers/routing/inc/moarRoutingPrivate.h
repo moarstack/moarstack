@@ -44,7 +44,7 @@ typedef struct{
 	PacketStorage_T				PacketStorage;
 	RoutingNeighborsStorage_T 	NeighborsStorage;
 	RouteDataTable_T			RouteTable;
-	moarTime_T					NextProbeSentMoment;
+	moarTime_T					NextProbeSentTime;
 } RoutingLayer_T;
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );

@@ -45,6 +45,6 @@ typedef struct{
 	RouteDataTable_T			RouteTable;
 } RoutingLayer_T;
 
-
+int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );
 
 #endif //MOARSTACK_MOARROUTINGPRIVATE_H

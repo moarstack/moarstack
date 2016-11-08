@@ -17,6 +17,5 @@ int helperUpdateRoute( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T *
 int helperUpdateNeighbor(RoutingLayer_T* layer);
 int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr );
 int helperRoute2Channel( RouteAddr_T * routeAddr, ChannelAddr_T * channelAddr );
-int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );
 
 #endif //MOARSTACK_MOARROUTINGTABLESHANDLER_H

@@ -149,6 +149,8 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 		return result;
 
 	layer->NextProbeSentTime = timeGetCurrent();
+	result = clearStoredPacket( &packet );
 
-	return FUNC_RESULT_SUCCESS;
+	return result;
 }
+

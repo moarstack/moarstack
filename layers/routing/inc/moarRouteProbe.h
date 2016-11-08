@@ -13,4 +13,7 @@ typedef struct {
 	RouteAddr_T			List[ 1 ];
 } RoutePayloadProbe_T;
 
+extern int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet );
+extern int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next, RouteStoredPacket_T * newPacket );
+
 #endif //MOARSTACK_MOARROUTEPROBE_H

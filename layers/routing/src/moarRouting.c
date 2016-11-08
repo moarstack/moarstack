@@ -117,18 +117,30 @@ int routingDeinit(RoutingLayer_T* layer){
 	return FUNC_RESULT_SUCCESS;
 }
 
-int updateEpollTimeout(RoutingLayer_T* layer){
-	if(NULL == layer)
+int updateEpollTimeout( RoutingLayer_T * layer ) {
+	RouteStoredPacket_T * pack;
+	moarTimeInterval_T 	interval;
+
+	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	RouteStoredPacket_T* pack = psGetTop(&(layer->PacketStorage));
-	moarTimeInterval_T interval = EPOLL_TIMEOUT;
-	if(NULL != pack){
-		moarTime_T nextProcessing = pack->NextProcessing;
-		interval = timeGetDifference(nextProcessing, timeGetCurrent());
-		if(interval < 0)
+
+	pack = psGetTop( &( layer->PacketStorage ) );
+	interval = EPOLL_TIMEOUT;
+
+	if( NULL != pack ) {
+		moarTime_T	nextProcessing = pack->NextProcessing,
+					now = timeGetCurrent();
+
+		if( -1 == timeCompare( nextProcessing, layer->NextProbeSentMoment ) )
+			interval = timeGetDifference( nextProcessing, now );
+		else
+			interval = timeGetDifference( layer->NextProbeSentMoment, now );
+
+		if( 0 > interval )
 			interval = 0;
 	}
-	layer->EpollTimeout = (int)interval;
+
+	layer->EpollTimeout = ( int )interval;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -171,11 +183,12 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
-		int res = processPacketStorage(&layer);
+		int res = processPacketStorage(&layer); // try to process message queue
 		//timeout | end of command processing
+
 		if( -1 == timeCompare( layer.NextProbeSentMoment, timeGetCurrent() ) ) // if need to send probes
 			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
-		// try to process message queue
+
 		// calculate optimal sleep time
 		// change pool timeout
 		updateEpollTimeout(&layer);

@@ -48,3 +48,10 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 
 	return FUNC_RESULT_SUCCESS;
 }
+
+int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next, RouteStoredPacket_T * newPacket ) {
+	if( NULL == layer || NULL == oldPacket || NULL == next || NULL == newPacket )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	return FUNC_RESULT_FAILED; // not implemented yet
+}

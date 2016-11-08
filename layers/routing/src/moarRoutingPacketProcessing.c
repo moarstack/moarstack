@@ -12,6 +12,7 @@
 #include <moarRouteFinder.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
+#include "moarRouteProbe.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -153,12 +154,15 @@ int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * pa
 
 	result = FUNC_RESULT_FAILED;
 	// todo update tables
-	if( 0 < packet->XTL ) { // if will be sent according to XTL
-		// todo create new probe
-		// todo send probe
+	if( 0 < packet->XTL ) // if will be sent according to XTL
+		result = sendProbeNext( layer, packet );
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = psRemove( &layer->PacketStorage, packet ); // dispose packet
+	else {
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
+		psUpdateTime( &( layer->PacketStorage ), packet );
 	}
-	// dispose packet
-	result = psRemove( &layer->PacketStorage, packet );
 	return result;
 }
 

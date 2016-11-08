@@ -13,6 +13,7 @@
 #include <moarRoutingNeighborsStorage.h>
 #include <moarRoutingPacketProcessing.h>
 #include <moarRouteTable.h>
+#include <moarRouteProbe.h>
 
 
 // инициализация работы с Epoll - прополка сокетов
@@ -172,8 +173,8 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		}
 		int res = processPacketStorage(&layer);
 		//timeout | end of command processing
-		// if need to send probes
-		// add probe to queue | send probe to channel layer
+		if( -1 == timeCompare( layer.NextProbeSentMoment, timeGetCurrent() ) ) // if need to send probes
+			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
 		// try to process message queue
 		// calculate optimal sleep time
 		// change pool timeout

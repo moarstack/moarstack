@@ -94,6 +94,8 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	int tableInitRes = RouteTableInit(&layer->RouteTable, &tableSettings);
 	if(FUNC_RESULT_SUCCESS != tableInitRes)
 		return tableInitRes;
+	// probe sending
+	layer->NextProbeSentMoment = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
 	return FUNC_RESULT_SUCCESS;
 }
 int routingDeinit(RoutingLayer_T* layer){

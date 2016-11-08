@@ -28,6 +28,7 @@
 #define DEFAULT_XTL_STEP					((RouteXTL_T)1)
 #define DEC_XTL_ON_TRYS						false
 #define DEFAULT_PROBE_DEPTH					64
+#define DEFAULT_PROBE_SEND_PERIOD			120000 // in milliseconds
 
 typedef struct{
 	int 						ChannelSocket;
@@ -43,6 +44,7 @@ typedef struct{
 	PacketStorage_T				PacketStorage;
 	RoutingNeighborsStorage_T 	NeighborsStorage;
 	RouteDataTable_T			RouteTable;
+	moarTime_T					NextProbeSentMoment;
 } RoutingLayer_T;
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );

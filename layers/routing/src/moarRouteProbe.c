@@ -154,3 +154,50 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	return result;
 }
 
+int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
+	RouteStoredPacket_T		newPacket;
+	RoutingNeighborInfo_T	* neInfo;
+	hashIterator_T			iterator = { 0 };
+	int 					choosed, index, result;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	choosed = rand() % layer->NeighborsStorage.Count;
+
+	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	for( index = 0; FUNC_RESULT_SUCCESS == result && index < choosed; index++ )
+		if( !hashIteratorIsLast( &iterator ) )
+			result = hashIteratorNext( &iterator );
+
+	neInfo = hashIteratorData( &iterator );
+
+	while( FUNC_RESULT_SUCCESS == result && NULL == neInfo && !hashIteratorIsLast( &iterator ) ) {
+		result = hashIteratorNext( &iterator );
+		neInfo = hashIteratorData( &iterator );
+	}
+
+	// TODO find address which isn`t presented in the probe`s list
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = produceProbeNext( layer, oldPacket, &( neInfo->Address ), &newPacket );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = sendPacketToChannel( layer, &newPacket );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	layer->NextProbeSentTime = timeGetCurrent();
+	result = clearStoredPacket( &newPacket );
+
+	return result;
+}

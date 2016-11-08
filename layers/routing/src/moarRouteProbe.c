@@ -5,6 +5,7 @@
 #include <moarRoutingPrivate.h>
 #include <moarRouteProbe.h>
 #include "moarRoutingTablesHelper.h"
+#include "moarRoutingStoredPacketFunc.h"
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
@@ -54,4 +55,49 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	return FUNC_RESULT_FAILED; // not implemented yet
+}
+
+int sendProbeFirst( RoutingLayer_T * layer ) {
+	RouteStoredPacket_T		packet;
+	RoutingNeighborInfo_T	* neInfo;
+	hashIterator_T			iterator = { 0 };
+	int 					choosed, index, result;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	choosed = rand() % layer->NeighborsStorage.Count;
+
+	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	for( index = 0; FUNC_RESULT_SUCCESS == result && index < choosed; index++ )
+		if( !hashIteratorIsLast( &iterator ) )
+			result = hashIteratorNext( &iterator );
+
+	neInfo = hashIteratorData( &iterator );
+
+	while( FUNC_RESULT_SUCCESS == result && NULL == neInfo && !hashIteratorIsLast( &iterator ) ) {
+		result = hashIteratorNext( &iterator );
+		neInfo = hashIteratorData( &iterator );
+	}
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = produceProbeFirst( layer, &( neInfo->Address ), &packet );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = sendPacketToChannel( layer, &packet );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	layer->NextProbeSentMoment = timeGetCurrent();
+
+	return FUNC_RESULT_SUCCESS;
 }

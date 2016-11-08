@@ -38,9 +38,8 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 		return result;
 
 	payload = ( RoutePayloadProbe_T * )( packet->Payload );
-	payload->DepthCurrent = 1;
+	payload->DepthCurrent = 0;
 	payload->DepthMax = DEFAULT_PROBE_DEPTH;
-	payload->List[ 0 ] = *next;
 	packet->PackType = RoutePackType_Probe;
 	packet->Source = layer->LocalAddress;
 	packet->Destination = *next;
@@ -52,16 +51,27 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 	return FUNC_RESULT_SUCCESS;
 }
 
+RouteAddr_T * getProbePayloadAddress( void * probePayload, RouteProbeDepth_T index ) {
+	RoutePayloadProbe_T	* start = ( RoutePayloadProbe_T * )probePayload;
+
+	if( NULL == probePayload || index >= start->DepthCurrent )
+		return NULL;
+
+	return ( RouteAddr_T * )( start + 1 ) + index;
+}
+
 int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next, RouteStoredPacket_T * newPacket ) {
 	RoutePayloadProbe_T	* newPayload,
 						* oldPayload;
+	RouteProbeDepth_T	newDepthCurrent;
 	int 				result;
 
 	if( NULL == layer || NULL == oldPacket || NULL == next || NULL == newPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	oldPayload = ( RoutePayloadProbe_T * )( oldPacket->Payload );
-	newPacket->PayloadSize = sizeof( RoutePayloadProbe_T ) + oldPayload->DepthCurrent * sizeof( RouteAddr_T );
+	newDepthCurrent = oldPayload->DepthCurrent + ( RouteProbeDepth_T )1;
+	newPacket->PayloadSize = sizeof( RoutePayloadProbe_T ) + newDepthCurrent * sizeof( RouteAddr_T );
 	newPacket->Payload = malloc( newPacket->PayloadSize );
 
 	if( NULL == newPacket->Payload )
@@ -83,10 +93,10 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 		return result;
 
 	newPayload = ( RoutePayloadProbe_T * )( newPacket->Payload );
-	newPayload->DepthCurrent = oldPayload->DepthCurrent + ( RouteProbeDepth_T )1;
 	newPayload->DepthMax = oldPayload->DepthMax;
-	memcpy( newPayload->List, oldPayload->List, oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
-	newPayload->List[ oldPayload->DepthCurrent ] = *next;
+	newPayload->DepthCurrent = newDepthCurrent;
+	memcpy( getProbePayloadAddress( newPayload, 0 ), getProbePayloadAddress( oldPayload, 0 ), oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
+	memcpy( getProbePayloadAddress( newPayload, oldPayload->DepthCurrent ), &( layer->LocalAddress ), sizeof( RouteAddr_T ) );
 	newPacket->PackType = RoutePackType_Probe;
 	newPacket->Source = oldPacket->Source;
 	newPacket->Destination = *next;

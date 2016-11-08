@@ -10,7 +10,6 @@ typedef uint16_t	RouteProbeDepth_T;
 typedef struct {
 	RouteProbeDepth_T	DepthMax,
 						DepthCurrent;
-	RouteAddr_T			List[ 1 ];
 } RoutePayloadProbe_T;
 
 extern int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet );

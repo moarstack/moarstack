@@ -10,6 +10,7 @@ typedef uint16_t	RouteProbeDepth_T;
 typedef struct {
 	RouteProbeDepth_T	DepthMax,
 						DepthCurrent;
+	RouteAddr_T			List[ 1 ];
 } RoutePayloadProbe_T;
 
 #endif //MOARSTACK_MOARROUTEPROBE_H

@@ -3,8 +3,7 @@
 //
 
 #include <moarRoutingPrivate.h>
-#include <moarRouting.h>
-#include "moarRouteProbe.h"
+#include <moarRouteProbe.h>
 #include "moarRoutingTablesHelper.h"
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
@@ -36,8 +35,9 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 		return result;
 
 	payload = ( RoutePayloadProbe_T * )( packet->Payload );
-	payload->DepthCurrent = 0;
+	payload->DepthCurrent = 1;
 	payload->DepthMax = DEFAULT_PROBE_DEPTH;
+	payload->List[ 0 ] = *next;
 	packet->PackType = RoutePackType_Probe;
 	packet->Source = layer->LocalAddress;
 	packet->Destination = *next;

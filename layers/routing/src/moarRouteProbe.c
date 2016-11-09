@@ -100,7 +100,7 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 }
 
 int sendProbeFirst( RoutingLayer_T * layer ) {
-	RouteStoredPacket_T	packet;
+	RouteStoredPacket_T	packet = { 0 };
 	RouteAddr_T			address;
 	int 				result;
 
@@ -111,10 +111,18 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	CHECK_RESULT( result );
 
 	result = produceProbeFirst( layer, &address, &packet );
-	CHECK_RESULT( result );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		clearStoredPacket( &packet );
+		return result;
+	}
 
 	result = sendPacketToChannel( layer, &packet );
-	CHECK_RESULT( result );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		clearStoredPacket( &packet );
+		return result;
+	}
 
 	layer->NextProbeSentTime = timeGetCurrent();
 	result = clearStoredPacket( &packet );
@@ -123,7 +131,7 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 }
 
 int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
-	RouteStoredPacket_T	newPacket;
+	RouteStoredPacket_T	newPacket = { 0 };
 	RoutePayloadProbe_T	* payload;
 	RouteAddrSeekList_T	rasl;
 	RouteAddr_T			address;
@@ -159,6 +167,7 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 
 	if( FUNC_RESULT_SUCCESS != result ) {
 		raslDeinit( &rasl );
+		clearStoredPacket( &newPacket );
 		return result;
 	}
 
@@ -166,6 +175,7 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 
 	if( FUNC_RESULT_SUCCESS != result ) {
 		raslDeinit( &rasl );
+		clearStoredPacket( &newPacket );
 		return result;
 	}
 

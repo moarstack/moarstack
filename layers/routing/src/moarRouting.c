@@ -131,12 +131,18 @@ int updateEpollTimeout( RoutingLayer_T * layer ) {
 
 	if( NULL != pack ) {
 		moarTime_T	nextProcessing = pack->NextProcessing,
+					nextMaintain,
 					now = timeGetCurrent();
 
-		if( -1 == timeCompare( nextProcessing, layer->NextProbeSentTime ) )
+		if( -1 == timeCompare( layer->NextTableRenewTime, layer->NextProbeSentTime ) )
+			nextMaintain = layer->NextTableRenewTime;
+		else
+			nextMaintain = layer->NextProbeSentTime;
+		
+		if( -1 == timeCompare( nextProcessing, nextMaintain ) )
 			interval = timeGetDifference( nextProcessing, now );
 		else
-			interval = timeGetDifference( layer->NextProbeSentTime, now );
+			interval = timeGetDifference( nextMaintain, now );
 
 		if( 0 > interval )
 			interval = 0;
@@ -191,8 +197,10 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 		if( -1 == timeCompare( layer.NextProbeSentTime, timeGetCurrent() ) ) // if need to send probes
 			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
 
-		if( -1 == timeCompare( layer.NextTableRenewTime, timeGetCurrent() ) ) // if need to renew table
+		if( -1 == timeCompare( layer.NextTableRenewTime, timeGetCurrent() ) ) { // if need to renew table
 			RouteTableRenew( &( layer.RouteTable ), timeGetCurrent() ); // renew table TODO add result check
+			layer.NextTableRenewTime = timeAddInterval( timeGetCurrent(), DEFAULT_TABLE_RENEW_PERIOD );
+		}
 
 		// calculate optimal sleep time
 		// change pool timeout

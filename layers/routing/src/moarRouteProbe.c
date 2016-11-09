@@ -8,6 +8,9 @@
 #include <memory.h>
 #include "moarRoutingTablesHelper.h"
 #include "moarRoutingStoredPacketFunc.h"
+#include "moarNeIterRoutine.h"
+
+#define CHECK_RESULT(r)	do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
@@ -23,19 +26,13 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
 	result = midGenerate( &( packet->InternalId ), MoarLayer_Routing );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = rmidGenerate( &( packet->MessageId ) );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = helperRoute2Channel( next, &( packet->NextHop ) );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	payload = ( RoutePayloadProbe_T * )( packet->Payload );
 	payload->DepthCurrent = 0;
@@ -78,19 +75,13 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
 	result = midGenerate( &( newPacket->InternalId ), MoarLayer_Routing );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = rmidGenerate( &( newPacket->MessageId ) );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = helperRoute2Channel( next, &( newPacket->NextHop ) );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	newPayload = ( RoutePayloadProbe_T * )( newPacket->Payload );
 	newPayload->DepthMax = oldPayload->DepthMax;
@@ -109,44 +100,21 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 }
 
 int sendProbeFirst( RoutingLayer_T * layer ) {
-	RouteStoredPacket_T		packet;
-	RoutingNeighborInfo_T	* neInfo;
-	hashIterator_T			iterator = { 0 };
-	int 					choosed, index, result;
+	RouteStoredPacket_T	packet;
+	RouteAddr_T			address;
+	int 				result;
 
 	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	choosed = rand() % layer->NeighborsStorage.Count;
+	result = neIterFindRandNotNUll( &( layer->NeighborsStorage ), &address );
+	CHECK_RESULT( result );
 
-	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	for( index = 0; FUNC_RESULT_SUCCESS == result && index < choosed; index++ )
-		if( !hashIteratorIsLast( &iterator ) )
-			result = hashIteratorNext( &iterator );
-
-	neInfo = hashIteratorData( &iterator );
-
-	while( FUNC_RESULT_SUCCESS == result && NULL == neInfo && !hashIteratorIsLast( &iterator ) ) {
-		result = hashIteratorNext( &iterator );
-		neInfo = hashIteratorData( &iterator );
-	}
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	result = produceProbeFirst( layer, &( neInfo->Address ), &packet );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	result = produceProbeFirst( layer, &address, &packet );
+	CHECK_RESULT( result );
 
 	result = sendPacketToChannel( layer, &packet );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	layer->NextProbeSentTime = timeGetCurrent();
 	result = clearStoredPacket( &packet );
@@ -155,46 +123,51 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 }
 
 int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
-	RouteStoredPacket_T		newPacket;
-	RoutingNeighborInfo_T	* neInfo;
-	hashIterator_T			iterator = { 0 };
-	int 					choosed, index, result;
+	RouteStoredPacket_T	newPacket;
+	RoutePayloadProbe_T	* payload;
+	RouteAddrSeekList_T	rasl;
+	RouteAddr_T			address;
+	int 				result;
 
-	if( NULL == layer )
+	if( NULL == layer || NULL == oldPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	choosed = rand() % layer->NeighborsStorage.Count;
+	payload = ( RoutePayloadProbe_T * )( oldPacket->Payload );
+	result = raslInit( &rasl, payload->DepthCurrent + 1, raslCompareDefault );
+	CHECK_RESULT( result );
 
-	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
+	result = raslSet( &rasl, 0, &( oldPacket->Source ), 1 );
+	CHECK_RESULT( result );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	result = raslSet( &rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
+	CHECK_RESULT( result );
 
-	for( index = 0; FUNC_RESULT_SUCCESS == result && index < choosed; index++ )
-		if( !hashIteratorIsLast( &iterator ) )
-			result = hashIteratorNext( &iterator );
+	result = raslSort( &rasl );
+	CHECK_RESULT( result );
 
-	neInfo = hashIteratorData( &iterator );
+	result = neIterFindRandNotNUllOrUsed( &( layer->NeighborsStorage ), &rasl, &address );
 
-	while( FUNC_RESULT_SUCCESS == result && NULL == neInfo && !hashIteratorIsLast( &iterator ) ) {
-		result = hashIteratorNext( &iterator );
-		neInfo = hashIteratorData( &iterator );
+	if( FUNC_RESULT_SUCCESS != result ) {
+		result = raslDeinit( &rasl );
+		CHECK_RESULT( result );
+
+		result = neIterFindRandNotNUll( &( layer->NeighborsStorage ), &address );
+		CHECK_RESULT( result );
 	}
 
-	// TODO find address which isn`t presented in the probe`s list
+	result = produceProbeNext( layer, oldPacket, &address, &newPacket );
 
-	if( FUNC_RESULT_SUCCESS != result )
+	if( FUNC_RESULT_SUCCESS != result ) {
+		raslDeinit( &rasl );
 		return result;
-
-	result = produceProbeNext( layer, oldPacket, &( neInfo->Address ), &newPacket );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	}
 
 	result = sendPacketToChannel( layer, &newPacket );
 
-	if( FUNC_RESULT_SUCCESS != result )
+	if( FUNC_RESULT_SUCCESS != result ) {
+		raslDeinit( &rasl );
 		return result;
+	}
 
 	layer->NextProbeSentTime = timeGetCurrent();
 	result = clearStoredPacket( &newPacket );

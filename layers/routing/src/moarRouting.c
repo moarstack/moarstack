@@ -97,6 +97,8 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 		return tableInitRes;
 	// probe sending
 	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
+	// route table renewing
+	layer->NextTableRenewTime = timeAddInterval( timeGetCurrent(), DEFAULT_TABLE_RENEW_PERIOD );
 	return FUNC_RESULT_SUCCESS;
 }
 int routingDeinit(RoutingLayer_T* layer){
@@ -188,6 +190,9 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 
 		if( -1 == timeCompare( layer.NextProbeSentTime, timeGetCurrent() ) ) // if need to send probes
 			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
+
+		if( -1 == timeCompare( layer.NextTableRenewTime, timeGetCurrent() ) ) // if need to renew table
+			RouteTableRenew( &( layer.RouteTable ), timeGetCurrent() ); // renew table TODO add result check
 
 		// calculate optimal sleep time
 		// change pool timeout

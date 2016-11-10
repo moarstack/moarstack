@@ -83,7 +83,7 @@ int RouteTableRenew( RouteDataTable_T * table, moarTime_T tick ) {
 
     table->Count -= count;
     table->LastTimeUpdated = tick;
-    return ( count > 0 );
+    return FUNC_RESULT_SUCCESS;
 }
 
 int RouteTableAdd( RouteDataTable_T * table, RouteAddr_T relay, RouteAddr_T dest ) {

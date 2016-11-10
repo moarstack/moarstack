@@ -106,7 +106,7 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = neIterFindRandNotNUll( &( layer->NeighborsStorage ), &address );
+	result = neIterFindRandNotNull( &( layer->NeighborsStorage ), &address );
 	CHECK_RESULT( result );
 
 	result = produceProbeFirst( layer, &address, &packet );
@@ -152,13 +152,13 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	result = raslSort( &rasl );
 	CHECK_RESULT( result );
 
-	result = neIterFindRandNotNUllOrUsed( &( layer->NeighborsStorage ), &rasl, &address );
+	result = neIterFindRandNotNullOrUsed( &( layer->NeighborsStorage ), &rasl, &address );
 
 	if( FUNC_RESULT_SUCCESS != result ) {
 		result = raslDeinit( &rasl );
 		CHECK_RESULT( result );
 
-		result = neIterFindRandNotNUll( &( layer->NeighborsStorage ), &address );
+		result = neIterFindRandNotNull( &( layer->NeighborsStorage ), &address );
 		CHECK_RESULT( result );
 	}
 

@@ -123,7 +123,7 @@ int neIterShiftWhileUsed( hashIterator_T * iterator, size_t limit, RouteAddrSeek
 	return ( neIterCheckNullOrUsed( iterator, rasl ) ? FUNC_RESULT_FAILED : FUNC_RESULT_SUCCESS );
 }
 
-int neIterFindRandNotNUll( RoutingNeighborsStorage_T * storage, RouteAddr_T * address ) {
+int neIterFindRandNotNull( RoutingNeighborsStorage_T * storage, RouteAddr_T * address ) {
 	hashIterator_T	iterator = { 0 };
 	size_t			index;
 	int 			result;
@@ -161,7 +161,7 @@ int neIterFindRandNotNUll( RoutingNeighborsStorage_T * storage, RouteAddr_T * ad
 	return FUNC_RESULT_SUCCESS;
 }
 
-int neIterFindRandNotNUllOrUsed( RoutingNeighborsStorage_T * storage, RouteAddrSeekList_T * rasl, RouteAddr_T * address ) {
+int neIterFindRandNotNullOrUsed( RoutingNeighborsStorage_T * storage, RouteAddrSeekList_T * rasl, RouteAddr_T * address ) {
 	hashIterator_T	iterator = { 0 };
 	size_t			index;
 	int 			result;

@@ -23,7 +23,8 @@ extern int raslSort( RouteAddrSeekList_T * rasl );
 extern RouteAddr_T * raslSeek( RouteAddrSeekList_T * rasl, RouteAddr_T * needle );
 extern int raslDeinit( RouteAddrSeekList_T * rasl );
 
-extern int neIterFindRandNotNUll( RoutingNeighborsStorage_T * storage, RouteAddr_T * address );
-extern int neIterFindRandNotNUllOrUsed( RoutingNeighborsStorage_T * storage, RouteAddrSeekList_T * rasl, RouteAddr_T * address );
+extern int neIterFindRandNotNull( RoutingNeighborsStorage_T * storage, RouteAddr_T * address );
+extern int neIterFindRandNotNullOrUsed( RoutingNeighborsStorage_T * storage, RouteAddrSeekList_T * rasl,
+										RouteAddr_T * address );
 
 #endif //MOARSTACK_MOARNEITERROUTINE_H

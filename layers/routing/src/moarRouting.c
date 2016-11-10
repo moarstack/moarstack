@@ -152,6 +152,35 @@ int updateEpollTimeout( RoutingLayer_T * layer ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
+int routingMaintain( RoutingLayer_T * layer ) {
+	moarTime_T	now;
+	int 		result;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	now = timeGetCurrent();
+
+	if( -1 == timeCompare( layer->NextProbeSentTime, now ) ) { // if need to send probes
+		result = sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+	}
+
+	if( -1 == timeCompare( layer->NextTableRenewTime, now ) ) { // if need to renew table
+		result = RouteTableRenew( &( layer->RouteTable ), now ); // renew table
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		layer->NextTableRenewTime = timeAddInterval( now, DEFAULT_TABLE_RENEW_PERIOD );
+	}
+
+	result = updateEpollTimeout( layer ); // calculate optimal sleep time & change pool timeout
+	return result;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	RoutingLayer_T layer = {0};
 	int initRes = routingInit(&layer, arg);
@@ -191,20 +220,9 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
-		int res = processPacketStorage(&layer); // try to process message queue
 		//timeout | end of command processing
-
-		if( -1 == timeCompare( layer.NextProbeSentTime, timeGetCurrent() ) ) // if need to send probes
-			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
-
-		if( -1 == timeCompare( layer.NextTableRenewTime, timeGetCurrent() ) ) { // if need to renew table
-			RouteTableRenew( &( layer.RouteTable ), timeGetCurrent() ); // renew table TODO add result check
-			layer.NextTableRenewTime = timeAddInterval( timeGetCurrent(), DEFAULT_TABLE_RENEW_PERIOD );
-		}
-
-		// calculate optimal sleep time
-		// change pool timeout
-		updateEpollTimeout(&layer);
+		int res = processPacketStorage(&layer); // try to process message queue
+		res = routingMaintain( &layer );
 	}
 	routingDeinit(&layer);
 	return NULL;

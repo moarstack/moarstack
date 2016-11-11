@@ -3,6 +3,7 @@
 //
 
 #include <moarRouteFinder.h>
+#include <moarRoutingStoredPacket.h>
 
 int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAddr_T* next_hop){
     if (NULL == layer)
@@ -20,6 +21,7 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAdd
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
     packet.NextHop = *next_hop;
+    packet.XTL = 1;
     RouteAddr_T nodes_list[1];
     nodes_list[0] = layer->LocalAddress;
 

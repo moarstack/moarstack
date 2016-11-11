@@ -21,7 +21,7 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAdd
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
     packet.NextHop = *next_hop;
-    packet.XTL = 1;
+    packet.XTL = DEFAULT_XTL;
     RouteAddr_T nodes_list[1];
     nodes_list[0] = layer->LocalAddress;
 

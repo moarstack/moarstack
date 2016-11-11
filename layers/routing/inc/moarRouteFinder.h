@@ -30,6 +30,6 @@ typedef struct
     RouteAddr_T        NodeList[1];
 } RoutePayloadFinder_T;
 
-int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr_T next_hop);
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop);
 
 #endif //MOARSTACK_MOARROUTEFINDER_H

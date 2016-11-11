@@ -4,7 +4,7 @@
 
 #include <moarRouteFinder.h>
 
-int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr_T next_hop){
+int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAddr_T* next_hop){
     if (NULL == layer)
         return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -14,12 +14,12 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T destination, RouteAddr
     rmidGenerate(&packet.MessageId);
 
     packet.Source = layer->LocalAddress;
-    packet.Destination = destination;
+    packet.Destination = *destination;
     packet.NextProcessing = 0;
     packet.PackType = RoutePackType_Ack;
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
-    packet.NextHop = next_hop;
+    packet.NextHop = *next_hop;
     RouteAddr_T nodes_list[1];
     nodes_list[0] = layer->LocalAddress;
 

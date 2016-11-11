@@ -25,10 +25,8 @@
 
 typedef struct
 {
-    uint8_t            Size;
     uint8_t            MaxSize;
-    RouteAddr_T        NodeList[1];
-} RoutePayloadFinder_T;
+} RouteInitialPayloadFinder_T;
 
 int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop);
 

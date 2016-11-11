@@ -23,16 +23,11 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAdd
     RouteAddr_T nodes_list[1];
     nodes_list[0] = layer->LocalAddress;
 
-    packet.PayloadSize = sizeof(RouteAddr_T) + sizeof(uint8_t);
+    packet.PayloadSize = sizeof(RouteInitialPayloadFinder_T);
     packet.Payload = malloc(packet.PayloadSize);
     if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-
-    RoutePayloadFinder_T* payload = (RoutePayloadFinder_T*)packet.Payload;
-    memcpy(&payload->NodeList, nodes_list, sizeof(RouteAddr_T));
-    payload->Size = 1;
+    RouteInitialPayloadFinder_T* payload = (RouteInitialPayloadFinder_T*)packet.Payload;
     payload->MaxSize = MaxRouteFinderPacketSize;
-
-
     int send_result = sendPacketToChannel(layer, &packet);
     free(payload);
 

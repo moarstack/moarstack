@@ -162,7 +162,7 @@ int routingMaintain( RoutingLayer_T * layer ) {
 	now = timeGetCurrent();
 
 	if( -1 == timeCompare( layer->NextProbeSentTime, now ) ) { // if need to send probes
-		result = sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
+		result = sendProbeFirst( layer ); // add probe to queue | send probe to channel layer TODO add result check
 
 		if( FUNC_RESULT_SUCCESS != result )
 			return result;

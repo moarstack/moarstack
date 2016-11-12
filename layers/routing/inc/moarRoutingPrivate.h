@@ -26,7 +26,7 @@
 #define DEFAULT_ROUTE_TRYS					3
 #define	DEFAULT_XTL							((RouteXTL_T)1024)
 #define DEFAULT_XTL_STEP					((RouteXTL_T)1)
-#define DEC_XTL_ON_TRYS						falses
+#define DEC_XTL_ON_TRYS						false
 #define DEFAULT_PROBE_DEPTH					64
 #define DEFAULT_PROBE_SEND_PERIOD			120000 // in milliseconds
 #define DEFAULT_TABLE_RENEW_PERIOD			15000 // calibrate!

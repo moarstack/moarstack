@@ -10,6 +10,7 @@
 #include <moarCommons.h>
 #include <moarRouteAck.h>
 #include <moarRouteFinder.h>
+#include <moarRouteFinderAck.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
 #include "moarRouteProbe.h"
@@ -118,7 +119,12 @@ int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* p
 	if (RoutePackType_FinderAck != packet->PackType)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
-	// todo process content
+
+	res = processPayloadFinderAck( layer, packet );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
 		res = FUNC_RESULT_SUCCESS;

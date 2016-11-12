@@ -2,6 +2,7 @@
 // Created by kryvashek on 08.11.16.
 //
 
+#include <moarRoutingTablesHelper.h>
 #include "moarRouting.h"		// RouteAddr_T
 #include "moarChannel.h"		// ChannelAddr_T
 #include "moarRoutingPrivate.h"

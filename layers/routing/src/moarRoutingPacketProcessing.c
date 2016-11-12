@@ -42,7 +42,8 @@ int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 
 	if( FUNC_RESULT_SUCCESS != result )
 		return result;
-
+	
+	helperUpdateNeighbor( layer ); // TODO implement fine neighbor updating ???
 	result = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != result )
@@ -83,6 +84,7 @@ int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 	if( FUNC_RESULT_SUCCESS != res )
 		return res;
 
+	helperUpdateNeighbor( layer ); // TODO implement fine neighbor updating ???
 	res = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
 
 	if( FUNC_RESULT_SUCCESS != res )

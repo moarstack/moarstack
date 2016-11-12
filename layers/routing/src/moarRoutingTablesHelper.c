@@ -63,6 +63,8 @@ int helperUpdateRoute( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T *
 	if( NULL == layer || NULL == dest || NULL == relay )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	helperUpdateNeighbor( layer ); // TODO implement fine neighbor updating ???
+
 	row = RouteTableGetRecord( &( layer->RouteTable ), *relay, *dest );
 
 	if( NULL == row )

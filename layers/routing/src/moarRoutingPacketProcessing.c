@@ -10,6 +10,7 @@
 #include <moarCommons.h>
 #include <moarRouteAck.h>
 #include <moarRouteFinder.h>
+#include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
@@ -28,24 +29,71 @@ int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T 
 	return WriteCommand(layer->PresentationSocket, &command);
 }
 
-int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
+int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	RouteAddr_T relayAddr;
+	int 		result;
+
+	if( NULL == layer || NULL == packet || RoutePackType_Data != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Data != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo update routes if needed (like for ack)
+
+	result = helperChannel2Route( &( packet->LastHop ), &relayAddr );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
+	result = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		return result;
+
 	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
 		//// forward up
-		res = sendPacketToPresentation(layer, packet);
-		produceAck(layer,packet); // todo check function result
+		result = sendPacketToPresentation( layer, packet );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		result = produceAck( layer, packet );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
 
 		//// dispose packet
-		psRemove(&layer->PacketStorage, packet);
-		res = FUNC_RESULT_SUCCESS;
+		result = psRemove( &layer->PacketStorage, packet );
+	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
+		//// change state to processing
+		packet->State = StoredPackState_InProcessing;
+		result = FUNC_RESULT_SUCCESS;
+	}
+	return result;
+}
+
+int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	RouteAddr_T relayAddr;
+	int res;
+
+	if( NULL == layer || NULL == packet || RoutePackType_Ack != packet->PackType )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	res = helperChannel2Route( &( packet->LastHop ), &relayAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
+	res = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return res;
+
+	// if destination
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
+		//// forward up event
+		res = notifyPresentation( layer, &packet->InternalId,
+								  PackStateRoute_Sent ); // todo review this logic !!! YES! Not by MID of ACK packet, but by source packet MID, which should be found by its RMID, retrieved from ACK packet payload
+		//// dispose packet
+		psRemove( &layer->PacketStorage, packet );
+		//res = FUNC_RESULT_SUCCESS;
 	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
@@ -53,29 +101,7 @@ int processReceivedDataPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet
 	}
 	return res;
 }
-int processReceivedAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Ack != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo update routes if needed
-	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
-		//// forward up event
-		res = notifyPresentation(layer, &packet->InternalId, PackStateRoute_Sent); // todo review this logic !!! YES! Not by MID of ACK packet, but by source packet MID, which should be found by its RMID, retrieved from ACK packet payload
-		//// dispose packet
-		psRemove(&layer->PacketStorage, packet);
-		//res = FUNC_RESULT_SUCCESS;
-	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
-		//// change state to processing
-		packet->State = StoredPackState_InProcessing;
-		res = FUNC_RESULT_SUCCESS;
-	}
-	return res;
-}
+
 int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -166,10 +192,11 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 }
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	ChannelAddr_T 	relayAddr;
+	int				result;
+
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	int res = FUNC_RESULT_FAILED;
 
 	if( DEC_XTL_ON_TRYS && DEFAULT_ROUTE_TRYS > packet->TrysLeft )
 		packet->XTL -= DEFAULT_XTL_STEP;    // will decrease XTL on every attempt except of very first, if setting DEC_XTL_ON_TRYS is chosen TRUE
@@ -184,23 +211,34 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 		} //else	
 		// todo possible nack sending here
 		//// dispose packet
-		res = psRemove( &layer->PacketStorage, packet );
-		return res;
+		result = psRemove( &layer->PacketStorage, packet );
+		return result;
 	}
-	// try to find route || neighbor
-	// if found
-	//// send to relay
-	//// change state to wait sent
-	//// update timeout
-	// else
-	//// update timeout
-	//// send finder
-	// todo make it started by if-else
 
-	//todo fill stub local adresses, replace with actual addrs.
-	produceRouteFinder(layer,  layer->LocalAddress, layer->LocalAddress);
+	result = helperFindRelay( layer, &( packet->Destination ), &relayAddr ); // try to find route || neighbor
 
-	return res;
+	if( FUNC_RESULT_SUCCESS == result ) {// if found
+		packet->NextHop = relayAddr;
+		result = sendPacketToChannel( layer, packet );	// send to relay
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		packet->State = StoredPackState_WaitSent;	// change state to wait sent
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
+	} else {// else
+		// todo make it started by if-else (kryvashek: ???)
+		result = sendFindersFirst( layer, &( packet->Destination ) ); // send finders
+
+		if( FUNC_RESULT_SUCCESS != result )
+			return result;
+
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), FACK_WAITING_TIMEOUT );
+	}
+
+	result = psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
+
+	return result;
 }
 
 int processWaitSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet){

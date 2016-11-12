@@ -21,11 +21,13 @@
 #define CHANNEL_PROCESSING_RULES_COUNT		6
 #define PRESENTATION_PROCESSING_RULES_COUNT	2
 #define ACK_WAITING_TIMEOUT					10000
+#define FACK_WAITING_TIMEOUT				15000
 #define SENT_WAITING_TIMEOUT				10000
 #define DEFAULT_ROUTE_TRYS					3
 #define	DEFAULT_XTL							((RouteXTL_T)1024)
 #define DEFAULT_XTL_STEP					((RouteXTL_T)1)
 #define DEC_XTL_ON_TRYS						false
+#define DEFAULT_FINDER_DEPTH				64
 
 typedef struct{
 	int 						ChannelSocket;
@@ -43,6 +45,6 @@ typedef struct{
 	RouteDataTable_T			RouteTable;
 } RoutingLayer_T;
 
-
+int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );
 
 #endif //MOARSTACK_MOARROUTINGPRIVATE_H

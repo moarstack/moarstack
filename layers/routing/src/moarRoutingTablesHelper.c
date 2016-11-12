@@ -56,10 +56,40 @@ int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 	int res = storageRemove(&(layer->NeighborsStorage), address);
 	return res;
 }
-int helperUpdateRoute(RoutingLayer_T* layer){
-	// todo add table work
+
+int helperUpdateRoute( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T * relay ) {
+	RouteDataRecord_T	* row;
+
+	if( NULL == layer || NULL == dest || NULL == relay )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	row = RouteTableGetRecord( &( layer->RouteTable ), *relay, *dest );
+
+	if( NULL == row )
+		RouteTableAdd( &( layer->RouteTable ), *relay, *dest );
+	else
+		RouteTableUpdate( row );
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+int helperUpdateNeighbor( RoutingLayer_T * layer ) {
 	return FUNC_RESULT_FAILED;
 }
-int helperUpdateNeighbor(RoutingLayer_T* layer){
-	return FUNC_RESULT_FAILED;
+
+int helperChannel2Route( ChannelAddr_T * channelAddr, RouteAddr_T * routeAddr ) {
+	if( NULL == channelAddr || NULL == routeAddr )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	*routeAddr = *( RouteAddr_T * )channelAddr; // edit when types become different
+	return FUNC_RESULT_SUCCESS;
+}
+
+int helperRoute2Channel( RouteAddr_T * routeAddr, ChannelAddr_T * channelAddr ) {
+	if( NULL == channelAddr || NULL == routeAddr )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	*channelAddr = *( ChannelAddr_T * )routeAddr; // edit when types become different
+	return FUNC_RESULT_SUCCESS;
+
 }

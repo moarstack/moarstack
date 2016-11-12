@@ -17,14 +17,11 @@ int produceRouteFinder(RoutingLayer_T *layer, RouteAddr_T* destination, RouteAdd
     packet.Source = layer->LocalAddress;
     packet.Destination = *destination;
     packet.NextProcessing = 0;
-    packet.PackType = RoutePackType_Ack;
+    packet.PackType = RoutePackType_Finder;
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
     packet.NextHop = *next_hop;
     packet.XTL = DEFAULT_XTL;
-    RouteAddr_T nodes_list[1];
-    nodes_list[0] = layer->LocalAddress;
-
     packet.PayloadSize = sizeof(RouteInitialPayloadFinder_T);
     packet.Payload = malloc(packet.PayloadSize);
     if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;

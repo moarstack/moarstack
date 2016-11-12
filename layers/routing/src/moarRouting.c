@@ -13,6 +13,7 @@
 #include <moarRoutingNeighborsStorage.h>
 #include <moarRoutingPacketProcessing.h>
 #include <moarRouteTable.h>
+#include <moarRouteProbe.h>
 
 
 // инициализация работы с Epoll - прополка сокетов
@@ -94,6 +95,8 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	int tableInitRes = RouteTableInit(&layer->RouteTable, &tableSettings);
 	if(FUNC_RESULT_SUCCESS != tableInitRes)
 		return tableInitRes;
+	// probe sending
+	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
 	return FUNC_RESULT_SUCCESS;
 }
 int routingDeinit(RoutingLayer_T* layer){
@@ -114,18 +117,30 @@ int routingDeinit(RoutingLayer_T* layer){
 	return FUNC_RESULT_SUCCESS;
 }
 
-int updateEpollTimeout(RoutingLayer_T* layer){
-	if(NULL == layer)
+int updateEpollTimeout( RoutingLayer_T * layer ) {
+	RouteStoredPacket_T * pack;
+	moarTimeInterval_T 	interval;
+
+	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	RouteStoredPacket_T* pack = psGetTop(&(layer->PacketStorage));
-	moarTimeInterval_T interval = EPOLL_TIMEOUT;
-	if(NULL != pack){
-		moarTime_T nextProcessing = pack->NextProcessing;
-		interval = timeGetDifference(nextProcessing, timeGetCurrent());
-		if(interval < 0)
+
+	pack = psGetTop( &( layer->PacketStorage ) );
+	interval = EPOLL_TIMEOUT;
+
+	if( NULL != pack ) {
+		moarTime_T	nextProcessing = pack->NextProcessing,
+					now = timeGetCurrent();
+
+		if( -1 == timeCompare( nextProcessing, layer->NextProbeSentTime ) )
+			interval = timeGetDifference( nextProcessing, now );
+		else
+			interval = timeGetDifference( layer->NextProbeSentTime, now );
+
+		if( 0 > interval )
 			interval = 0;
 	}
-	layer->EpollTimeout = (int)interval;
+
+	layer->EpollTimeout = ( int )interval;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -168,11 +183,12 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 				// return NULL;
 			}
 		}
-		int res = processPacketStorage(&layer);
+		int res = processPacketStorage(&layer); // try to process message queue
 		//timeout | end of command processing
-		// if need to send probes
-		// add probe to queue | send probe to channel layer
-		// try to process message queue
+
+		if( -1 == timeCompare( layer.NextProbeSentTime, timeGetCurrent() ) ) // if need to send probes
+			sendProbeFirst( &layer ); // add probe to queue | send probe to channel layer TODO add result check
+
 		// calculate optimal sleep time
 		// change pool timeout
 		updateEpollTimeout(&layer);

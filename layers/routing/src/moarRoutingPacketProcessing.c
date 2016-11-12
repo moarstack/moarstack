@@ -12,6 +12,7 @@
 #include <moarRouteFinder.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
+#include "moarRouteProbe.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -144,22 +145,25 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	res = psRemove(&layer->PacketStorage, packet);
 	return res;
 }
-int processReceivedProbePacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
+
+int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	int result;
+
+	if( NULL == layer || NULL == packet || RoutePackType_Probe != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Probe != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
+
+	result = FUNC_RESULT_FAILED;
 	// todo update tables
-	if( 0 < packet->XTL ) { // if will be sent according to XTL
-		// todo create new probe
-		// todo send probe
+	if( 0 < packet->XTL ) // if will be sent according to XTL
+		result = sendProbeNext( layer, packet );
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = psRemove( &layer->PacketStorage, packet ); // dispose packet
+	else {
+		packet->NextProcessing = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
+		psUpdateTime( &( layer->PacketStorage ), packet );
 	}
-	// dispose packet
-	res = psRemove(&layer->PacketStorage, packet);
-	return res;
+	return result;
 }
 
 int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {

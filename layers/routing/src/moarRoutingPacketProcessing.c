@@ -9,6 +9,7 @@
 #include <moarRoutingStoredPacketFunc.h>
 #include <moarCommons.h>
 #include <moarRouteAck.h>
+#include <moarRouteFinder.h>
 #include "moarRoutingPacketProcessing.h"
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
@@ -194,6 +195,11 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 	// else
 	//// update timeout
 	//// send finder
+	// todo make it started by if-else
+
+	//todo fill stub local adresses, replace with actual addrs.
+	produceRouteFinder(layer,  layer->LocalAddress, layer->LocalAddress);
+
 	return res;
 }
 

@@ -28,10 +28,12 @@ typedef struct
     uint8_t            MaxSize;
 } RouteInitialPayloadFinder_T;
 
+int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest );
+
 int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop);
 
-int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket,  RouteAddr_T *destination, RouteAddr_T *nextHop);
+int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket,  RouteAddr_T *nextHop);
 
-uint8_t getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T  prevPayloadSize, RouteAddr_T *nextHop, uint8_t** nextPacketPayload);
+uint8_t getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T  prevPayloadSize, RouteAddr_T *nextHop, void** nextPacketPayload);
 
 #endif //MOARSTACK_MOARROUTEFINDER_H

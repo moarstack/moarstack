@@ -7,7 +7,7 @@
 
 
 int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop) {
-    if (NULL == layer)
+    if (NULL == layer|| NULL == destination || NULL == next_hop)
         return FUNC_RESULT_FAILED_ARGUMENT;
 
     RouteStoredPacket_T packet = {0};
@@ -33,37 +33,40 @@ int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, R
 
     return send_result;
 }
-int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
-	hashIterator_T			iterator = { 0 };
-	RoutingNeighborInfo_T	* neInfo;
-	int 					result,
-							count;
 
-	if( NULL == layer || NULL == dest )
-		return FUNC_RESULT_FAILED_ARGUMENT;
+
+
+int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
+    hashIterator_T			iterator = { 0 };
+    RoutingNeighborInfo_T	* neInfo;
+    int 					result,
+            count;
+
+    if( NULL == layer || NULL == dest )
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
 	if( 0 == layer->NeighborsStorage.Count )
 		return FUNC_RESULT_FAILED_NEIGHBORS;
 
-	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
+    result = storageIterator( &( layer->NeighborsStorage ), &iterator );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+    if( FUNC_RESULT_SUCCESS != result )
+        return result;
 
-	count = 0;
+    count = 0;
 
-	while( !hashIteratorIsLast( &iterator ) ) {
-		neInfo = storageIteratorData( &iterator );
-		hashIteratorNext( &iterator );
-		result = produceRouteFinder( layer, dest, &( neInfo->Address ) );
+    while( !hashIteratorIsLast( &iterator ) ) {
+        neInfo = storageIteratorData( &iterator );
+        hashIteratorNext( &iterator );
+        result = produceInitialRouteFinder( layer, dest, &( neInfo->Address ) );
 
-		if( FUNC_RESULT_SUCCESS == result )
-			count++;
-	}
+        if( FUNC_RESULT_SUCCESS == result )
+            count++;
+    }
 
-	hashIteratorFree( &iterator );
+    hashIteratorFree( &iterator );
 
-	return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED );
+    return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED_IO );
 }
 
 ////тут мы прикидываем из старого пакета с частью пути делаем новый и перекидываем дальше
@@ -71,27 +74,33 @@ int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
 
 // по пейлоуду предыдущего пакета делаем пейлоуд для следующего
 uint8_t getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
-                                  RouteAddr_T *nextHop, uint8_t **nextPacketPayload) {
+                                  RouteAddr_T *nextHop, void **nextPacketPayload) {
+    if( NULL == layer || NULL == prevPayload || 0 == prevPayloadSize || NULL == nextHop || NULL ==nextPacketPayload)
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
     uint8_t * nextPayload =  malloc(prevPayloadSize + sizeof(RouteAddr_T));
     if (NULL == nextPayload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
     memcpy(nextPayload, prevPayload, prevPayloadSize);
-    *(nextPayload + prevPayloadSize) = nextHop;
+    *(RouteAddr_T*)(nextPayload + prevPayloadSize) = *nextHop;
     *nextPacketPayload =  nextPayload;
     return FUNC_RESULT_SUCCESS;
 }
 
 
-int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket, RouteAddr_T *destination,
+int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket,
                            RouteAddr_T *nextHop) {
+
+    if( NULL == layer || NULL == prevPacket || NULL == nextHop)
+        return FUNC_RESULT_FAILED_ARGUMENT;
+
     RouteStoredPacket_T packet = {0};
 
     midGenerate(&packet.InternalId, MoarLayer_Routing);
     rmidGenerate(&packet.MessageId);
 
     packet.Source = layer->LocalAddress;
-    packet.Destination = *destination;
+    packet.Destination = prevPacket->Destination;
     packet.NextProcessing = 0;
     packet.PackType = RoutePackType_Finder;
     packet.State = StoredPackState_InProcessing;
@@ -108,12 +117,5 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     free(packet.Payload);
 
     return send_result;
-
-}
-
-////А тут пакет прибыл куда искал. Время вернуть FinderAck
-int finishRouteFinder(RouteAddr_T *layer, RouteStoredPacket_T *routeFinderPacket ){
-    // обновить табличку роутинга
-    // запустить обратный пакет
 }
 

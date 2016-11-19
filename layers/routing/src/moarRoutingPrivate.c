@@ -30,3 +30,31 @@ int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T *
 
 	return result;
 }
+
+int helperUpdateRouteAddrChain( RoutingLayer_T * layer, RouteAddr_T * list, size_t count, bool before ) {
+	const ssize_t	step( before ? -1 : 1 );
+	int 			result;
+
+	for( count--; count > 0; list += step ) {
+		result = helperUpdateRoute( layer, list + step, list );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			count--;
+	}
+
+	return ( 0 == count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED );
+}
+
+int helperUpdateRouteAddrChainBefore( RoutingLayer_T * layer, RouteAddr_T * list, size_t count ) {
+	if( NULL == layer || NULL == list || 0 == count )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	return helperUpdateRouteAddrChain( layer, list, count, true );
+}
+
+int helperUpdateRouteAddrChainAfter( RoutingLayer_T * layer, RouteAddr_T * list, size_t count ) {
+	if( NULL == layer || NULL == list || 0 == count )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	return helperUpdateRouteAddrChain( layer, list, count, false );
+}

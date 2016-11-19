@@ -8,6 +8,8 @@
 #include <moarRoutingPrivate.h>
 #include <moarRoutingStoredPacket.h>
 
-int processPayloadFinderAck( RoutingLayer_T * layer, RouteStoredPacket_T * packet );
+extern int processPayloadFinderAck( RoutingLayer_T * layer, RouteStoredPacket_T * packet );
+extern int produceFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteStoredPacket_T * newPacket );
+extern int sendFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket );
 
 #endif //MOARSTACK_MOARROUTEFINDERACK_H

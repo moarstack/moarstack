@@ -4,34 +4,35 @@
 
 #include <moarRouteFinder.h>
 
-int produceRouteFinder( RoutingLayer_T * layer, RouteAddr_T * destination, RouteAddr_T * next_hop ) {
-	if( NULL == layer )
-		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	RouteStoredPacket_T packet = { 0 };
 
-	midGenerate( &packet.InternalId, MoarLayer_Routing );
-	rmidGenerate( &packet.MessageId );
+int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop) {
+    if (NULL == layer)
+        return FUNC_RESULT_FAILED_ARGUMENT;
 
-	packet.Source = layer->LocalAddress;
-	packet.Destination = *destination;
-	packet.NextProcessing = 0;
-	packet.PackType = RoutePackType_Finder;
-	packet.State = StoredPackState_InProcessing;
-	packet.TrysLeft = DEFAULT_ROUTE_TRYS;
-	packet.NextHop = *next_hop;
+    RouteStoredPacket_T packet = {0};
+
+    midGenerate(&packet.InternalId, MoarLayer_Routing);
+    rmidGenerate(&packet.MessageId);
+
+    packet.Source = layer->LocalAddress;
+    packet.Destination = *destination;
+    packet.NextProcessing = 0;
+    packet.PackType = RoutePackType_Finder;
+    packet.State = StoredPackState_InProcessing;
+    packet.TrysLeft = DEFAULT_ROUTE_TRYS;
+    packet.NextHop = *next_hop;
 	packet.XTL = DEFAULT_XTL_FINDER;
-	packet.PayloadSize = sizeof( RouteInitialPayloadFinder_T );
-	packet.Payload = malloc( packet.PayloadSize );
-	if( NULL == packet.Payload ) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-	RouteInitialPayloadFinder_T * payload = ( RouteInitialPayloadFinder_T * )packet.Payload;
-	payload->MaxSize = MaxRouteFinderPacketSize;
-	int send_result = sendPacketToChannel( layer, &packet );
-	free( payload );
+    packet.PayloadSize = sizeof(RouteInitialPayloadFinder_T);
+    packet.Payload = malloc(packet.PayloadSize);
+    if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+    RouteInitialPayloadFinder_T* payload = (RouteInitialPayloadFinder_T*)packet.Payload;
+    payload->MaxSize = MaxRouteFinderPacketSize;
+    int send_result = sendPacketToChannel(layer, &packet);
+    free(payload);
 
-	return send_result;
+    return send_result;
 }
-
 int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
 	hashIterator_T			iterator = { 0 };
 	RoutingNeighborInfo_T	* neInfo;
@@ -64,3 +65,55 @@ int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
 
 	return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED );
 }
+
+////тут мы прикидываем из старого пакета с частью пути делаем новый и перекидываем дальше
+
+
+// по пейлоуду предыдущего пакета делаем пейлоуд для следующего
+uint8_t getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
+                                  RouteAddr_T *nextHop, uint8_t **nextPacketPayload) {
+
+    uint8_t * nextPayload =  malloc(prevPayloadSize + sizeof(RouteAddr_T));
+    if (NULL == nextPayload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+    memcpy(nextPayload, prevPayload, prevPayloadSize);
+    *(nextPayload + prevPayloadSize) = nextHop;
+    *nextPacketPayload =  nextPayload;
+    return FUNC_RESULT_SUCCESS;
+}
+
+
+int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket, RouteAddr_T *destination,
+                           RouteAddr_T *nextHop) {
+    RouteStoredPacket_T packet = {0};
+
+    midGenerate(&packet.InternalId, MoarLayer_Routing);
+    rmidGenerate(&packet.MessageId);
+
+    packet.Source = layer->LocalAddress;
+    packet.Destination = *destination;
+    packet.NextProcessing = 0;
+    packet.PackType = RoutePackType_Finder;
+    packet.State = StoredPackState_InProcessing;
+    packet.TrysLeft = DEFAULT_ROUTE_TRYS;
+    packet.NextHop = *nextHop;
+    packet.XTL = DEFAULT_XTL;
+
+    if (FUNC_RESULT_FAILED_MEM_ALLOCATION == getNextRouteFinderPayload(layer,prevPacket->Payload, prevPacket->PayloadSize,
+                                                                       nextHop, &packet.Payload))
+        return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+    packet.PayloadSize = prevPacket->PayloadSize + sizeof(RouteAddr_T);
+    int send_result = sendPacketToChannel(layer, &packet);
+    free(packet.Payload);
+
+    return send_result;
+
+}
+
+////А тут пакет прибыл куда искал. Время вернуть FinderAck
+int finishRouteFinder(RouteAddr_T *layer, RouteStoredPacket_T *routeFinderPacket ){
+    // обновить табличку роутинга
+    // запустить обратный пакет
+}
+

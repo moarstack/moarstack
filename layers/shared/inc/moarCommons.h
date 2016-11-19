@@ -11,6 +11,7 @@
 
 #define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
 #define CRC_SIZE				sizeof( Crc_T )
+#define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
 
 #pragma pack(push, 1)
 

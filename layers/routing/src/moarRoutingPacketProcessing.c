@@ -13,7 +13,8 @@
 #include <moarRouteFinderAck.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
-#include "moarRouteProbe.h"
+#include <moarRouteProbe.h>
+#include <moarRouteFinderAck.h>
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -124,15 +125,13 @@ int processReceivedFinderAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T 
 		return result;
 	}
 
-	// if destination
-	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
-		result = FUNC_RESULT_SUCCESS;
-	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
-		//// todo create new packet
-		//// todo add with processing state
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) // if destination
+		result = psRemove( &layer->PacketStorage, packet ); // dispose packet
+	else if( 0 < packet->XTL ) { // else if will be sent according to XTL
+		packet->State = StoredPackState_InProcessing;
+		return FUNC_RESULT_SUCCESS;
 	}
-	//// dispose packet
-	result = psRemove( &layer->PacketStorage, packet );
+
 	return result;
 }
 
@@ -147,8 +146,8 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	// todo process content
 	// if destination
 	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
-		//// todo create finder ack
-		//// todo add finder ack with procesing state
+		res = sendFack( layer, packet );
+		CHECK_RESULT( res );
 	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// todo create new packet
 		//// todo try to send

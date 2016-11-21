@@ -59,4 +59,6 @@ int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T *
 int helperUpdateRouteAddrChainBefore( RoutingLayer_T * layer, RouteAddr_T * list, size_t count );
 int helperUpdateRouteAddrChainAfter( RoutingLayer_T * layer, RouteAddr_T * list, size_t count );
 int helperUpdateRouteAddrChain( RoutingLayer_T * layer, RouteAddr_T * list, size_t count, bool before );
+int helperSolveRoutes( RoutingLayer_T * layer );
+
 #endif //MOARSTACK_MOARROUTINGPRIVATE_H

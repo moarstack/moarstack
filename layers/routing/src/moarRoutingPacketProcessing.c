@@ -154,7 +154,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 		// also multiple stage finders process here
 		ChannelAddr_T* relayAddrChannel;
 		RouteAddr_T*   relayAddr;
-		int result = helperFindRelay(layer, &(packet->Destination), relayAddrChannel);
+		int result = helperFindRelay(layer, &(packet->Destination), &relayAddrChannel);
 		if (FUNC_RESULT_SUCCESS == result){
 			helperChannel2Route(relayAddrChannel, relayAddr);
 			produceNextRouteFinder(layer, packet, relayAddr);

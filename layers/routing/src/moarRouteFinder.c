@@ -34,8 +34,6 @@ int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, R
     return send_result;
 }
 
-
-
 int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
     hashIterator_T			iterator = { 0 };
     RoutingNeighborInfo_T	* neInfo;
@@ -73,7 +71,7 @@ int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
 
 
 // по пейлоуду предыдущего пакета делаем пейлоуд для следующего
-uint8_t getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
+int getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
                                   RouteAddr_T *nextHop, void **nextPacketPayload) {
     if( NULL == layer || NULL == prevPayload || 0 == prevPayloadSize || NULL == nextHop || NULL ==nextPacketPayload)
         return FUNC_RESULT_FAILED_ARGUMENT;
@@ -108,11 +106,24 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     packet.NextHop = *nextHop;
     packet.XTL = DEFAULT_XTL;
 
-    if (FUNC_RESULT_FAILED_MEM_ALLOCATION == getNextRouteFinderPayload(layer,prevPacket->Payload, prevPacket->PayloadSize,
-                                                                       nextHop, &packet.Payload))
-        return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+    int recCount = (prevPacket->PayloadSize - sizeof(uint8_t)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
+    if (MaxRouteFinderPacketSize <= recCount)
+    {
+// todo push finderack back to origin
+        packet.PayloadSize = sizeof(RouteInitialPayloadFinder_T);
+        packet.Payload = malloc(packet.PayloadSize);
+        if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+        RouteInitialPayloadFinder_T* payload = (RouteInitialPayloadFinder_T*)packet.Payload;
+        payload->MaxSize = MaxRouteFinderPacketSize;
+    }
+    else {
+        if (FUNC_RESULT_FAILED_MEM_ALLOCATION ==
+            getNextRouteFinderPayload(layer, prevPacket->Payload, prevPacket->PayloadSize,
+                                      nextHop, &packet.Payload))
+            return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
-    packet.PayloadSize = prevPacket->PayloadSize + sizeof(RouteAddr_T);
+        packet.PayloadSize = prevPacket->PayloadSize + sizeof(RouteAddr_T);
+    }
     int send_result = sendPacketToChannel(layer, &packet);
     free(packet.Payload);
 

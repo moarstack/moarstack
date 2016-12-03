@@ -32,7 +32,7 @@ int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T *
 }
 
 int helperUpdateRouteAddrChain( RoutingLayer_T * layer, RouteAddr_T * list, size_t count, bool before ) {
-	const ssize_t	step( before ? -1 : 1 );
+	const ssize_t	step = ( before ? -1 : 1 );
 	int 			result;
 
 	for( count--; count > 0; list += step ) {

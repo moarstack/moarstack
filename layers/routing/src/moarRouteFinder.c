@@ -106,7 +106,7 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     packet.NextHop = *nextHop;
     packet.XTL = DEFAULT_XTL;
 
-    int recCount = (prevPacket->PayloadSize - sizeof(uint8_t)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
+    int recCount = (prevPacket->PayloadSize - sizeof(RouteInitialPayloadFinder_T)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
     if (MaxRouteFinderPacketSize <= recCount)
     {
 // todo push finderack back to origin

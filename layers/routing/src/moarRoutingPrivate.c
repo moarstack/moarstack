@@ -15,10 +15,10 @@
 #include "moarRoutingPrivate.h"
 
 typedef struct {
-	float		weight;
-	RouteAddr_T	parent,
-				root;
-} AimInfo_T;			// todo think about moving into header
+	RouteAddr_T		Relay;
+	RouteChance_T	Chance;
+	bool			Found;
+} AimInfo_T;				// todo think about moving into header
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay ) {
 	RouteDataRecord_T		* row;
@@ -46,9 +46,10 @@ int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T *
 
 int helperUpdateRouteAddrChain( RoutingLayer_T * layer, RouteAddr_T * list, size_t count, bool before ) {
 	const ssize_t	step = ( before ? -1 : 1 );
+	size_t			left;
 	int 			result;
 
-	for( count--; count > 0; list += step ) {
+	for( left = --count; left > 0; left--, list += step ) {
 		result = helperUpdateRoute( layer, list + step, list );
 
 		if( FUNC_RESULT_SUCCESS == result )
@@ -83,64 +84,93 @@ int routeChancesCompare( void * one, void * two, size_t size ) {
 
 int helperSolveRoutes( RoutingLayer_T * layer ) {
 	hashTable_T				aims;
-	RouteDataRecord_T		* row,
-							temp;
-	AimInfo_T				tempInfo = { .weight = FLT_MAX },
-							* current;
+	RouteDataRecord_T		* recEntry,
+							current,
+							child;
+	RouteChance_T			newChance;
+	RouteAddr_T				* dest;
+	AimInfo_T				* aimEntry,
+							aim;
 	PriorityQueue_T			order;
-	hashIterator_T			neIter;
+	hashIterator_T			iterator;
 	RoutingNeighborInfo_T	* neInfo;
-	bool					* used;
+	int 					result;
 
-	hashInit( &aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( AimInfo_T ) );
+	hashInit( &aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( RouteDataRecord_T ) );
 
-	row = RouteTableRowFirst( &( layer->RouteTable ) );
+	recEntry = RouteTableRowFirst( &( layer->RouteTable ) );
+	aim.Chance = 0;
+	aim.Found = false;
+	memset( &( aim.Relay ), 0, sizeof( aim.Relay ) );
 
-	while( NULL != row ) {
-		if( !hashContain( &aims, &( row->Relay ) ) )
-			hashAdd( &aims, &( row->Relay ), &tempInfo );
+	while( NULL != recEntry ) {
+		if( !hashContain( &aims, &( recEntry->Relay ) ) )
+			hashAdd( &aims, &( recEntry->Relay ), &aim );
 
-		if( !hashContain( &aims, &( row->Dest ) ) )
-			hashAdd( &aims, &( row->Dest ), &tempInfo );
+		if( !hashContain( &aims, &( recEntry->Dest ) ) )
+			hashAdd( &aims, &( recEntry->Dest ), &aim );
 
-		row = RouteTableRowNext( &( layer->RouteTable ), row );
+		recEntry = RouteTableRowNext( &( layer->RouteTable ), recEntry );
 	}
 
-	used = calloc( ( size_t )aims.Count, sizeof( bool ) );
 	pqInit( &order, layer->RouteTable.Count, routeChancesCompare, sizeof( RouteChance_T ), sizeof( RouteDataRecord_T ) );
-	hashIterator( &( layer->NeighborsStorage.Storage ), &neIter );
+	result = hashIterator( &( layer->NeighborsStorage.Storage ), &iterator );
 
-	while( !hashIteratorIsLast( &neIter ) ) {
-		neInfo = hashIteratorData( &neIter );
-		temp.Dest = neInfo->Address;
-		temp.Relay = neInfo->Address;
-		temp.P = layer->RouteTable.Settings->RouteDefaultMetric;
-		pqEnqueue( &order, &( temp.P ), &temp );
+	while( FUNC_RESULT_SUCCESS == result && !hashIteratorIsLast( &iterator ) ) {
+		neInfo = hashIteratorData( &iterator );
+		current.Dest = neInfo->Address;
+		current.Relay = neInfo->Address;
+		current.P = layer->RouteTable.Settings->RouteDefaultMetric;
+		pqEnqueue( &order, &( current.P ), &current );
+		result = hashIteratorNext( &iterator );
 	}
 
-	//! Использовать приоритетную очередь
-	//! Добавить сначала всех соседей с их метриками
-	//! Дальше обрабатывать как обычно
+	while( FUNC_RESULT_SUCCESS == result && 0 < order.Count ) {
+		result = pqTop( &order, &current );
 
-	while( !hashIteratorIsLast( &neIter ) ) {
-		neInfo = hashIteratorData( &neIter );
-		queueEnqueue( &order, &( neInfo->Address ) );
-		current = hashGetPtr( &aims, &( neInfo->Address ) );
-		current->weight = 0; // TODO add metric to this neighbor
+		if( FUNC_RESULT_SUCCESS != result )
+			continue;
 
-		while( 0 < order.Count ) {
+		aimEntry = hashGetPtr( &aims, &( current.Dest ) );
 
-		}
+		if( NULL == aimEntry || aimEntry->Found )
+			continue;
 
-		hashIteratorNext( &neIter );
+		aimEntry->Found = true;
+		aimEntry->Relay = current.Relay;
+		aimEntry->Chance = current.P;
 
-		if( !hashIteratorIsLast( &neIter ) ) {
-			queueClear( &order );
-			memset( used, 0, aims.Count * sizeof( bool ) );
+		recEntry = RouteTableRowFirst( &( layer->RouteTable ) );
+
+		while( NULL != recEntry ) {
+			if( routeAddrEqualPtr( &( recEntry->Relay ), &( current.Dest ) ) ) {	// if current is a relay for some node
+				aimEntry = hashGetPtr( &aims, &( recEntry->Dest ) );				// find new dest in aims
+				newChance = ( current.P < recEntry->P ? current.P : recEntry->P );	// new metric calculating: the minimum chance
+
+				if( NULL != aimEntry && !aimEntry->Found && aimEntry->Chance < newChance ) {
+					child.Dest = current.Dest;
+					child.Relay = current.Relay;
+					child.P = newChance;
+					pqEnqueue( &order, &( child.P ), &child );
+				}
+			}
+
+			recEntry = RouteTableRowNext( &( layer->RouteTable ), recEntry );
 		}
 	}
 
+	pqDeinit( &order );
+	hashIterator( &aims, &iterator );
+	result = RouteTableClear( &( layer->RouteTableSolved ) );
 
-	queueDeinit( &order );
+	while( FUNC_RESULT_SUCCESS == result && !hashIteratorIsLast( &iterator ) ) {
+		aimEntry = hashIteratorData( &iterator );
+		dest = hashIteratorKey( &iterator );
+		RouteTableAdd( &( layer->RouteTableSolved ), aimEntry->Relay, *dest );
+		result = hashIteratorNext( &iterator );
+	}
+
 	hashFree( &aims );
+
+	return result;
 }

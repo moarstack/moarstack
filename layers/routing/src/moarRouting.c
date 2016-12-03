@@ -85,7 +85,7 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 
 	// todo write correct params here
 	RouteTableSettings_T tableSettings = {0};
-	tableSettings.TableSize = 10;
+	tableSettings.TableSize = 45;
 	tableSettings.FinderMarkerRenewRate = 27;
 	tableSettings.FinderMarkerDefaultMetric = 128;
 	tableSettings.RouteRenewRate = 1;
@@ -94,6 +94,17 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 	// init table
 	int tableInitRes = RouteTableInit(&layer->RouteTable, &tableSettings);
 	if(FUNC_RESULT_SUCCESS != tableInitRes)
+		return tableInitRes;
+
+	// init solved table
+	tableSettings.TableSize = 10;					// 10 * ( 10 - 1 ) / 2 = 45 (see above)
+	tableSettings.FinderMarkerRenewRate = 0;		// no finders in the solved table
+	tableSettings.FinderMarkerDefaultMetric = 0;	// no finders in the solved table
+	tableSettings.RouteRenewRate = 1;				// routes chance shouldn`t even be decreased in the solved table
+	tableSettings.RouteDefaultMetric = 0;			// no defaults, metric is set as a solving result
+	tableSettings.RouteQualityThreshold = 0;
+	int solvedTableInitRes = RouteTableInit(&layer->RouteTableSolved, &tableSettings);
+	if(FUNC_RESULT_SUCCESS != solvedTableInitRes)
 		return tableInitRes;
 	// probe sending
 	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );

@@ -50,7 +50,8 @@ typedef struct{
 	RouteAddr_T					LocalAddress;
 	PacketStorage_T				PacketStorage;
 	RoutingNeighborsStorage_T 	NeighborsStorage;
-	RouteDataTable_T			RouteTable;
+	RouteDataTable_T			RouteTable,
+								RouteTableSolved;
 	moarTime_T					NextProbeSentTime,
 								NextTableRenewTime;
 } RoutingLayer_T;

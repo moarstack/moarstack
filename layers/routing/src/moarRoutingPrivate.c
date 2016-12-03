@@ -5,7 +5,7 @@
 #include <moarRoutingTablesHelper.h>
 #include <moarRoutingPrivate.h>
 #include <moarRouteTable.h>
-#include <queue.h>
+#include <priorityQueue.h>
 #include <moarRoutingNeighborsStorage.h>
 #include <float.h>
 #include <hashTable.h>
@@ -72,12 +72,22 @@ int helperUpdateRouteAddrChainAfter( RoutingLayer_T * layer, RouteAddr_T * list,
 	return helperUpdateRouteAddrChain( layer, list, count, false );
 }
 
+int routeChancesCompare( void * one, void * two, size_t size ) {
+	if( *( RouteChance_T * )one > *( RouteChance_T * )two )
+		return 1;
+	else if( *( RouteChance_T * )one == *( RouteChance_T * )two )
+		return 0;
+	else
+		return -1;
+}
+
 int helperSolveRoutes( RoutingLayer_T * layer ) {
 	hashTable_T				aims;
-	RouteDataRecord_T		* row;
+	RouteDataRecord_T		* row,
+							temp;
 	AimInfo_T				tempInfo = { .weight = FLT_MAX },
 							* current;
-	Queue_T					order;
+	PriorityQueue_T			order;
 	hashIterator_T			neIter;
 	RoutingNeighborInfo_T	* neInfo;
 	bool					* used;
@@ -96,9 +106,21 @@ int helperSolveRoutes( RoutingLayer_T * layer ) {
 		row = RouteTableRowNext( &( layer->RouteTable ), row );
 	}
 
-	used = calloc( aims.Count, sizeof( bool ) );
-	queueInit( &order, sizeof( RouteAddr_T ) );
-	hashIterator( &( layer->NeighborsStorage ), &neIter );
+	used = calloc( ( size_t )aims.Count, sizeof( bool ) );
+	pqInit( &order, layer->RouteTable.Count, routeChancesCompare, sizeof( RouteChance_T ), sizeof( RouteDataRecord_T ) );
+	hashIterator( &( layer->NeighborsStorage.Storage ), &neIter );
+
+	while( !hashIteratorIsLast( &neIter ) ) {
+		neInfo = hashIteratorData( &neIter );
+		temp.Dest = neInfo->Address;
+		temp.Relay = neInfo->Address;
+		temp.P = layer->RouteTable.Settings->RouteDefaultMetric;
+		pqEnqueue( &order, &( temp.P ), &temp );
+	}
+
+	//! Использовать приоритетную очередь
+	//! Добавить сначала всех соседей с их метриками
+	//! Дальше обрабатывать как обычно
 
 	while( !hashIteratorIsLast( &neIter ) ) {
 		neInfo = hashIteratorData( &neIter );

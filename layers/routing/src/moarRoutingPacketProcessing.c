@@ -10,6 +10,7 @@
 #include <moarCommons.h>
 #include <moarRouteAck.h>
 #include <moarRouteFinder.h>
+#include <moarRouteFinderAck.h>
 #include <moarRoutingTablesHelper.h>
 #include "moarRoutingPacketProcessing.h"
 #include "moarRouteProbe.h"
@@ -110,26 +111,31 @@ int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 	return res;
 }
 
-int processReceivedFinderAckPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
+int processReceivedFinderAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	int result;
+
+	if( NULL == layer || NULL == packet || RoutePackType_FinderAck != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_FinderAck != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo process content
+
+	result = processPayloadFinderAck( layer, packet );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		result = psRemove( &layer->PacketStorage, packet ); // dispose packet
+		return result;
+	}
+
 	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
-		res = FUNC_RESULT_SUCCESS;
-	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
+		result = FUNC_RESULT_SUCCESS;
+	} else if( 0 < packet->XTL ) {// else if will be sent according to XTL
 		//// todo create new packet
 		//// todo add with processing state
 	}
 	//// dispose packet
-	res = psRemove(&layer->PacketStorage, packet);
-	return res;
+	result = psRemove( &layer->PacketStorage, packet );
+	return result;
 }
+
 int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
 	if (NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;

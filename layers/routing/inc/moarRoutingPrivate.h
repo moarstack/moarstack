@@ -50,5 +50,7 @@ typedef struct{
 } RoutingLayer_T;
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );
+int helperUpdateRouteAddrChainBefore( RoutingLayer_T * layer, RouteAddr_T * list, size_t count );
+int helperUpdateRouteAddrChainAfter( RoutingLayer_T * layer, RouteAddr_T * list, size_t count );
 
 #endif //MOARSTACK_MOARROUTINGPRIVATE_H

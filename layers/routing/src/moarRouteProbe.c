@@ -9,8 +9,6 @@
 #include <moarRoutingTablesHelper.h>
 #include <moarNeIterRoutine.h>
 
-#define CHECK_RESULT(r)	do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
-
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
 	int 				result;

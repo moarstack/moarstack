@@ -190,10 +190,34 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 
 
 int processProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ){
+
+    FUNC_RESULT result;
+
+    if (NULL == layer || NULL == packet){
+        return FUNC_RESULT_FAILED_ARGUMENT;
+    }
+
     RoutePayloadProbe_T* payload = packet->Payload;
+
+    if(NULL == payload){
+        return FUNC_RESULT_FAILED;
+    }
+
+    RouteAddr_T* relay = getProbePayloadAddress(payload,payload->DepthCurrent - 1);
+    if(NULL == relay){
+        return FUNC_RESULT_FAILED;
+    }
 
     for (int i = 0; i < payload->DepthCurrent; ++i) {
         RouteAddr_T* addr = getProbePayloadAddress(payload,i);
-        //helperUpdateRoute(layer, )
+        if(NULL == addr){
+            return FUNC_RESULT_FAILED;
+        }
+        result = (FUNC_RESULT)helperUpdateRoute(layer, addr, relay);
+        if (FUNC_RESULT_SUCCESS != result){
+            return result;
+        }
     }
+
+    return FUNC_RESULT_SUCCESS;
 }

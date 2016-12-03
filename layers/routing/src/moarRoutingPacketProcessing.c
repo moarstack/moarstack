@@ -166,6 +166,8 @@ int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * pa
 
 	result = FUNC_RESULT_FAILED;
 	// todo update tables
+    processProbePacket(layer, packet);
+
 	if( 0 < packet->XTL ) // if will be sent according to XTL
 		result = sendProbeNext( layer, packet );
 

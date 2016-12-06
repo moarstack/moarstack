@@ -118,7 +118,7 @@ int processReceivedFinderAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T 
 	if( NULL == layer || NULL == packet || RoutePackType_FinderAck != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = processPayloadFinderAck( layer, packet );
+	result = processPayloadFack( layer, packet );
 
 	if( FUNC_RESULT_SUCCESS != result ) {
 		result = psRemove( &layer->PacketStorage, packet ); // dispose packet

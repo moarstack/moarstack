@@ -11,7 +11,7 @@
 #include <moarRouteFinder.h>
 #include "moarRouteFinderAck.h"
 
-int processPayloadFinderAck( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+int processPayloadFack( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	size_t		count,
 				position;
 	RouteAddr_T	* list,

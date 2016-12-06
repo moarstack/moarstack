@@ -32,7 +32,3 @@ hashVal_T hashRoutingAddress(void* address, size_t size){
 hashVal_T hashChannelAddress(void* address, size_t size){
 	return hashBytesEx(address, size, 0xF4E613);
 }
-hashVal_T hashString(void* data, size_t size){
-	size_t len = strlen(data);
-	return hashBytesEx(data,len, 0xF4E617);
-}

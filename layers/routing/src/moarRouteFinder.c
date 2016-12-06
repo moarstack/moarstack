@@ -3,7 +3,6 @@
 //
 
 #include <moarRouteFinder.h>
-#include <moarRoutingStoredPacket.h>
 
 int produceRouteFinder( RoutingLayer_T * layer, RouteAddr_T * destination, RouteAddr_T * next_hop ) {
 	if( NULL == layer )
@@ -42,6 +41,9 @@ int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
 	if( NULL == layer || NULL == dest )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	if( 0 == layer->NeighborsStorage.Count )
+		return FUNC_RESULT_FAILED_NEIGHBORS;
+
 	result = storageIterator( &( layer->NeighborsStorage ), &iterator );
 
 	if( FUNC_RESULT_SUCCESS != result )
@@ -60,5 +62,5 @@ int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest ) {
 
 	hashIteratorFree( &iterator );
 
-	return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED_IO );
+	return ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED );
 }

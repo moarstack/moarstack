@@ -82,95 +82,175 @@ int routeChancesCompare( void * one, void * two, size_t size ) {
 		return -1;
 }
 
-int helperSolveRoutes( RoutingLayer_T * layer ) {
-	hashTable_T				aims;
-	RouteDataRecord_T		* recEntry,
-							current,
-							child;
-	RouteChance_T			newChance;
-	RouteAddr_T				* dest;
-	AimInfo_T				* aimEntry,
-							aim;
-	PriorityQueue_T			order;
-	hashIterator_T			iterator;
-	RoutingNeighborInfo_T	* neInfo;
-	int 					result;
+int findAllAims( RoutingLayer_T * layer, hashTable_T * aims ) {
+	AimInfo_T			aim;
+	RouteDataRecord_T	* record;
+	int 				result;
 
-	hashInit( &aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( AimInfo_T ) );
+	if( NULL == layer || NULL == aims )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	recEntry = RouteTableRowFirst( &( layer->RouteTable ) );
+	result = hashInit( aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( AimInfo_T ) );
+	CHECK_RESULT( result );
+
 	aim.Chance = 0;
 	aim.Found = false;
 	memset( &( aim.Relay ), 0, sizeof( aim.Relay ) );
+	record = RouteTableRowFirst( &( layer->RouteTable ) );
 
-	while( NULL != recEntry ) {
-		if( !hashContain( &aims, &( recEntry->Relay ) ) )
-			hashAdd( &aims, &( recEntry->Relay ), &aim );
+	while( NULL != record ) {
+		if( !hashContain( aims, &( record->Relay ) ) ) {
+			result = hashAdd( aims, &( record->Relay ), &aim );
+			CHECK_RESULT( result );
+		}
 
-		if( !hashContain( &aims, &( recEntry->Dest ) ) )
-			hashAdd( &aims, &( recEntry->Dest ), &aim );
+		if( !hashContain( aims, &( record->Dest ) ) ) {
+			result = hashAdd( aims, &( record->Dest ), &aim );
+			CHECK_RESULT( result );
+		}
 
-		recEntry = RouteTableRowNext( &( layer->RouteTable ), recEntry );
+		record = RouteTableRowNext( &( layer->RouteTable ), record );
 	}
 
-	pqInit( &order, layer->RouteTable.Count, routeChancesCompare, sizeof( RouteChance_T ), sizeof( RouteDataRecord_T ) );
-	result = hashIterator( &( layer->NeighborsStorage.Storage ), &iterator );
+	return FUNC_RESULT_SUCCESS;
+}
 
-	while( FUNC_RESULT_SUCCESS == result && !hashIteratorIsLast( &iterator ) ) {
+int prepareQueue( RoutingLayer_T * layer, PriorityQueue_T * order ) {
+	hashIterator_T			iterator;
+	RoutingNeighborInfo_T	* neInfo;
+	RouteDataRecord_T		current;
+	int 					result;
+
+	if( NULL == layer || NULL == order )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = hashIterator( &( layer->NeighborsStorage.Storage ), &iterator );
+	CHECK_RESULT( result );
+
+	result = pqInit( order, layer->RouteTable.Count, routeChancesCompare, sizeof( RouteChance_T ), sizeof( RouteDataRecord_T ) );
+	CHECK_RESULT( result );
+
+	while( !hashIteratorIsLast( &iterator ) ) {
 		neInfo = hashIteratorData( &iterator );
 		current.Dest = neInfo->Address;
 		current.Relay = neInfo->Address;
-		current.P = layer->RouteTable.Settings->RouteDefaultMetric;
-		pqEnqueue( &order, &( current.P ), &current );
+		current.P = layer->RouteTable.Settings->RouteDefaultMetric; // todo replace with proper when time
+		result = pqEnqueue( order, &( current.P ), &current );
+
+		if( FUNC_RESULT_SUCCESS != result ) {
+			pqDeinit( order );
+			return result;
+		}
+
 		result = hashIteratorNext( &iterator );
+
+		if( FUNC_RESULT_SUCCESS != result ) {
+			pqDeinit( order );
+			return result;
+		}
 	}
 
-	while( FUNC_RESULT_SUCCESS == result && 0 < order.Count ) {
+}
+
+int processDijkstra( RoutingLayer_T * layer, hashTable_T * aims ) {
+	PriorityQueue_T		order;
+	RouteDataRecord_T	current,
+						child,
+						* record;
+	AimInfo_T			* aim;
+	RouteChance_T		newChance;
+	int 				result;
+
+	if( NULL == layer || NULL == aims )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = prepareQueue( layer, &order );
+	CHECK_RESULT( result );
+
+	while( 0 < order.Count ) {
 		result = pqTop( &order, &current );
 
 		if( FUNC_RESULT_SUCCESS != result )
 			continue;
 
-		aimEntry = hashGetPtr( &aims, &( current.Dest ) );
+		aim = hashGetPtr( aims, &( current.Dest ) );
 
-		if( NULL == aimEntry || aimEntry->Found )
+		if( NULL == aim || aim->Found )
 			continue;
 
-		aimEntry->Found = true;
-		aimEntry->Relay = current.Relay;
-		aimEntry->Chance = current.P;
+		aim->Found = true;
+		aim->Relay = current.Relay;
+		aim->Chance = current.P;
 
-		recEntry = RouteTableRowFirst( &( layer->RouteTable ) );
+		record = RouteTableRowFirst( &( layer->RouteTable ) );
 
-		while( NULL != recEntry ) {
-			if( routeAddrEqualPtr( &( recEntry->Relay ), &( current.Dest ) ) ) {	// if current is a relay for some node
-				aimEntry = hashGetPtr( &aims, &( recEntry->Dest ) );				// find new dest in aims
-				newChance = ( current.P < recEntry->P ? current.P : recEntry->P );	// new metric calculating: the minimum chance
+		while( NULL != record ) {
+			if( routeAddrEqualPtr( &( record->Relay ), &( current.Dest ) ) ) {	// if current is a relay for some node
+				aim = hashGetPtr( aims, &( record->Dest ) );					// find new dest in aims
+				newChance = ( current.P < record->P ? current.P : record->P );	// new metric calculating: the minimum chance
 
-				if( NULL != aimEntry && !aimEntry->Found && aimEntry->Chance < newChance ) {
+				if( NULL != aim && !aim->Found && aim->Chance < newChance ) {
 					child.Dest = current.Dest;
 					child.Relay = current.Relay;
 					child.P = newChance;
-					pqEnqueue( &order, &( child.P ), &child );
+					result = pqEnqueue( &order, &( child.P ), &child );
+
+					if( FUNC_RESULT_SUCCESS != result ) {
+						pqDeinit( &order );
+						return result;
+					}
 				}
 			}
 
-			recEntry = RouteTableRowNext( &( layer->RouteTable ), recEntry );
+			record = RouteTableRowNext( &( layer->RouteTable ), record );
 		}
 	}
 
-	pqDeinit( &order );
-	hashIterator( &aims, &iterator );
-	result = RouteTableClear( &( layer->RouteTableSolved ) );
+	result = pqDeinit( &order );
 
-	while( FUNC_RESULT_SUCCESS == result && !hashIteratorIsLast( &iterator ) ) {
-		aimEntry = hashIteratorData( &iterator );
-		dest = hashIteratorKey( &iterator );
-		RouteTableAdd( &( layer->RouteTableSolved ), aimEntry->Relay, *dest );
+	return result;
+}
+
+int saveSolvedRoutes( RoutingLayer_T * layer, hashTable_T * aims ) {
+	RouteAddr_T		* destination;
+	AimInfo_T		* aim;
+	hashIterator_T	iterator;
+	int				result;
+
+	if( NULL == layer || NULL == aims )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	result = hashIterator( aims, &iterator );
+	CHECK_RESULT( result );
+
+	result = RouteTableClear( &( layer->RouteTableSolved ) );
+	CHECK_RESULT( result );
+
+	while( !hashIteratorIsLast( &iterator ) ) {
+		aim = hashIteratorData( &iterator );
+		destination = hashIteratorKey( &iterator );
+		result = RouteTableAdd( &( layer->RouteTableSolved ), aim->Relay, *destination );
+		CHECK_RESULT( result );
+
 		result = hashIteratorNext( &iterator );
+		CHECK_RESULT( result );
 	}
 
-	hashFree( &aims );
+}
 
+int helperSolveRoutes( RoutingLayer_T * layer ) {
+	hashTable_T				aims;
+	int 					result;
+
+	result = findAllAims( layer, &aims );
+	CHECK_RESULT( result );
+
+	result = processDijkstra( layer, &aims );
+	CHECK_RESULT( result );
+
+	result = saveSolvedRoutes( layer, &aims );
+	CHECK_RESULT( result );
+
+	result = hashFree( &aims );
 	return result;
 }

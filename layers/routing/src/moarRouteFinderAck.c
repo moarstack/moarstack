@@ -49,6 +49,9 @@ int processPayloadFinderAck( RoutingLayer_T * layer, RouteStoredPacket_T * packe
 		result = helperUpdateRoute( layer, &( packet->Source ), list + count - 1 );
 	}
 
+	return result;
+}
+
 int produceFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteStoredPacket_T * newPacket ) {
 	void	* oldPayload;
 	int 	result;

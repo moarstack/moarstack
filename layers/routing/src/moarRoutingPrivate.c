@@ -96,7 +96,7 @@ int helperSolveRoutes( RoutingLayer_T * layer ) {
 	RoutingNeighborInfo_T	* neInfo;
 	int 					result;
 
-	hashInit( &aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( RouteDataRecord_T ) );
+	hashInit( &aims, hashRoutingAddress, layer->RouteTable.Count, sizeof( RouteAddr_T ), sizeof( AimInfo_T ) );
 
 	recEntry = RouteTableRowFirst( &( layer->RouteTable ) );
 	aim.Chance = 0;

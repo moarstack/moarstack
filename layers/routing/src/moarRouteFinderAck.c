@@ -4,10 +4,6 @@
 
 #include <moarRouting.h>
 #include <moarRoutingTablesHelper.h>
-#include <funcResults.h>
-#include <moarRoutingPrivate.h>
-#include <moarRoutingStoredPacket.h>
-#include <moarCommons.h>
 #include <moarRouteFinder.h>
 #include "moarRouteFinderAck.h"
 
@@ -56,7 +52,8 @@ int produceFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteS
 	void	* oldPayload;
 	int 	result;
 
-	if( NULL == layer || NULL == oldPacket || NULL == newPacket )
+	if( NULL == layer || NULL == oldPacket || NULL == oldPacket->Payload ||
+			sizeof( RouteInitialPayloadFinder_T ) > oldPacket->PayloadSize || NULL == newPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	newPacket->PayloadSize = oldPacket->PayloadSize - sizeof( RouteInitialPayloadFinder_T );

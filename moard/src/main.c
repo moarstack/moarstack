@@ -17,11 +17,13 @@
 #include <moarLogger.h>
 #include <errno.h>
 #include <moarInterface.h>
+#include <moarConfigReader.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
 #define IFACE_LOG_FILE				"/tmp/moarInterface.log"
 #define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
-
+//#define CONFIG_FILE						"/etc/moarstack/moar.conf"
+#define CONFIG_FILE						"/home/svalov/moarstack/moarstack/config/moarstack/moar.conf"
 //#define LOAD_MULTIPLE_INTERFACES
 
 #ifndef LOAD_MULTIPLE_INTERFACES
@@ -108,6 +110,10 @@ int LogWorkIllustration( void ) {
 
 int main(int argc, char** argv)
 {
+	hashTable_T config = {0};
+	int confPrepareRes = configPrepare(&config);
+	int confRes = configRead(&config, CONFIG_FILE);
+
     MoarLibrary_T libraries[LAYERS_COUNT];
 
 	LogWorkIllustration();

@@ -58,6 +58,47 @@ void trim(char* s){
 	memmove(s,p,l+1);
 }
 
+int processLine(hashTable_T* config, char* line){
+	if(NULL == config || NULL == line)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//some line here
+	if(line[0] != '#' && line[0] != '\0') {
+		//process key
+		char *end = line;
+		while (*end && !isDelimeter(*end)) end++;
+		// key now from buffer to end
+		char *key = malloc(end - line + 1);
+		if(NULL == key)
+			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+		//copy
+		memcpy(key, line, end - line);
+		key[end - line] = '\0';
+		//ifnore some stuff
+		while (*end && isDelimeter(*end)) end++;
+		char *value = end;
+		// process value
+		while (*end && !isEol(*end)) end++;
+		// value from value to end
+		char *val = malloc(end - value + 1);
+		if(NULL == val) {
+			free(key);
+			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+		}
+		//copy
+		memcpy(val, value, end - value);
+		value[end - value] = '\0';
+		// add here
+		int res = hashAdd(config, &key, &val);
+		if(res != FUNC_RESULT_SUCCESS){
+			//cleanup
+			free(key);
+			free(val);
+		}
+		return res;
+	}
+	return FUNC_RESULT_SUCCESS;
+}
+
 int configRead(hashTable_T* config, char* fileName){
 	if(NULL == fileName || NULL == config)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -74,31 +115,15 @@ int configRead(hashTable_T* config, char* fileName){
 	}
 	char buffer[255];
 	int i=0;
+	int res = FUNC_RESULT_SUCCESS;
 	//read by line
 	while(fgets(buffer, sizeof(buffer), configFile) != NULL){
-		//some line here
-		trim(buffer);
-		if(buffer[0] != '#' && buffer[0] != '\0') {
-			//process
-			char* end = buffer;
-			while(*end && !isDelimeter(*end)) end++;
-			// key from buffer to end
-			char* key = malloc(end-buffer+1);
-			memcpy(key, buffer, end-buffer);
-			key[end-buffer] = '\0';
-			//ifnore some stuff
-			while(*end && isDelimeter(*end)) end++;
-			char* value = end;
-			// value
-			while(*end && !isEol(*end)) end++;
-			char* val = malloc(end-value+1);
-			memcpy(val, value, end-value);
-			value[end-value] = '\0';
-
-			hashAdd(config, &key, &val);
-		}
+			trim(buffer);
+			int res = processLine(config, buffer);
+			if(res!= FUNC_RESULT_SUCCESS)
+				break;
 	}
 	//close
 	fclose(configFile);
-	return FUNC_RESULT_SUCCESS;
+	return res;
 }

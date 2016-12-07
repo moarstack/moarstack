@@ -9,7 +9,12 @@
 
 #define CONFIG_SIZE 100
 
-int configPrepare(hashTable_T* config);
-int configRead(hashTable_T* config, char* fileName);
+__BEGIN_DECLS
 
+extern int configInit(hashTable_T* config);
+extern int configFree(hashTable_T* config);
+extern int configRead(hashTable_T* config, char* fileName);
+extern int configMerge(hashTable_T* dest, hashTable_T* source);
+
+__END_DECLS
 #endif //MOARSTACK_MOARCONFIGREADER_H

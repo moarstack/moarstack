@@ -8,6 +8,8 @@
 #include <hashTable.h>
 #include <string.h>
 #include <unistd.h>
+#include <moarCommons.h>
+#include <bits/string2.h>
 
 int equalString(const void* key1, const void* key2, size_t size){
 	if(NULL == key1 || NULL == key2)
@@ -27,7 +29,7 @@ hashVal_T hashString(void* data, size_t size){
 	return hashBytesEx(*(char**)data, len, 0xF4E617);
 }
 
-int configPrepare(hashTable_T* config){
+int configInit(hashTable_T* config){
 	if(NULL == config)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int initRes = hashInit(config, hashString, CONFIG_SIZE, sizeof(char*), sizeof(char*));
@@ -36,6 +38,17 @@ int configPrepare(hashTable_T* config){
 	config->DataFreeFunction = freeString;
 	config->KeyFreeFunction = freeString;
 	config->EqualFunction = equalString;
+	return FUNC_RESULT_SUCCESS;
+}
+int configFree(hashTable_T* config){
+	if(NULL == config)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = hashClear(config);
+	CHECK_RESULT(res);
+
+	res = hashFree(config);
+	CHECK_RESULT(res);
+
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -100,7 +113,7 @@ int extractValue(char* value, char** val){
 	return FUNC_RESULT_SUCCESS;
 }
 
-int processConfigLine(hashTable_T* config, char* line){
+int configProcessLine(hashTable_T* config, char* line){
 	if(NULL == config || NULL == line)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	// trim some trash
@@ -155,7 +168,7 @@ int configRead(hashTable_T* config, char* fileName){
 	int res = FUNC_RESULT_SUCCESS;
 	//read by line
 	while(fgets(buffer, sizeof(buffer), configFile) != NULL){
-			int res = processConfigLine(config, buffer);
+			int res = configProcessLine(config, buffer);
 			if(res!= FUNC_RESULT_SUCCESS)
 				break;
 	}
@@ -165,5 +178,35 @@ int configRead(hashTable_T* config, char* fileName){
 }
 
 int configMerge(hashTable_T* dest, hashTable_T* source){
+	if(NULL == dest || NULL == source)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	hashIterator_T iter = {0};
+	int res = hashIterator(source, &iter);
+	CHECK_RESULT(res);
+	while(!hashIteratorIsLast(&iter)){
 
+		char* iterKey = *((char**)hashIteratorKey(&iter));
+		char* iterData = *((char**)hashIteratorData(&iter));
+		if(NULL != iterKey && NULL != iterData){
+			//remove entry if contain
+			res = hashRemoveExact(dest, &iterKey, &iterData);
+			CHECK_RESULT(res);
+			//copy two strings
+			char* newKey = strdup(iterKey);
+			if(NULL == newKey)
+				return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+			char* newData = strdup(iterData);
+			if(NULL == newData) {
+				free(newKey);
+				return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+			}
+			//and add to table
+			res = hashAdd(dest, &newKey, &newData);
+			CHECK_RESULT(res);
+		}
+		res = hashIteratorNext(&iter);
+		CHECK_RESULT(res);
+	}
+	hashIteratorFree(&iter);
+	return FUNC_RESULT_SUCCESS;
 }

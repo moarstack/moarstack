@@ -111,7 +111,7 @@ int LogWorkIllustration( void ) {
 int main(int argc, char** argv)
 {
 	hashTable_T config = {0};
-	int confPrepareRes = configPrepare(&config);
+	int confPrepareRes = configInit(&config);
 	int confRes = configRead(&config, CONFIG_FILE);
 
     MoarLibrary_T libraries[LAYERS_COUNT];

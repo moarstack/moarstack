@@ -39,54 +39,91 @@ int configPrepare(hashTable_T* config){
 	return FUNC_RESULT_SUCCESS;
 }
 
-bool isDelimeter(char p){
-	if(p == ' ' || p == '\t' || p == '=' || p=='\r' || p=='\n')
-		return true;
-	return false;
-}
 bool isEol(char p){
 	if(p=='\r' || p=='\n')
 		return true;
 	return false;
 }
-
+bool isSpace(char p){
+	if(p == ' ' || p == '\t' || isEol(p))
+		return true;
+	return false;
+}
+bool isDelimeter(char p){
+	if(isSpace(p) || p == '=' )
+		return true;
+	return false;
+}
 void trim(char* s){
 	char* p = s;
 	size_t l = strlen(s);
-	while(isDelimeter(p[l-1])) p[--l] = 0;
-	while(*p && isDelimeter(*p)) ++p, --l;
+	while(isSpace(p[l-1])) p[--l] = 0;
+	while(*p && isSpace(*p)) ++p, --l;
 	memmove(s,p,l+1);
 }
 
-int processLine(hashTable_T* config, char* line){
+int extractKey(char* line, char** key, char** pos){
+	//process key
+	char *end = line;
+	// search end of key
+	while (*end && !isDelimeter(*end))
+		end++;
+	//if no key
+	if(0 == end-line)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	// key now from buffer to end
+	*key = malloc(end - line + 1);
+	if(NULL == *key)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	//copy
+	memcpy(*key, line, end - line);
+	(*key)[end - line] = '\0';
+	*pos = end;
+	return FUNC_RESULT_SUCCESS;
+}
+int extractValue(char* value, char** val){
+	// begin of value
+	char* end = value;
+	// search end of value
+	while (*end && !isEol(*end))
+		end++;
+	//if no value
+	if(0 == end-value)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	// value from value to end
+	*val = malloc(end - value + 1);
+	if(NULL == *val)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	//copy
+	memcpy(*val, value, end - value);
+	(*val)[end - value] = '\0';
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processConfigLine(hashTable_T* config, char* line){
 	if(NULL == config || NULL == line)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	// trim some trash
+	trim(line);
 	//some line here
 	if(line[0] != '#' && line[0] != '\0') {
-		//process key
-		char *end = line;
-		while (*end && !isDelimeter(*end)) end++;
-		// key now from buffer to end
-		char *key = malloc(end - line + 1);
-		if(NULL == key)
-			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-		//copy
-		memcpy(key, line, end - line);
-		key[end - line] = '\0';
-		//ifnore some stuff
-		while (*end && isDelimeter(*end)) end++;
-		char *value = end;
-		// process value
-		while (*end && !isEol(*end)) end++;
-		// value from value to end
-		char *val = malloc(end - value + 1);
-		if(NULL == val) {
+
+		char* pos;
+		char* key = NULL;
+		int keyRes = extractKey(line, &key, &pos);
+		if(keyRes!= FUNC_RESULT_SUCCESS)
+			return FUNC_RESULT_SUCCESS;
+
+		//ignore some stuff between key and value
+		while (*pos && isDelimeter(*pos))
+			pos++;
+
+		char* val = NULL;
+		int valRes = extractValue(pos, &val);
+		if(FUNC_RESULT_SUCCESS != valRes){
 			free(key);
-			return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+			return FUNC_RESULT_SUCCESS;
 		}
-		//copy
-		memcpy(val, value, end - value);
-		value[end - value] = '\0';
 		// add here
 		int res = hashAdd(config, &key, &val);
 		if(res != FUNC_RESULT_SUCCESS){
@@ -118,12 +155,15 @@ int configRead(hashTable_T* config, char* fileName){
 	int res = FUNC_RESULT_SUCCESS;
 	//read by line
 	while(fgets(buffer, sizeof(buffer), configFile) != NULL){
-			trim(buffer);
-			int res = processLine(config, buffer);
+			int res = processConfigLine(config, buffer);
 			if(res!= FUNC_RESULT_SUCCESS)
 				break;
 	}
 	//close
 	fclose(configFile);
 	return res;
+}
+
+int configMerge(hashTable_T* dest, hashTable_T* source){
+
 }

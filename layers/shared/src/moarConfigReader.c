@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <moarCommons.h>
 #include <bits/string2.h>
+#include <ctype.h>
 
 int equalString(const void* key1, const void* key2, size_t size){
 	if(NULL == key1 || NULL == key2)
@@ -88,9 +89,19 @@ int extractKey(char* line, char** key, char** pos){
 	*key = malloc(end - line + 1);
 	if(NULL == *key)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-	//copy
-	memcpy(*key, line, end - line);
+	//copy with lowering
+
+	for(char* p = *key, *l = line; l < end; p++, l++)
+		*p =  (char) tolower(*l);
+
+	//memcpy(*key, line, end - line);
 	(*key)[end - line] = '\0';
+//	char* p = *key;
+//	while(*p) {
+//		*p = (char) tolower(*p);
+//		p++;
+//	}
+
 	*pos = end;
 	return FUNC_RESULT_SUCCESS;
 }

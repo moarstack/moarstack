@@ -90,18 +90,9 @@ int extractKey(char* line, char** key, char** pos){
 	if(NULL == *key)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	//copy with lowering
-
 	for(char* p = *key, *l = line; l < end; p++, l++)
 		*p =  (char) tolower(*l);
-
-	//memcpy(*key, line, end - line);
 	(*key)[end - line] = '\0';
-//	char* p = *key;
-//	while(*p) {
-//		*p = (char) tolower(*p);
-//		p++;
-//	}
-
 	*pos = end;
 	return FUNC_RESULT_SUCCESS;
 }
@@ -170,12 +161,9 @@ int configRead(hashTable_T* config, char* fileName){
 	// open
 	FILE* configFile = fopen(fileName, "r");
 	if(!configFile)
-	{
-		fclose(configFile);
 		return FUNC_RESULT_FAILED_IO;
-	}
-	char buffer[255];
-	int i=0;
+	//read
+	char buffer[LINE_SIZE];
 	int res = FUNC_RESULT_SUCCESS;
 	//read by line
 	while(fgets(buffer, sizeof(buffer), configFile) != NULL){

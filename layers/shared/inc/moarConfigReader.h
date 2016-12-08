@@ -8,6 +8,7 @@
 #include <hashTable.h>
 
 #define CONFIG_SIZE 100
+#define LINE_SIZE 255
 
 __BEGIN_DECLS
 

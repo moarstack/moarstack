@@ -15,7 +15,7 @@
 int equalString(const void* key1, const void* key2, size_t size){
 	if(NULL == key1 || NULL == key2)
 		return 1;
-	return strcmp(*(char**)key1, *(char**)key2);
+	return strcmp(STRVAL(key1), STRVAL(key2));
 }
 
 void freeString(void* data){
@@ -26,8 +26,8 @@ void freeString(void* data){
 }
 
 hashVal_T hashString(void* data, size_t size){
-	size_t len = strlen(*(char**)data);
-	return hashBytesEx(*(char**)data, len, 0xF4E617);
+	size_t len = strlen(STRVAL(data));
+	return hashBytesEx(STRVAL(data), len, 0xF4E617);
 }
 
 int configInit(hashTable_T* config){

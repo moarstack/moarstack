@@ -10,6 +10,7 @@
 #define CONFIG_SIZE 100
 #define LINE_SIZE 255
 
+#define STRVAL(str) (*((char**)str))
 __BEGIN_DECLS
 
 extern int configInit(hashTable_T* config);

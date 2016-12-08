@@ -1,0 +1,21 @@
+#include "moarApi.h"
+
+MoarDesc_T moarSocket(void) {
+
+}
+
+int moarBind(MoarDesc_T fd, AppId_T appId) {
+
+}
+
+ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
+
+}
+
+ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {
+
+}
+
+MessageState_T moarMsgState(MoarDesc_T fd, MessageId_T msgId) {
+
+}

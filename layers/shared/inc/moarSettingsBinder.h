@@ -5,6 +5,10 @@
 #ifndef MOARSTACK_MOARSETTINGSBINDER_H
 #define MOARSTACK_MOARSETTINGSBINDER_H
 
+#include <stdint.h>
+
+typedef uint64_t Offset_T;
+
 typedef enum{
 	FieldType_int,
 } FieldType_T;
@@ -12,7 +16,7 @@ typedef enum{
 typedef struct{
 	char* Name; // lower case field name
 	FieldType_T FieldType;
-	void* Offset; // offset in structure
+	Offset_T Offset; // offset in structure
 }SettingsBind_T;
 
 //make binding macro
@@ -23,7 +27,8 @@ typedef struct{
 //__BEGIN_DECLS
 //
 extern void bindingFreeName(SettingsBind_T* binding);
-extern int bindingMake(SettingsBind_T* binding, char* name, void* offset, FieldType_T type);
+extern int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_T type);
+extern int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val);
 
 //__END_DECLS
 

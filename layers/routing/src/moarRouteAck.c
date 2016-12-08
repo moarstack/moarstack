@@ -22,6 +22,7 @@ int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original) {
     packet.PackType = RoutePackType_Ack;
     packet.State = StoredPackState_InProcessing;
     packet.TrysLeft = DEFAULT_ROUTE_TRYS;
+    packet.XTL = DEFAULT_XTL_ACK;
     packet.PayloadSize = sizeof(RoutePayloadAck_T);
     packet.Payload = malloc(packet.PayloadSize);
     if (NULL == packet.Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;

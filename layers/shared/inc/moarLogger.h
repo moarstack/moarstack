@@ -20,10 +20,8 @@
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 #define LOG_LEVELS_COUNT	(1+(int)LogLevel_Critical)
 
-#define LOG_CHECK_RESULT_ANY(r,h,l,f,...)	do{ LogWrite( (h), (l), (f), __VA_ARGS__ ); if( FUNC_RESULT_SUCCESS != (r) ) return (r); }while( 0 )
-#define LOG_CHECK_RESULT_BAD(r,h,l,f,...)	do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogWrite( (h), (l), (f), __VA_ARGS__ ); return (r); } }while( 0 )
-#define LOG_CHECK_ERROR_MOAR(r,h,l,m)		do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogErrMoar( (h), (l), (r), (m) ); return (r); } }while( 0 )
-#define LOG_CHECK_ERROR_SYS(h,l,m)			do{ if( 0 != errno ) { LogErrSystem( (h), (l), (m) ); return FUNC_RESULT_FAILED; } }while( 0 )
+#define LOG_CHECK_RESULT_MOAR(r,h,lg,lb,mg,mb)	do{ int result = LogCombMoar( (h), (lg), (lb), (r), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
+#define LOG_CHECK_RESULT_SYSTEM(h,lg,lb,mg,mb)	do{ int result = LogCombSystem( (h), (lg), (lb), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];
@@ -75,6 +73,12 @@ extern int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * m
 
 // writes moar error message to the log file specified by handle, adding time of writing
 extern int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const char * message );
+
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on value of errno and returns true for -Good case
+extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, const char * msgGood, const char * msgBad );
+
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on returnResult value and returns true for -Good case
+extern int LogCombMoar( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, int returnResult, const char * msgGood, const char * msgBad );
 
 // closes log file specified by given handle
 extern int LogClose( LogHandle_T * handle );

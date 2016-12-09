@@ -28,12 +28,11 @@ int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_
 }
 
 int bindingSetInt(void* ptr, char* val){
-	int* field = (int*)ptr;
-	errno = 0;
-	int res = strtol(val, NULL, 10);
-	if(0 == res && errno == EINVAL)
+	int value = 0;
+	int res = sscanf(val, "%d", &value);
+	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	*field = res;
+	*((int*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 

@@ -4,7 +4,7 @@ MoarDesc_T moarSocket(void) {
 
 }
 
-int moarBind(MoarDesc_T fd, AppId_T appId) {
+int moarBind(MoarDesc_T fd, const AppId_T *appId) {
 
 }
 
@@ -16,6 +16,6 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
 
 }
 
-MessageState_T moarMsgState(MoarDesc_T fd, MessageId_T msgId) {
+MessageState_T moarMsgState(MoarDesc_T fd, const MessageId_T *msgId) {
 
 }

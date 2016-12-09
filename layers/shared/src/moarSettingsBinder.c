@@ -36,7 +36,7 @@ int bindingSet_int(void* ptr, char* val){
 	*((int*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
-int bindingSet_string(void* ptr, char* val){
+int bindingSet_char(void* ptr, char* val){
 	*((char**)ptr) = val;
 	return FUNC_RESULT_SUCCESS;
 }
@@ -95,8 +95,8 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 		case FieldType_int:
 			res = bindingSet_int(ptr, val);
 			break;
-		case FieldType_string:
-			res = bindingSet_string(ptr, val);
+		case FieldType_char:
+			res = bindingSet_char(ptr, val);
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

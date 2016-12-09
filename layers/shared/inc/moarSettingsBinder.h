@@ -12,7 +12,7 @@ typedef uint64_t Offset_T;
 
 typedef enum{
 	FieldType_int,
-	FieldType_string,
+	FieldType_char,
 	FieldType_uint64_t,
 	FieldType_uint32_t,
 	FieldType_uint16_t,

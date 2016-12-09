@@ -34,7 +34,7 @@ typedef struct{
 
 #define MAKENAME(strct, field) (#strct "." #field)
 #define MAKEOFFSET(strct, field) ((Offset_T)&(((strct*)NULL)->field))
-#define BINDINGMAKE(b, s, f, t) bindingMake(b, MAKENAME(s,f), MAKEOFFSET(s, f), t);
+#define BINDINGMAKE(b, s, f, t) bindingMake(b, MAKENAME(s,f), MAKEOFFSET(s, f), t)
 //__BEGIN_DECLS
 //
 extern void bindingFreeName(SettingsBind_T* binding);

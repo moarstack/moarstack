@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <moarInterface.h>
 #include <moarConfigReader.h>
+#include <moardSettings.h>
 #include <getopt.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
@@ -157,8 +158,8 @@ int main(int argc, char** argv)
 	CHECK_RESULT(res);
 	res = parseCliArgs(&cliArgs, argc, argv);
 	CHECK_RESULT(res);
-
-	hashTable_T config = {0};
+	moardSettings settings = {0};
+		hashTable_T config = {0};
 	{
 		int confPrepareRes = configInit(&config);
 
@@ -171,6 +172,13 @@ int main(int argc, char** argv)
 			fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
 			return 1;
 		}
+		int count = 0;
+		SettingsBind_T* binding = NULL;
+		int bindRes = makeMoardSettingsBinding(&binding, &count);
+		CHECK_RESULT(bindRes);
+		int settingsBindRes = bindingBindStruct(&config,binding, count, &settings);
+		CHECK_RESULT(settingsBindRes);
+		free(binding);
 	}
     MoarLibrary_T libraries[LAYERS_COUNT];
 

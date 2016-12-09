@@ -7,6 +7,7 @@
 #include "stddef.h"
 #include <errno.h>
 
+
 void bindingFreeName(SettingsBind_T* binding){
 	if(binding != NULL)
 		free(binding->Name);
@@ -64,7 +65,7 @@ int bindingSet_uint16_t(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint8_t(void* ptr, char* val){
-	uint8_t value = 0;
+	int value = 0;
 	int res = sscanf(val, "%d", &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -101,4 +102,21 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			res = FUNC_RESULT_FAILED_ARGUMENT;
 	}
 	return res;
+}
+int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int bindCount, void* targetStruct){
+	if(NULL == settings || NULL == binding || NULL == targetStruct)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	for(int i=0; i<bindCount; i++){
+		//get line from table
+		char* val;
+		int res = hashGet(settings, &(binding[i].Name), &val);
+		if(res == FUNC_RESULT_SUCCESS){
+			// process found
+			res = bindingBind(binding+i, targetStruct, val);
+			CHECK_RESULT(res);
+		}
+		else
+			return FUNC_RESULT_FAILED_ARGUMENT;
+	}
+	return FUNC_RESULT_SUCCESS;
 }

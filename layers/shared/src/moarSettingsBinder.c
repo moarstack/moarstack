@@ -27,7 +27,7 @@ int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_
 	return FUNC_RESULT_SUCCESS;
 }
 
-int bindingSetInt(void* ptr, char* val){
+int bindingSet_int(void* ptr, char* val){
 	int value = 0;
 	int res = sscanf(val, "%d", &value);
 	if(1 != res)
@@ -35,16 +35,67 @@ int bindingSetInt(void* ptr, char* val){
 	*((int*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
+int bindingSet_string(void* ptr, char* val){
+	*((char**)ptr) = val;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_uint64_t(void* ptr, char* val){
+	long long int value = 0;
+	int res = sscanf(val, "%lld", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((uint64_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_uint32_t(void* ptr, char* val){
+	long long int value = 0;
+	int res = sscanf(val, "%lld", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((uint32_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_uint16_t(void* ptr, char* val){
+	uint16_t value = 0;
+	int res = sscanf(val, "%d", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((uint16_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_uint8_t(void* ptr, char* val){
+	uint8_t value = 0;
+	int res = sscanf(val, "%d", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((uint8_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
 
 int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 	if(NULL == binding || NULL == val || NULL == targetStruct)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
-	void* ptr = targetStruct+binding->Offset;
+	void* ptr = (void*)targetStruct+binding->Offset;
 	switch(binding->FieldType)
 	{
+		case FieldType_uint64_t:
+			res = bindingSet_uint64_t(ptr, val);
+			break;
+		case FieldType_uint32_t:
+			res = bindingSet_uint32_t(ptr, val);
+			break;
+		case FieldType_uint16_t:
+			res = bindingSet_uint16_t(ptr, val);
+			break;
+		case FieldType_uint8_t:
+			res = bindingSet_uint8_t(ptr, val);
+			break;
 		case FieldType_int:
-			res = bindingSetInt(ptr, val);
+			res = bindingSet_int(ptr, val);
+			break;
+		case FieldType_string:
+			res = bindingSet_string(ptr, val);
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

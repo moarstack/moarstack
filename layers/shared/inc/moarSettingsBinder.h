@@ -11,6 +11,15 @@ typedef uint64_t Offset_T;
 
 typedef enum{
 	FieldType_int,
+	FieldType_string,
+	FieldType_uint64_t,
+	FieldType_uint32_t,
+	FieldType_uint16_t,
+	FieldType_uint8_t,
+	FieldType_int64_t,
+	FieldType_int32_t,
+	FieldType_int16_t,
+	FieldType_int8_t,
 } FieldType_T;
 
 typedef struct{
@@ -22,7 +31,7 @@ typedef struct{
 //make binding macro
 
 #define MAKENAME(strct, field) (#strct "." #field)
-#define MAKEOFFSET(strct, field) ((void*)&(((strct*)NULL)->field))
+#define MAKEOFFSET(strct, field) ((Offset_T)&(((strct*)NULL)->field))
 #define BINDINGMAKE(b, s, f, t) bindingMake(b, MAKENAME(s,f), MAKEOFFSET(s, f), t);
 //__BEGIN_DECLS
 //

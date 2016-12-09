@@ -16,5 +16,7 @@ typedef int	FUNC_RESULT;
 
 #define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
 
+#define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
+
 #endif //MOARSTACK_FUNCRESULTS_H
 

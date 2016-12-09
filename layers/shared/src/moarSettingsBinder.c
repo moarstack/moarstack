@@ -115,8 +115,6 @@ int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int bindCo
 			res = bindingBind(binding+i, targetStruct, val);
 			CHECK_RESULT(res);
 		}
-		else
-			return FUNC_RESULT_FAILED_ARGUMENT;
 	}
 	return FUNC_RESULT_SUCCESS;
 }

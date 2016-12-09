@@ -20,6 +20,11 @@
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 #define LOG_LEVELS_COUNT	(1+(int)LogLevel_Critical)
 
+#define LOG_CHECK_RESULT_ANY(r,h,l,f,...)	do{ LogWrite( (h), (l), (f), __VA_ARGS__ ); if( FUNC_RESULT_SUCCESS != (r) ) return (r); }while( 0 )
+#define LOG_CHECK_RESULT_BAD(r,h,l,f,...)	do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogWrite( (h), (l), (f), __VA_ARGS__ ); return (r); } }while( 0 )
+#define LOG_CHECK_ERROR_MOAR(r,h,l,m)		do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogErrMoar( (h), (l), (r), (m) ); return (r); } }while( 0 )
+#define LOG_CHECK_ERROR_SYS(h,l,m)			do{ if( 0 != errno ) { LogErrSystem( (h), (l), (m) ); return FUNC_RESULT_FAILED; } }while( 0 )
+
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];
 typedef FILE	* LogFileHandle_T;
@@ -48,9 +53,7 @@ typedef struct {
 
 typedef LogDescriptor_T	* LogHandle_T;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 // opens log file with specified filepath; returns handler on success, value <= 0 otherwise
 extern int LogOpen( LogFilepath_T logFile, LogHandle_T * handle );
@@ -76,9 +79,6 @@ extern int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult
 // closes log file specified by given handle
 extern int LogClose( LogHandle_T * handle );
 
-#ifdef __cplusplus
-}
-#endif
-
+__END_DECLS
 
 #endif //MOARSTACK_MOARLOGGER_H

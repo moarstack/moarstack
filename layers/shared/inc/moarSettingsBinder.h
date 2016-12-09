@@ -21,10 +21,10 @@ typedef enum{
 //	FieldType_ChannelAddr_t,
 //	FieldType_IfaceAddr_t,
 //	FieldType_moarTime_t,
-//	FieldType_int64_t,
-//	FieldType_int32_t,
-//	FieldType_int16_t,
-//	FieldType_int8_t,
+	FieldType_int64_t,
+	FieldType_int32_t,
+	FieldType_int16_t,
+	FieldType_int8_t,
 } FieldType_T;
 
 typedef struct{

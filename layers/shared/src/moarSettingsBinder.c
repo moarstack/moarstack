@@ -41,8 +41,8 @@ int bindingSet_char(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint64_t(void* ptr, char* val){
-	long long int value = 0;
-	int res = sscanf(val, "%lld", &value);
+	uint64_t value = 0;
+	int res = sscanf(val, "%llu", &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint64_t*)ptr) = value;
@@ -72,6 +72,38 @@ int bindingSet_uint8_t(void* ptr, char* val){
 	*((uint8_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
+int bindingSet_int64_t(void* ptr, char* val){
+	long long int value = 0;
+	int res = sscanf(val, "%lld", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((int64_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_int32_t(void* ptr, char* val){
+	long long int value = 0;
+	int res = sscanf(val, "%lld", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((int32_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_int16_t(void* ptr, char* val){
+	int value = 0;
+	int res = sscanf(val, "%d", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((int16_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
+int bindingSet_int8_t(void* ptr, char* val){
+	int value = 0;
+	int res = sscanf(val, "%d", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((int8_t*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
 
 int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 	if(NULL == binding || NULL == val || NULL == targetStruct)
@@ -91,6 +123,18 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			break;
 		case FieldType_uint8_t:
 			res = bindingSet_uint8_t(ptr, val);
+			break;
+		case FieldType_int64_t:
+			res = bindingSet_int64_t(ptr, val);
+			break;
+		case FieldType_int32_t:
+			res = bindingSet_int32_t(ptr, val);
+			break;
+		case FieldType_int16_t:
+			res = bindingSet_int16_t(ptr, val);
+			break;
+		case FieldType_int8_t:
+			res = bindingSet_int8_t(ptr, val);
 			break;
 		case FieldType_int:
 			res = bindingSet_int(ptr, val);

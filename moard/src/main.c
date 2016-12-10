@@ -20,7 +20,11 @@
 #include <moarConfigReader.h>
 #include <moardSettings.h>
 #include <getopt.h>
+#include <moarCommonSettings.h>
+#include <libgen.h>
+#include <dirent.h>
 
+#define PATH_SEPARATOR 				"/"
 #define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
 #define IFACE_LOG_FILE				"/tmp/moarInterface.log"
 #define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
@@ -148,6 +152,24 @@ int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
 	return FUNC_RESULT_SUCCESS;
 }
 
+char* concatPath(char* dir, char* file){
+	size_t pathSize = strlen(dir);
+	size_t dirLen = strlen(file);
+	size_t fullPath = pathSize+dirLen+2;
+	char* enabledPath = malloc(fullPath);
+	char* separator = PATH_SEPARATOR;
+	strncpy(enabledPath, dir, pathSize);
+	strncpy(enabledPath+pathSize, separator, 1);
+	strncpy(enabledPath+pathSize+1, file, dirLen+1);
+
+	return enabledPath;
+}
+
+char* getLayersEnabledPath(moardSettings* settings, char* configFile){
+	//make directory for enabled layers
+	char* confPath = dirname(configFile);
+	return concatPath(confPath, settings->LayersEnabledDir);
+}
 int main(int argc, char** argv)
 {
 	//TODO add log error output
@@ -158,28 +180,28 @@ int main(int argc, char** argv)
 	CHECK_RESULT(res);
 	res = parseCliArgs(&cliArgs, argc, argv);
 	CHECK_RESULT(res);
+	
 	moardSettings settings = {0};
-		hashTable_T config = {0};
+
+	ifaceSocket ifaceSock = {0};
+	serviceSocket servSock = {0};
+
+	
 	{
 		int confPrepareRes = configInit(&config);
-
 		if (FUNC_RESULT_SUCCESS != confPrepareRes) {
-			fprintf(stderr, "Can not init config storage\r\n");
-			return 1;
 		}
-		int confRes = configRead(&config, cliArgs.ConfigFile);
-		if (FUNC_RESULT_SUCCESS != confRes) {
-			fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
-			return 1;
-		}
-		int count = 0;
-		SettingsBind_T* binding = NULL;
-		int bindRes = makeMoardSettingsBinding(&binding, &count);
-		CHECK_RESULT(bindRes);
-		int settingsBindRes = bindingBindStruct(&config,binding, count, &settings);
-		CHECK_RESULT(settingsBindRes);
-		free(binding);
-	}
+	int confRes = configRead(&config, cliArgs.ConfigFile);
+	if (FUNC_RESULT_SUCCESS != confRes) {
+		fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
+		return 1;
+
+	int settingsRes = settingsLoad(&settings, configFile, &config);
+	CHECK_RESULT(settingsRes);
+	int isock = bindingBindStructFunc(&config, makeIfaceSockBinding, &ifaceSock);
+	CHECK_RESULT(isock);
+	int ssock = bindingBindStructFunc(&config, makeServSockBinding, &servSock);
+	CHECK_RESULT(ssock);
     MoarLibrary_T libraries[LAYERS_COUNT];
 
 	LogWorkIllustration();
@@ -197,6 +219,53 @@ int main(int argc, char** argv)
 
     //setup signal handler
     signal(SIGINT, signalHandler);
+	// create all needed sockets
+	SocketsPrepare( ifaceSock.FileName, servSock.FileName );
+
+	char* layersConfDirName = getLayersEnabledPath(&settings, configFile);
+	DIR * d;
+	struct dirent *dir;
+	d = opendir(layersConfDirName);
+	if(d){
+		while((dir = readdir(d))!= NULL){
+			if(strstr(dir->d_name,".conf") != NULL) {
+				// file here
+				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
+				//init config
+				int res = configInit(layerConfig);
+				CHECK_RESULT(res);
+				// get config
+				char* fullName = concatPath(layersConfDirName, dir->d_name);
+				res = configRead(layerConfig, fullName);
+				free(fullName);
+				CHECK_RESULT(res);
+				// merge without override
+				res = configMerge(layerConfig, &config);
+				CHECK_RESULT(res);
+				// get file name
+				libraryLocation location = {0};
+				res = bindingBindStructFunc(layerConfig, makeLibraryLocationBinding, &location);
+				CHECK_RESULT(res);
+				// load layer
+				MoarLibrary_T library = {0};
+				res = loadLibrary(location.FileName, &library);
+				if (FUNC_RESULT_SUCCESS == res) {
+					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
+						   library.Info.TargetMoarApiVersion);
+					// start layer
+					runLayer(&library);
+				}
+				else
+					printf("%s load failed\n", location.FileName);
+			}
+		}
+		closedir(d);
+	}
+	free(layersConfDirName);
+
+
+
+
     //load
     for(int i=0; i<LAYERS_COUNT;i++) {
         int res = loadLibrary(fileNames[i], libraries+i);
@@ -205,10 +274,12 @@ int main(int argc, char** argv)
         else
             printf("%s load failed\n",fileNames[i]);
     }
-    SocketsPrepare( IFACE_CHANNEL_SOCKET_FILE, SERVICE_APP_SOCKET_FILE );
+
     //start layers here
 	for(int i = 0; i < LAYERS_COUNT; i++)
 		runLayer( libraries + i );
+
+
 
     //wait
     pause();

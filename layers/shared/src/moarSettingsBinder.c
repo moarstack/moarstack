@@ -162,3 +162,14 @@ int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int bindCo
 	}
 	return FUNC_RESULT_SUCCESS;
 }
+int bindingBindStructFunc(hashTable_T* settings, bindingFunc_F func, void* targetStruct){
+	if(NULL == func)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	SettingsBind_T* bind;
+	int count = 0;
+	int res = func(&bind, &count);
+	CHECK_RESULT(res);
+	res = bindingBindStruct(settings, bind, count, targetStruct);
+	free(bind);
+	return res;
+}

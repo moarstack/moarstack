@@ -14,5 +14,6 @@ typedef struct {
 }moardSettings;
 
 int makeMoardSettingsBinding(SettingsBind_T** binding, int* count);
+int settingsLoad(moardSettings* settings,  char* fileName, hashTable_T* table);
 
 #endif //MOARSTACK_MOARDSETTINGS_H

@@ -12,11 +12,10 @@ hashVal_T intHash(void* val, size_t size) {
 		return 0;
 	return *((hashVal_T *)val);
 }
-int freeIfaceDescriptor(void* desc){
+void freeIfaceDescriptor(void* desc){
 	InterfaceDescriptor_T* descriptor = (InterfaceDescriptor_T*)desc;
 	unAddressFree(&(descriptor->Address));
 	free(descriptor);
-	return FUNC_RESULT_SUCCESS;
 }
 int interfaceInit(ChannelLayer_T* layer){
 	if(NULL == layer)

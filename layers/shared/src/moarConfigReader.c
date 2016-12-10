@@ -187,21 +187,22 @@ int configMerge(hashTable_T* dest, hashTable_T* source){
 		char* iterKey = *((char**)hashIteratorKey(&iter));
 		char* iterData = *((char**)hashIteratorData(&iter));
 		if(NULL != iterKey && NULL != iterData){
-			//remove entry if contain
-			res = hashRemoveExact(dest, &iterKey, &iterData);
-			CHECK_RESULT(res);
-			//copy two strings
-			char* newKey = strdup(iterKey);
-			if(NULL == newKey)
-				return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-			char* newData = strdup(iterData);
-			if(NULL == newData) {
-				free(newKey);
-				return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+			//ignore entry if contain
+			bool contain = hashContain(dest, &iterKey);
+			if(!contain) {
+				//copy two strings
+				char *newKey = strdup(iterKey);
+				if (NULL == newKey)
+					return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+				char *newData = strdup(iterData);
+				if (NULL == newData) {
+					free(newKey);
+					return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+				}
+				//and add to table
+				res = hashAdd(dest, &newKey, &newData);
+				CHECK_RESULT(res);
 			}
-			//and add to table
-			res = hashAdd(dest, &newKey, &newData);
-			CHECK_RESULT(res);
 		}
 		res = hashIteratorNext(&iter);
 		CHECK_RESULT(res);

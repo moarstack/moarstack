@@ -98,7 +98,7 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
         return FUNC_RESULT_FAILED_ARGUMENT;
 
     midGenerate(&new_packet->InternalId, MoarLayer_Routing);
-    rmidGenerate(&new_packet->MessageId);
+    new_packet->MessageId = prevPacket->MessageId;
 
     new_packet->Source = layer->LocalAddress;
     new_packet->Destination = prevPacket->Destination;
@@ -107,7 +107,7 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     new_packet->State = StoredPackState_InProcessing;
     new_packet->TrysLeft = DEFAULT_ROUTE_TRYS;
     new_packet->NextHop = *nextHop;
-    new_packet->XTL = DEFAULT_XTL;
+    new_packet->XTL = DEFAULT_XTL_FINDER;
 
     int recCount = (prevPacket->PayloadSize - sizeof(RouteInitialPayloadFinder_T)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
     if (MaxRouteFinderPacketSize <= recCount)

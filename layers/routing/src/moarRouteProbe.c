@@ -8,6 +8,7 @@
 #include <memory.h>
 #include <moarRoutingTablesHelper.h>
 #include <moarNeIterRoutine.h>
+#include <moarRoutingStoredPacket.h>
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
@@ -83,8 +84,13 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 	newPayload = ( RoutePayloadProbe_T * )( newPacket->Payload );
 	newPayload->DepthMax = oldPayload->DepthMax;
 	newPayload->DepthCurrent = newDepthCurrent;
-	memcpy( getProbePayloadAddress( newPayload, 0 ), getProbePayloadAddress( oldPayload, 0 ), oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
-	memcpy( getProbePayloadAddress( newPayload, oldPayload->DepthCurrent ), &( layer->LocalAddress ), sizeof( RouteAddr_T ) );
+	memcpy( getProbePayloadAddress( newPayload, 0 ),
+            getProbePayloadAddress( oldPayload, 0 ),
+            oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
+	memcpy( getProbePayloadAddress( newPayload,
+                                    oldPayload->DepthCurrent ),
+            &( layer->LocalAddress ),
+            sizeof( RouteAddr_T ) );
 	newPacket->PackType = RoutePackType_Probe;
 	newPacket->Source = oldPacket->Source;
 	newPacket->Destination = *next;
@@ -180,4 +186,38 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	result = clearStoredPacket( &newPacket );
 
 	return result;
+}
+
+
+int processProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ){
+
+    FUNC_RESULT result;
+
+    if (NULL == layer || NULL == packet){
+        return FUNC_RESULT_FAILED_ARGUMENT;
+    }
+
+    RoutePayloadProbe_T* payload = packet->Payload;
+
+    if(NULL == payload){
+        return FUNC_RESULT_FAILED;
+    }
+
+    RouteAddr_T* relay = getProbePayloadAddress(payload,payload->DepthCurrent - 1);
+    if(NULL == relay){
+        return FUNC_RESULT_FAILED;
+    }
+
+    for (int i = 0; i < payload->DepthCurrent; ++i) {
+        RouteAddr_T* addr = getProbePayloadAddress(payload,i);
+        if(NULL == addr){
+            return FUNC_RESULT_FAILED;
+        }
+        result = (FUNC_RESULT)helperUpdateRoute(layer, addr, relay);
+        if (FUNC_RESULT_SUCCESS != result){
+            return result;
+        }
+    }
+
+    return FUNC_RESULT_SUCCESS;
 }

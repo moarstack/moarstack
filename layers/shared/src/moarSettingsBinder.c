@@ -6,6 +6,10 @@
 #include "funcResults.h"
 #include "stddef.h"
 #include <errno.h>
+#include <string.h>
+#include <ctype.h>
+#include <bits/string2.h>
+#include <stdio.h>
 
 
 void bindingFreeName(SettingsBind_T* binding){
@@ -19,12 +23,12 @@ int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_
 
 	binding->Offset = offset;
 	binding->FieldType = type;
-
-	char* newLine = strdup(name);
+	size_t len = strlen(name)+1;
+	char* newLine = malloc(len);
 	binding->Name = newLine;
 	// to lower
-	for(;*newLine;newLine++)
-		*newLine = (char)tolower(*newLine);
+	for(;*name;newLine++, name++)
+		*newLine = (char)tolower(*name);
 	return FUNC_RESULT_SUCCESS;
 }
 

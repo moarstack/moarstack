@@ -107,7 +107,7 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     new_packet->State = StoredPackState_InProcessing;
     new_packet->TrysLeft = DEFAULT_ROUTE_TRYS;
     new_packet->NextHop = *nextHop;
-    new_packet->XTL = DEFAULT_XTL_FINDER;
+    new_packet->XTL = prevPacket->XTL;
 
     int recCount = (prevPacket->PayloadSize - sizeof(RouteInitialPayloadFinder_T)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
     if (MaxRouteFinderPacketSize <= recCount)

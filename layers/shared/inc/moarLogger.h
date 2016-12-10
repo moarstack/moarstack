@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <stdarg.h>
 
 #include <funcResults.h>
 
@@ -21,10 +22,32 @@
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 #define LOG_LEVELS_COUNT	(1+(int)LogLevel_Critical)
 
-#define LOG_CHECK_RESULT_MOAR(r,h,lg,lb,mg,mb)	do{ int __macros__result__ = LogCombMoar( (h), (lg), (lb), (r), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != __macros__result__ ) return __macros__result__; }while( 0 )
-#define LOG_CHECK_RESULT_SYSTEM(h,lg,lb,mg,mb)	do{ int __macros__result__ = LogCombSystem( (h), (lg), (lb), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != __macros__result__ ) return __macros__result__; }while( 0 )
-#define LOG_CHECK_ERROR_MOAR(r,h,l,m)			do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogErrMoar( (h), (l), (r), (m) ); return (r); } }while( 0 )
-#define LOG_CHECK_ERROR_SYSTEM(h,l,m)			do{ if( 0 != errno ) { LogErrSystem( (h), (l), (m) ); return FUNC_RESULT_FAILED; } }while( 0 )
+#define LOG_CHECK_RESULT_MOAR(r,h,lb,mb,lg,mg)	do{ 																			\
+													int __macros__result__ = LogCombMoar( (h), (r), (lb), (mb), (lg), (mg) );	\
+													if( FUNC_RESULT_SUCCESS != __macros__result__ )								\
+														return __macros__result__;												\
+												} while( 0 )
+
+#define LOG_CHECK_RESULT_SYSTEM(h,lb,mb,lg,mg)	do{																			\
+													int __macros__result__ = LogCombSystem( (h), (lb), (mb), (lg), (mg) );	\
+													if( FUNC_RESULT_SUCCESS != __macros__result__ )							\
+														return __macros__result__;											\
+												} while( 0 )
+
+#define LOG_CHECK_ERROR_MOAR(r,h,l,m)			do{															\
+													int __macros__result__ = (r);							\
+													if( FUNC_RESULT_SUCCESS != __macros__result__ ) {		\
+														LogErrMoar( (h), (l), __macros__result__, (m) );	\
+														return __macros__result__;							\
+													}														\
+												} while( 0 )
+
+#define LOG_CHECK_ERROR_SYSTEM(h,l,m)			do{										\
+													if( 0 != errno ) {					\
+														LogErrSystem( (h), (l), (m) );	\
+														return FUNC_RESULT_FAILED;		\
+													}									\
+												} while( 0 )
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];
@@ -77,11 +100,11 @@ extern int LogErrSystem( LogHandle_T handle, LogLevel_T logLevel, const char * m
 // writes moar error message to the log file specified by handle, adding time of writing
 extern int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const char * message );
 
-// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on value of errno and returns true for -Good case
-extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, const char * msgGood, const char * msgBad );
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on value of errno
+extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelBad, const char * msgBad, LogLevel_T logLevelGood, const char * msgGood );
 
-// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on returnResult value and returns true for -Good case
-extern int LogCombMoar( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, int returnResult, const char * msgGood, const char * msgBad );
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on returnResult
+extern int LogCombMoar( LogHandle_T handle, int returnResult, LogLevel_T logLevelBad, const char * msgBad, LogLevel_T logLevelGood, const char * msgGood );
 
 // closes log file specified by given handle
 extern int LogClose( LogHandle_T * handle );

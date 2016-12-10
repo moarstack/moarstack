@@ -331,8 +331,8 @@ int LogErrMoar( LogHandle_T handle, LogLevel_T logLevel, int returnResult, const
 	return ( 0 > result ? FUNC_RESULT_FAILED_IO : FUNC_RESULT_SUCCESS );
 }
 
-// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on value of errno and returns true for -Good case
-extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, const char * msgGood, const char * msgBad ) {
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on value of errno
+extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelBad, const char * msgBad, LogLevel_T logLevelGood, const char * msgGood ) {
 	int result;
 
 	if( 0 == errno ) {
@@ -344,8 +344,8 @@ extern int LogCombSystem( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_
 	}
 }
 
-// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on returnResult value and returns true for -Good case
-extern int LogCombMoar( LogHandle_T handle, LogLevel_T logLevelGood, LogLevel_T logLevelBad, int returnResult, const char * msgGood, const char * msgBad ) {
+// calls LogWrite with -Good arguments or LogErrMoar with -Bad ones depending on returnResult
+extern int LogCombMoar( LogHandle_T handle, int returnResult, LogLevel_T logLevelBad, const char * msgBad, LogLevel_T logLevelGood, const char * msgGood ) {
 	int result;
 
 	if( FUNC_RESULT_SUCCESS == returnResult ) {

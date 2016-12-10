@@ -77,7 +77,7 @@ int produceFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteS
 	newPacket->NextProcessing = timeGetCurrent();
 	newPacket->State = StoredPackState_InProcessing;
 	newPacket->TrysLeft = DEFAULT_ROUTE_TRYS;
-	newPacket->XTL = DEFAULT_XTL;
+	newPacket->XTL = DEFAULT_XTL_FACK;
 
 	return FUNC_RESULT_SUCCESS;
 }

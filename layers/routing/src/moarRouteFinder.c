@@ -21,7 +21,7 @@ int produceRouteFinder( RoutingLayer_T * layer, RouteAddr_T * destination, Route
 	packet.State = StoredPackState_InProcessing;
 	packet.TrysLeft = DEFAULT_ROUTE_TRYS;
 	packet.NextHop = *next_hop;
-	packet.XTL = DEFAULT_XTL;
+	packet.XTL = DEFAULT_XTL_FINDER;
 	packet.PayloadSize = sizeof( RouteInitialPayloadFinder_T );
 	packet.Payload = malloc( packet.PayloadSize );
 	if( NULL == packet.Payload ) return FUNC_RESULT_FAILED_MEM_ALLOCATION;

@@ -40,7 +40,7 @@ int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPa
 	packet->NextProcessing = timeGetCurrent();
 	packet->State = StoredPackState_WaitSent; // packet should be sent immediately, but supposed to be sent from another function
 	packet->TrysLeft = DEFAULT_ROUTE_TRYS;
-	packet->XTL = DEFAULT_XTL;
+	packet->XTL = DEFAULT_XTL_PROBE;
 
 	return FUNC_RESULT_SUCCESS;
 }

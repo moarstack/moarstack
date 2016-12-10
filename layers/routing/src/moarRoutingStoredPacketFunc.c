@@ -164,7 +164,7 @@ int prepareSentPacket(RoutingLayer_T* layer, RouteStoredPacket_T * packet, Prese
 	packet->State = StoredPackState_Received; // received (=got) by routing from its input
 	packet->TrysLeft = DEFAULT_ROUTE_TRYS;
 	packet->Source = layer->LocalAddress;
-	packet->XTL = DEFAULT_XTL;
+	packet->XTL = DEFAULT_XTL_DATA;
 		// no LastHop due to current hop being first
 		// no NextHop because its routing work to know such things
 

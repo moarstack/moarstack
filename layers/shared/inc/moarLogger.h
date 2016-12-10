@@ -21,8 +21,8 @@
 #define LOG_DEF_LEVEL_DUMP	LogLevel_Warning
 #define LOG_LEVELS_COUNT	(1+(int)LogLevel_Critical)
 
-#define LOG_CHECK_RESULT_MOAR(r,h,lg,lb,mg,mb)	do{ int result = LogCombMoar( (h), (lg), (lb), (r), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
-#define LOG_CHECK_RESULT_SYSTEM(h,lg,lb,mg,mb)	do{ int result = LogCombSystem( (h), (lg), (lb), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
+#define LOG_CHECK_RESULT_MOAR(r,h,lg,lb,mg,mb)	do{ int __macros__result__ = LogCombMoar( (h), (lg), (lb), (r), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != __macros__result__ ) return __macros__result__; }while( 0 )
+#define LOG_CHECK_RESULT_SYSTEM(h,lg,lb,mg,mb)	do{ int __macros__result__ = LogCombSystem( (h), (lg), (lb), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != __macros__result__ ) return __macros__result__; }while( 0 )
 #define LOG_CHECK_ERROR_MOAR(r,h,l,m)			do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogErrMoar( (h), (l), (r), (m) ); return (r); } }while( 0 )
 #define LOG_CHECK_ERROR_SYSTEM(h,l,m)			do{ if( 0 != errno ) { LogErrSystem( (h), (l), (m) ); return FUNC_RESULT_FAILED; } }while( 0 )
 

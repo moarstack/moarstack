@@ -18,8 +18,8 @@ int makeMoardSettingsBinding(SettingsBind_T** binding, int* count){
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	*binding = bind;
 
-	CHECK_RESULT(BINDINGMAKE(bind++, moardSettings, LogPath, FieldType_char));
-	CHECK_RESULT(BINDINGMAKE(bind++, moardSettings, LayersEnabledDir, FieldType_char));
+	BINDINGMAKE(bind++, moardSettings, LogPath, FieldType_char);
+	BINDINGMAKE(bind++, moardSettings, LayersEnabledDir, FieldType_char);
 
 	return FUNC_RESULT_SUCCESS;
 }

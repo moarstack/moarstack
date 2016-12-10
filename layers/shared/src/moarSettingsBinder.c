@@ -29,6 +29,7 @@ int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_
 	// to lower
 	for(;*name;newLine++, name++)
 		*newLine = (char)tolower(*name);
+	*newLine = '\0';
 	return FUNC_RESULT_SUCCESS;
 }
 

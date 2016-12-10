@@ -23,12 +23,9 @@
 #include <moarCommonSettings.h>
 #include <libgen.h>
 #include <dirent.h>
+#include <moarLibrary.h>
 
 #define PATH_SEPARATOR 				"/"
-#define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
-#define IFACE_LOG_FILE				"/tmp/moarInterface.log"
-#define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
-//#define LOAD_MULTIPLE_INTERFACES
 
 #ifndef LOAD_MULTIPLE_INTERFACES
 #define LAYERS_COUNT	(MoarLayer_LayersCount)
@@ -48,38 +45,44 @@ void signalHandler(int signo){
         printf("Received signal %d\n",signo);
 }
 
-int runLayer( MoarLibrary_T * layerLibrary ) {
-	int				result;
-    void			* vsp;
-    MoarLayerType_T	layerType = layerLibrary->Info.LayerType;
+int runLayer( MoarLibrary_T * layerLibrary, hashTable_T *config) {
+	int result;
+	MoarLayerType_T layerType = layerLibrary->Info.LayerType;
+	MoarLayerStartupParams_T *layerStartupParams;
 
-    if( MoarLayer_Interface == layerType ) {  // I DONT LIKE THIS PLACE
-		MoarIfaceStartupParams_T	* spIface;
+	layerStartupParams = (MoarLayerStartupParams_T *) calloc(1, sizeof(MoarLayerStartupParams_T));
 
-		spIface = ( MoarIfaceStartupParams_T * )calloc( 1, sizeof( MoarIfaceStartupParams_T ) );
+	if (NULL == layerStartupParams)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
-		if( NULL == spIface )
-			return -1;
+	layerStartupParams->DownSocketHandler = SocketDown(layerType);
+	layerStartupParams->UpSocketHandler = SocketUp(layerType);
+	layerStartupParams->LayerConfig = config;
 
-		strncpy( spIface->socketToChannel, IFACE_CHANNEL_SOCKET_FILE, SOCKET_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE
-		strncpy( spIface->filepathToLog, IFACE_LOG_FILE, LOG_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE TOO
-		vsp = spIface;
-    } else {
-        MoarLayerStartupParams_T	* spNonIface;
-
-		spNonIface = ( MoarLayerStartupParams_T * )calloc( 1, sizeof( MoarLayerStartupParams_T ) );
-
-        if( NULL == spNonIface )
-            return -1;
-
-		spNonIface->DownSocketHandler = SocketDown( layerType );
-		spNonIface->UpSocketHandler = SocketUp( layerType );
-        vsp = spNonIface;
-    }
-
-	result = createThread( layerLibrary, vsp );
-	printf( FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName );
+	result = createThread(layerLibrary, layerStartupParams);
+	printf(FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName);
 	return result;
+}
+
+int loadLayer(MoarLibrary_T* library, char* fileName, hashTable_T* moardConfig, hashTable_T* layerConfig){
+	if(NULL == library || NULL == fileName || NULL == moardConfig || NULL == layerConfig)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//init config
+	int res = configInit(layerConfig);
+	CHECK_RESULT(res);
+	// get config
+	res = configRead(layerConfig, fileName);
+	CHECK_RESULT(res);
+	// merge without override
+	res = configMerge(layerConfig, moardConfig);
+	CHECK_RESULT(res);
+	// get file name
+	libraryLocation location = {0};
+	res = bindingBindStructFunc(layerConfig, makeLibraryLocationBinding, &location);
+	CHECK_RESULT(res);
+	// load layer
+	res = loadLibrary(location.FileName, library);
+	return res;
 }
 
 int LogWorkIllustration( void ) {
@@ -202,20 +205,20 @@ int main(int argc, char** argv)
 	CHECK_RESULT(isock);
 	int ssock = bindingBindStructFunc(&config, makeServSockBinding, &servSock);
 	CHECK_RESULT(ssock);
-    MoarLibrary_T libraries[LAYERS_COUNT];
+ //   MoarLibrary_T libraries[LAYERS_COUNT];
 
 	LogWorkIllustration();
 
-    char *fileNames[LAYERS_COUNT];
-    fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
-    fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
-    fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;
-    fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
-    fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
-    //testing multiple instances
-#ifdef LOAD_MULTIPLE_INTERFACES
-    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
-#endif
+//    char *fileNames[LAYERS_COUNT];
+//    fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
+//    fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
+//    fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;
+//    fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
+//    fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
+//    //testing multiple instances
+//#ifdef LOAD_MULTIPLE_INTERFACES
+//    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
+//#endif
 
     //setup signal handler
     signal(SIGINT, signalHandler);
@@ -229,34 +232,22 @@ int main(int argc, char** argv)
 	if(d){
 		while((dir = readdir(d))!= NULL){
 			if(strstr(dir->d_name,".conf") != NULL) {
-				// file here
-				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
-				//init config
-				int res = configInit(layerConfig);
-				CHECK_RESULT(res);
-				// get config
 				char* fullName = concatPath(layersConfDirName, dir->d_name);
-				res = configRead(layerConfig, fullName);
-				free(fullName);
-				CHECK_RESULT(res);
-				// merge without override
-				res = configMerge(layerConfig, &config);
-				CHECK_RESULT(res);
-				// get file name
-				libraryLocation location = {0};
-				res = bindingBindStructFunc(layerConfig, makeLibraryLocationBinding, &location);
-				CHECK_RESULT(res);
-				// load layer
+				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
+
 				MoarLibrary_T library = {0};
-				res = loadLibrary(location.FileName, &library);
+				int res = loadLayer(&library, fullName, &config, layerConfig);
+
 				if (FUNC_RESULT_SUCCESS == res) {
 					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
 						   library.Info.TargetMoarApiVersion);
 					// start layer
-					runLayer(&library);
+					runLayer(&library, layerConfig);
 				}
 				else
-					printf("%s load failed\n", location.FileName);
+					printf("%s load failed\n", fullName);
+
+				free(fullName);
 			}
 		}
 		closedir(d);
@@ -266,39 +257,39 @@ int main(int argc, char** argv)
 
 
 
-    //load
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = loadLibrary(fileNames[i], libraries+i);
-        if (FUNC_RESULT_SUCCESS == res)
-            printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
-        else
-            printf("%s load failed\n",fileNames[i]);
-    }
+//    //load
+//    for(int i=0; i<LAYERS_COUNT;i++) {
+//        int res = loadLibrary(fileNames[i], libraries+i);
+//        if (FUNC_RESULT_SUCCESS == res)
+//            printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
+//        else
+//            printf("%s load failed\n",fileNames[i]);
+//    }
 
-    //start layers here
-	for(int i = 0; i < LAYERS_COUNT; i++)
-		runLayer( libraries + i );
+//    //start layers here
+//	for(int i = 0; i < LAYERS_COUNT; i++)
+//		runLayer( libraries + i );
 
 
 
     //wait
     pause();
-    //stop
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = exitThread(libraries+i);
-        if(FUNC_RESULT_SUCCESS == res)
-            printf("thread %s exited\n",libraries[i].Info.LibraryName);
-        else
-            printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
-    }
-    //unload
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = closeLibrary(libraries+i);
-        //check for empty lib closing
-        if (FUNC_RESULT_SUCCESS == res)
-            printf("library %s closed\n",libraries[i].Filename);
-        else
-            printf("close %s failed\n",libraries[i].Filename);
-    }
+//    //stop
+//    for(int i=0; i<LAYERS_COUNT;i++) {
+//        int res = exitThread(libraries+i);
+//        if(FUNC_RESULT_SUCCESS == res)
+//            printf("thread %s exited\n",libraries[i].Info.LibraryName);
+//        else
+//            printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
+//    }
+//    //unload
+//    for(int i=0; i<LAYERS_COUNT;i++) {
+//        int res = closeLibrary(libraries+i);
+//        //check for empty lib closing
+//        if (FUNC_RESULT_SUCCESS == res)
+//            printf("library %s closed\n",libraries[i].Filename);
+//        else
+//            printf("close %s failed\n",libraries[i].Filename);
+//    }
     return 0;
 }

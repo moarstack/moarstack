@@ -61,7 +61,7 @@ int unAddressWriteToSocket(int fd, UnIfaceAddr_T* address){
 }
 
 // compare
-bool unAddressCompare(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2){
+bool unAddressCompare(const UnIfaceAddr_T* addr1, const UnIfaceAddr_T* addr2){
 	if(NULL == addr1 || NULL == addr2)
 		return false;
 	if(addr1->Length != addr2->Length)

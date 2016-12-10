@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <funcResults.h>
 
@@ -22,6 +23,8 @@
 
 #define LOG_CHECK_RESULT_MOAR(r,h,lg,lb,mg,mb)	do{ int result = LogCombMoar( (h), (lg), (lb), (r), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
 #define LOG_CHECK_RESULT_SYSTEM(h,lg,lb,mg,mb)	do{ int result = LogCombSystem( (h), (lg), (lb), (mg), (mb) ); if( FUNC_RESULT_SUCCESS != result ) return result; }while( 0 )
+#define LOG_CHECK_ERROR_MOAR(r,h,l,m)			do{ if( FUNC_RESULT_SUCCESS != (r) ) { LogErrMoar( (h), (l), (r), (m) ); return (r); } }while( 0 )
+#define LOG_CHECK_ERROR_SYSTEM(h,l,m)			do{ if( 0 != errno ) { LogErrSystem( (h), (l), (m) ); return FUNC_RESULT_FAILED; } }while( 0 )
 
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];

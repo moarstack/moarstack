@@ -1,4 +1,5 @@
 #include "moarApi.h"
+#include "moarServiceApp.h"
 
 MoarDesc_T moarSocket(void) {
 

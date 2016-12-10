@@ -15,6 +15,8 @@
 #include "moarRoutingPacketProcessing.h"
 #include <moarRouteProbe.h>
 #include <moarRouteFinderAck.h>
+#include <moarRoutingNeighborsStorage.h>
+#include <hashTable.h>
 
 int notifyPresentation(RoutingLayer_T* layer, MessageId_T* id, PackStateRoute_T state){
 	if(NULL == layer)
@@ -153,22 +155,40 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 		//// todo try to send
 		// also multiple stage finders process here
 		ChannelAddr_T* relayAddrChannel;
-		RouteAddr_T*   relayAddr;
+		RouteAddr_T   relayAddr;
 		int result = helperFindRelay(layer, &(packet->Destination), relayAddrChannel);
 		if (FUNC_RESULT_SUCCESS == result){
-			helperChannel2Route(relayAddrChannel, relayAddr);
-            RouteStoredPacket_T new_packet = {0};
-			result = produceNextRouteFinder(layer, packet, relayAddr, &new_packet);
-            if(FUNC_RESULT_SUCCESS == result){
-                result = sendPacketToChannel(layer, &new_packet);
-                clearStoredPacket(&new_packet);
-            }
+			helperChannel2Route(relayAddrChannel, &relayAddr);
+            ProduceAndSendProbePacketFurther(layer, packet, &relayAddr);
 		}
+        else{
+            hashIterator_T iterator;
+            hashIterator(&(layer->NeighborsStorage.Storage), &iterator);
+
+            while (!hashIteratorIsLast(&iterator)){
+                RouteAddr_T* neighbor_data = (RouteAddr_T *)hashIteratorData(&iterator);
+                ProduceAndSendProbePacketFurther(layer, packet, neighbor_data);
+            }
+
+        }
 	}
 	// dispose packet
 	res = psRemove(&layer->PacketStorage, packet);
 	return res;
 }
+
+int ProduceAndSendProbePacketFurther(RoutingLayer_T *layer, RouteStoredPacket_T *packet, RouteAddr_T *next){
+    RouteStoredPacket_T new_packet = {0};
+    int result = produceNextRouteFinder(layer, packet, next, &new_packet);
+    if(FUNC_RESULT_SUCCESS == result){
+        result = sendPacketToChannel(layer, &new_packet);
+        clearStoredPacket(&new_packet);
+        return result;
+    }
+
+    return FUNC_RESULT_FAILED;
+}
+
 
 int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	int result;

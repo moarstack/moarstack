@@ -42,7 +42,7 @@ typedef struct{
 #define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
 
 __BEGIN_DECLS
-extern bool routeAddrEqualPtr(RouteAddr_T* first, RouteAddr_T* second);
+extern bool routeAddrEqualPtr(const RouteAddr_T* first, const RouteAddr_T* second);
 
 __END_DECLS
 #define routeAddrEqual(first, second) routeAddrEqualPtr(&(first),&(second))

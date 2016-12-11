@@ -210,8 +210,9 @@ int processReceivedPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet 
 }
 
 int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
-	ChannelAddr_T 	relayAddr;
-	int				result;
+	ChannelAddr_T 		relayAddr;
+	moarTimeInterval_T	interval;
+	int					result;
 
 	if( NULL == layer || NULL == packet || StoredPackState_InProcessing != packet->State )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -238,22 +239,16 @@ int processInProcessingPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 	if( FUNC_RESULT_SUCCESS == result ) {// if found
 		packet->NextHop = relayAddr;
 		result = sendPacketToChannel( layer, packet );	// send to relay
+		interval = ( FUNC_RESULT_SUCCESS == result ? SENT_WAITING_TIMEOUT : UNSENT_WAITING_TIMEOUT );
 
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
-
-		packet->State = StoredPackState_WaitSent;	// change state to wait sent
-		packet->NextProcessing = timeAddInterval( timeGetCurrent(), SENT_WAITING_TIMEOUT );
+		if( FUNC_RESULT_SUCCESS == result )
+			packet->State = StoredPackState_WaitSent;	// change state to wait sent
 	} else {// else
-		// todo make it started by if-else (kryvashek: ???)
 		result = sendFindersFirst( layer, &( packet->Destination ) ); // send finders
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
-
-		packet->NextProcessing = timeAddInterval( timeGetCurrent(), FACK_WAITING_TIMEOUT );
+		interval = ( FUNC_RESULT_SUCCESS == result ? FACK_WAITING_TIMEOUT : UNSENT_WAITING_TIMEOUT );
 	}
 
+	packet->NextProcessing = timeAddInterval( timeGetCurrent(), interval );
 	result = psUpdateTime( &( layer->PacketStorage ), packet );	// update timeout
 
 	return result;

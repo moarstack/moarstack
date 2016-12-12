@@ -111,7 +111,7 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	layer->NextProbeSentTime = timeGetCurrent();
+	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
 
 	if( 0 == layer->NeighborsStorage.Count )
 		return FUNC_RESULT_SUCCESS;
@@ -166,6 +166,7 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	if( 0 == layer->NeighborsStorage.Count )
 		return FUNC_RESULT_SUCCESS;
 
+	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
 	result = helperProbe2Rasl( oldPacket, &rasl );
 	CHECK_RESULT( result );
 
@@ -195,7 +196,6 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 		return result;
 	}
 
-	layer->NextProbeSentTime = timeGetCurrent();
 	result = clearStoredPacket( &newPacket );
 
 	return result;

@@ -162,17 +162,13 @@ int routingMaintain( RoutingLayer_T * layer ) {
 	now = timeGetCurrent();
 
 	if( 0 >= timeCompare( layer->NextProbeSentTime, now ) ) { // if need to send probes
-		result = sendProbeFirst( layer ); // add probe to queue | send probe to channel layer TODO add result check
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
+		result = sendProbeFirst( layer ); // add probe to queue | send probe to channel layer
+		CHECK_RESULT( result );
 	}
 
 	if( 0 >= timeCompare( layer->NextTableRenewTime, now ) ) { // if need to renew table
 		result = RouteTableRenew( &( layer->RouteTable ), now ); // renew table
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
+		CHECK_RESULT( result );
 
 		layer->NextTableRenewTime = timeAddInterval( now, DEFAULT_TABLE_RENEW_PERIOD );
 	}

@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <moarServiceCommand.h>
 
 int addSocketToEpoll(ServiceLayer_T* layer, int fd, uint32_t events){
 	if(NULL == layer)
@@ -96,7 +97,9 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	//app
 	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
 	//presentation
-	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
+	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
+	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);
+	layer->PresentationProcessingRules[2] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 

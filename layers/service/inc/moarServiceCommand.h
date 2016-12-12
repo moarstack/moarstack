@@ -7,4 +7,7 @@
 
 #include <moarServicePrivate.h>
 
+int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T *command);
+int processMsgStateCommand(void* layerRef, int fd, LayerCommandStruct_T *command);
+
 #endif //MOARSTACK_MOARSERVICECOMMAND_H

@@ -11,6 +11,9 @@
 #include <moarIfaceMockitActions.h>
 #include <moarInterface.h>
 #include <moarCommonSettings.h>
+#include <moarLayerEntryPoint.h>
+#include <mockIfaceSettings.h>
+#include "mockIfaceSettings.h"
 
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
@@ -56,8 +59,11 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	int res = bindingBindStructFunc(paramsStruct->LayerConfig, makeIfaceSockBinding, &socketInfo);
 	CHECK_RESULT(res);
 
+	mockIface ifaceSettings = {0};
+	res = bindingBindStructFunc(paramsStruct->LayerConfig, makeMockIfaceBinding, &ifaceSettings);
+
 	strncpy( layer->Config.ChannelSocketFilepath, socketInfo.FileName, SOCKET_FILEPATH_SIZE );
-	//strncpy( layer->Config.LogFilepath, paramsStruct->filepathToLog, LOG_FILEPATH_SIZE );
+	strncpy( layer->Config.LogFilepath, ifaceSettings.LogPath, LOG_FILEPATH_SIZE );
 
 	result = LogOpen( layer->Config.LogFilepath, &( layer->Config.LogHandle) );
 

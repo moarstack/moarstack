@@ -6,6 +6,13 @@
 #include "moarCommons.h"
 #include "moarService.h"
 #include "moarPresentationService.h"
+#include <moarServicePrivate.h>
+
+int initEpol
+
+int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
+	
+}
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // load configuration

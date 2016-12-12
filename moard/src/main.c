@@ -24,6 +24,7 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <moarLibrary.h>
+#include <queue.h>
 
 #define PATH_SEPARATOR 				"/"
 
@@ -36,6 +37,8 @@
 typedef struct{
 	char* ConfigFile;
 } MoardCliArgs_T;
+
+Queue_T layersRunning = {0};
 
 void signalHandler(int signo){
     if(SIGINT == signo){
@@ -155,7 +158,8 @@ int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
 	return FUNC_RESULT_SUCCESS;
 }
 
-char* concatPath(char* dir, char* file){
+
+char* concatPath(const char* dir, const char* file){
 	size_t pathSize = strlen(dir);
 	size_t dirLen = strlen(file);
 	size_t fullPath = pathSize+dirLen+2;
@@ -173,7 +177,64 @@ char* getLayersEnabledPath(moardSettings* settings, char* configFile){
 	char* confPath = dirname(configFile);
 	return concatPath(confPath, settings->LayersEnabledDir);
 }
-int main(int argc, char** argv)
+
+int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
+	if(NULL == moardConfig || NULL == layersConfDirName)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	DIR * d;
+	struct dirent *dir;
+	d = opendir(layersConfDirName);
+	if(d){
+		while((dir = readdir(d))!= NULL){
+			if(strstr(dir->d_name,".conf") != NULL) {
+				char* fullName = concatPath(layersConfDirName, dir->d_name);
+				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
+
+				MoarLibrary_T library = {0};
+				int res = loadLayer(&library, fullName, &config, layerConfig);
+				int res = loadLayer(&library, fullName, moardConfig, layerConfig);
+
+				if (FUNC_RESULT_SUCCESS == res) {
+					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
+						   library.Info.TargetMoarApiVersion);
+					// start layer
+					runLayer(&library, layerConfig);
+					res = runLayer(&library, layerConfig);
+					if(FUNC_RESULT_SUCCESS == res)
+						queueEnqueue(&layersRunning, &library);
+				}
+				else
+					printf("%s load failed\n", fullName);
+
+				free(fullName);
+			}
+		}
+		closedir(d);
+	}
+	free(layersConfDirName);
+	return FUNC_RESULT_SUCCESS;
+}
+
+int stopAllLayers() {
+	while(layersRunning.Count != 0){
+		MoarLibrary_T lib;
+		int res = queueDequeue(&layersRunning, &lib);
+		if(FUNC_RESULT_SUCCESS == res){
+			int res = exitThread(&lib);
+       if(FUNC_RESULT_SUCCESS == res)
+            printf("thread %s exited\n",lib.Info.LibraryName);
+        else
+            printf("failed thread exit for %s\n",lib.Info.LibraryName);
+		}
+		res = closeLibrary(&lib);
+        //check for empty lib closing
+        if (FUNC_RESULT_SUCCESS == res)
+            printf("library %s closed\n",lib.Filename);
+        else
+            printf("close %s failed\n",lib.Filename);
+	}
+}int main(int argc, char** argv)
 {
 	//TODO add log error output
 	// TODO use get opts
@@ -189,107 +250,22 @@ int main(int argc, char** argv)
 	ifaceSocket ifaceSock = {0};
 	serviceSocket servSock = {0};
 
-	
-	{
-		int confPrepareRes = configInit(&config);
-		if (FUNC_RESULT_SUCCESS != confPrepareRes) {
-		}
-	int confRes = configRead(&config, cliArgs.ConfigFile);
-	if (FUNC_RESULT_SUCCESS != confRes) {
-		fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
-		return 1;
-
-	int settingsRes = settingsLoad(&settings, configFile, &config);
-	CHECK_RESULT(settingsRes);
-	int isock = bindingBindStructFunc(&config, makeIfaceSockBinding, &ifaceSock);
-	CHECK_RESULT(isock);
-	int ssock = bindingBindStructFunc(&config, makeServSockBinding, &servSock);
-	CHECK_RESULT(ssock);
- //   MoarLibrary_T libraries[LAYERS_COUNT];
-
-	LogWorkIllustration();
-
-//    char *fileNames[LAYERS_COUNT];
-//    fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
-//    fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
-//    fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;
-//    fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
-//    fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
-//    //testing multiple instances
-//#ifdef LOAD_MULTIPLE_INTERFACES
-//    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
-//#endif
-
+	//LogWorkIllustration();
     //setup signal handler
-    signal(SIGINT, signalHandler);
-	// create all needed sockets
-	SocketsPrepare( ifaceSock.FileName, servSock.FileName );
+
+	queueInit(&layersRunning, sizeof(MoarLibrary_T));
 
 	char* layersConfDirName = getLayersEnabledPath(&settings, configFile);
-	DIR * d;
-	struct dirent *dir;
-	d = opendir(layersConfDirName);
-	if(d){
-		while((dir = readdir(d))!= NULL){
-			if(strstr(dir->d_name,".conf") != NULL) {
-				char* fullName = concatPath(layersConfDirName, dir->d_name);
-				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
 
-				MoarLibrary_T library = {0};
-				int res = loadLayer(&library, fullName, &config, layerConfig);
+	runAllLayers(&config, layersConfDirName);
 
-				if (FUNC_RESULT_SUCCESS == res) {
-					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
-						   library.Info.TargetMoarApiVersion);
-					// start layer
-					runLayer(&library, layerConfig);
-				}
-				else
-					printf("%s load failed\n", fullName);
-
-				free(fullName);
-			}
-		}
-		closedir(d);
-	}
 	free(layersConfDirName);
 
-
-
-
-//    //load
-//    for(int i=0; i<LAYERS_COUNT;i++) {
-//        int res = loadLibrary(fileNames[i], libraries+i);
-//        if (FUNC_RESULT_SUCCESS == res)
-//            printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
-//        else
-//            printf("%s load failed\n",fileNames[i]);
-//    }
-
-//    //start layers here
-//	for(int i = 0; i < LAYERS_COUNT; i++)
-//		runLayer( libraries + i );
-
-
-
-    //wait
     pause();
-//    //stop
-//    for(int i=0; i<LAYERS_COUNT;i++) {
-//        int res = exitThread(libraries+i);
-//        if(FUNC_RESULT_SUCCESS == res)
-//            printf("thread %s exited\n",libraries[i].Info.LibraryName);
-//        else
-//            printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
-//    }
-//    //unload
-//    for(int i=0; i<LAYERS_COUNT;i++) {
-//        int res = closeLibrary(libraries+i);
-//        //check for empty lib closing
-//        if (FUNC_RESULT_SUCCESS == res)
-//            printf("library %s closed\n",libraries[i].Filename);
-//        else
-//            printf("close %s failed\n",libraries[i].Filename);
-//    }
+
+
+	stopAllLayers();
+
+	queueDeinit(&layersRunning);
     return 0;
 }

@@ -54,8 +54,8 @@ int bindingSet_uint64_t(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint32_t(void* ptr, char* val){
-	long long int value = 0;
-	int res = sscanf(val, "%lld", &value);
+	uint32_t value = 0;
+	int res = sscanf(val, "%u", &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint32_t*)ptr) = value;

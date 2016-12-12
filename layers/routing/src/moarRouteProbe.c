@@ -9,6 +9,7 @@
 #include <moarRoutingTablesHelper.h>
 #include <moarNeIterRoutine.h>
 #include <moarRoutingStoredPacket.h>
+#include <moarRoutingNeighborsStorage.h>
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
@@ -110,29 +111,51 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = neIterFindRandNotNull( &( layer->NeighborsStorage ), &address );
-
-	if( FUNC_RESULT_SUCCESS == result ) {
-		result = produceProbeFirst( layer, &address, &packet );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			result = sendPacketToChannel( layer, &packet );
-
-		if( FUNC_RESULT_SUCCESS == result )
-			result = clearStoredPacket( &packet );
-		else
-			clearStoredPacket( &packet );
-	} else if( FUNC_RESULT_FAILED_NEIGHBORS == result )
-		result = FUNC_RESULT_SUCCESS;
-
 	layer->NextProbeSentTime = timeGetCurrent();
 
+	if( 0 == layer->NeighborsStorage.Count )
+		return FUNC_RESULT_SUCCESS;
+
+	result = neIterFindRandNotNull( &( layer->NeighborsStorage ), &address );
+	CHECK_RESULT( result );
+
+	result = produceProbeFirst( layer, &address, &packet );
+	CHECK_RESULT( result );
+
+	result = sendPacketToChannel( layer, &packet );
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = clearStoredPacket( &packet );
+	else
+		clearStoredPacket( &packet );
+
+	return result;
+}
+
+int helperProbe2Rasl( RouteStoredPacket_T * probe, RouteAddrSeekList_T * rasl ) {
+	RoutePayloadProbe_T	* payload;
+	int 				result;
+	
+	if( NULL == probe || NULL == rasl )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	payload = ( RoutePayloadProbe_T * )( probe->Payload );
+	result = raslInit( rasl, payload->DepthCurrent + 1, raslCompareDefault );
+	CHECK_RESULT( result );
+
+	result = raslSet( rasl, 0, &( probe->Source ), 1 );
+	CHECK_RESULT( result );
+
+	result = raslSet( rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
+	CHECK_RESULT( result );
+
+	result = raslSort( rasl );
+	
 	return result;
 }
 
 int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	RouteStoredPacket_T	newPacket = { 0 };
-	RoutePayloadProbe_T	* payload;
 	RouteAddrSeekList_T	rasl;
 	RouteAddr_T			address;
 	int 				result;
@@ -140,17 +163,10 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	if( NULL == layer || NULL == oldPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	payload = ( RoutePayloadProbe_T * )( oldPacket->Payload );
-	result = raslInit( &rasl, payload->DepthCurrent + 1, raslCompareDefault );
-	CHECK_RESULT( result );
+	if( 0 == layer->NeighborsStorage.Count )
+		return FUNC_RESULT_SUCCESS;
 
-	result = raslSet( &rasl, 0, &( oldPacket->Source ), 1 );
-	CHECK_RESULT( result );
-
-	result = raslSet( &rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
-	CHECK_RESULT( result );
-
-	result = raslSort( &rasl );
+	result = helperProbe2Rasl( oldPacket, &rasl );
 	CHECK_RESULT( result );
 
 	result = neIterFindRandNotNullOrUsed( &( layer->NeighborsStorage ), &rasl, &address );
@@ -187,7 +203,6 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 
 
 int processProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ){
-
     FUNC_RESULT result;
 
     if (NULL == layer || NULL == packet){

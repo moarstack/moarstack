@@ -144,14 +144,27 @@ int helperProbe2Rasl( RouteStoredPacket_T * probe, RouteAddrSeekList_T * rasl ) 
 	CHECK_RESULT( result );
 
 	result = raslSet( rasl, 0, &( probe->Source ), 1 );
-	CHECK_RESULT( result );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		raslDeinit( rasl );
+		return result;
+	}
 
 	result = raslSet( rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
-	CHECK_RESULT( result );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		raslDeinit( rasl );
+		return result;
+	}
 
 	result = raslSort( rasl );
+
+	if( FUNC_RESULT_SUCCESS != result ) {
+		raslDeinit( rasl );
+		return result;
+	}
 	
-	return result;
+	return FUNC_RESULT_SUCCESS;
 }
 
 int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {

@@ -27,7 +27,6 @@ int addSocketToEpoll(ServiceLayer_T* layer, int fd, uint32_t events){
 int initEpoll(ServiceLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_SUCCESS;
 	//init epol
 	layer->EpollTimeout = EPOLL_TIMEOUT;
 	layer->EpollCount = EPOLL_EVENTS_COUNT;
@@ -38,7 +37,7 @@ int initEpoll(ServiceLayer_T* layer){
 		return FUNC_RESULT_FAILED;
 	}
 	// add socket to presentation
-	res = addSocketToEpoll(layer, layer->DownSocket, EPOLL_PRESENTATION_EVENTS);
+	int res = addSocketToEpoll(layer, layer->DownSocket, EPOLL_PRESENTATION_EVENTS);
 	CHECK_RESULT(res);
 	// add socket to service
 	res = addSocketToEpoll(layer, layer->UpSocket, EPOLL_APP_EVENTS);
@@ -59,6 +58,7 @@ int processNewConnection(ServiceLayer_T* layer, int fd){
 		return FUNC_RESULT_FAILED_IO;
 	}
 	int res = addSocketToEpoll(layer, newFd, EPOLL_APP_EVENTS);
+	CHECK_RESULT(res);
 	return FUNC_RESULT_SUCCESS;
 }
 //close connection to interface
@@ -88,6 +88,7 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	if(NULL == layer || NULL == params)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_SUCCESS;
+	// TODO load config here
 	// add sockets
 	layer->DownSocket = params->DownSocketHandler;
 	layer->UpSocket = params->UpSocketHandler;
@@ -104,7 +105,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
     // load configuration
 	int res = initService(&servicelayer, (MoarLayerStartupParams_T*)arg);
 	CHECK_RESULT(res);
-	
+
 	res = initEpoll(&servicelayer);
 	CHECK_RESULT(res);
 

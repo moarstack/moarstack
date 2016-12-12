@@ -154,11 +154,11 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 		//// todo create new packet
 		//// todo try to send
 		// also multiple stage finders process here
-		ChannelAddr_T* relayAddrChannel;
+		ChannelAddr_T relayAddrChannel;
 		RouteAddr_T   relayAddr;
 		int result = helperFindRelay(layer, &(packet->Destination), &relayAddrChannel);
 		if (FUNC_RESULT_SUCCESS == result){
-			helperChannel2Route(relayAddrChannel, &relayAddr);
+			helperChannel2Route(&relayAddrChannel, &relayAddr);
             ProduceAndSendProbePacketFurther(layer, packet, &relayAddr);
 		}
         else{

@@ -111,24 +111,21 @@ int sendProbeFirst( RoutingLayer_T * layer ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	result = neIterFindRandNotNull( &( layer->NeighborsStorage ), &address );
-	CHECK_RESULT( result );
 
-	result = produceProbeFirst( layer, &address, &packet );
+	if( FUNC_RESULT_SUCCESS == result ) {
+		result = produceProbeFirst( layer, &address, &packet );
 
-	if( FUNC_RESULT_SUCCESS != result ) {
-		clearStoredPacket( &packet );
-		return result;
-	}
+		if( FUNC_RESULT_SUCCESS == result )
+			result = sendPacketToChannel( layer, &packet );
 
-	result = sendPacketToChannel( layer, &packet );
-
-	if( FUNC_RESULT_SUCCESS != result ) {
-		clearStoredPacket( &packet );
-		return result;
-	}
+		if( FUNC_RESULT_SUCCESS == result )
+			result = clearStoredPacket( &packet );
+		else
+			clearStoredPacket( &packet );
+	} else if( FUNC_RESULT_FAILED_NEIGHBORS == result )
+		result = FUNC_RESULT_SUCCESS;
 
 	layer->NextProbeSentTime = timeGetCurrent();
-	result = clearStoredPacket( &packet );
 
 	return result;
 }

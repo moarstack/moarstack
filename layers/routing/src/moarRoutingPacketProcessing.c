@@ -159,7 +159,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 		int result = helperFindRelay(layer, &(packet->Destination), &relayAddrChannel);
 		if (FUNC_RESULT_SUCCESS == result){
 			helperChannel2Route(&relayAddrChannel, &relayAddr);
-            ProduceAndSendProbePacketFurther(layer, packet, &relayAddr);
+            ProduceAndSendFinderPacketFurther(layer, packet, &relayAddr);
 		}
         else{
             hashIterator_T iterator;
@@ -167,7 +167,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 
             while (!hashIteratorIsLast(&iterator)){
                 RouteAddr_T* neighbor_data = (RouteAddr_T *)hashIteratorData(&iterator);
-                ProduceAndSendProbePacketFurther(layer, packet, neighbor_data);
+                ProduceAndSendFinderPacketFurther(layer, packet, neighbor_data);
             }
 
         }
@@ -177,7 +177,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
 	return res;
 }
 
-int ProduceAndSendProbePacketFurther(RoutingLayer_T *layer, RouteStoredPacket_T *packet, RouteAddr_T *next){
+int ProduceAndSendFinderPacketFurther(RoutingLayer_T *layer, RouteStoredPacket_T *packet, RouteAddr_T *next){
     RouteStoredPacket_T new_packet = {0};
     int result = produceNextRouteFinder(layer, packet, next, &new_packet);
     if(FUNC_RESULT_SUCCESS == result){

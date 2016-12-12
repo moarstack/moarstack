@@ -92,25 +92,52 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	layer->DownSocket = params->DownSocketHandler;
 	layer->UpSocket = params->UpSocketHandler;
 	//add unified handlers
+	//app
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
+	//presentation
+	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
-	ServiceLayer_T layer = {0};
+	ServiceLayer_T servicelayer = {0};
     // load configuration
-	int res = initService(&layer, (MoarLayerStartupParams_T*)arg);
+	int res = initService(&servicelayer, (MoarLayerStartupParams_T*)arg);
 	CHECK_RESULT(res);
-    // listen for connection
-    // in poll
-        // if new application connected
-            // accept
-            // add to pool list
-        // if command
-            // connect
-            // disconnect
-            // send
-            // state request
-            // receive
-            // message state
-            // get message
+
+	servicelayer.Running = true;
+	while(servicelayer.Running) {
+		int epollRes = epoll_wait(servicelayer.EpollHandler, servicelayer.EpollEvent,
+								  servicelayer.EpollCount, servicelayer.EpollTimeout);
+		// in poll
+		if(epollRes<0){
+			//perror("Channel epoll_wait");
+		}
+		for(int i=0; i<epollRes;i++) {
+			//interface descriptors
+			uint32_t event = servicelayer.EpollEvent[i].events;
+			int fd = servicelayer.EpollEvent[i].data.fd;
+			// if new interface connected
+			int res = FUNC_RESULT_FAILED;
+			if (fd == servicelayer.UpSocket) {
+				res = processNewConnection(&servicelayer, fd);
+			} // if command from routing
+			else if (fd == servicelayer.DownSocket) {
+				res = ProcessCommand(&servicelayer, fd, event, EPOLL_PRESENTATION_EVENTS,
+									 servicelayer.PresentationProcessingRules);
+			} //data from interface
+			else {
+				//process disconnected event
+				// if interface disconnected
+				if ((event & EPOLL_APP_DISCONNECT_EVENTS) == 0) {
+					res = ProcessCommand(&servicelayer, fd, event, EPOLL_APP_EVENTS,
+										 servicelayer.AppProcessingRules);
+				}
+				if (FUNC_RESULT_SUCCESS != res) {
+					processCloseConnection(&servicelayer, fd);
+				}
+			}
+		}
+		//some processing here
+	}
 }

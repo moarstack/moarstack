@@ -30,7 +30,5 @@ typedef struct {
 	RouteAddr_T	Destination;
 } ServiceMsgDown_T;
 
-const size_t	PRESENT_MSG_UP_SIZE = sizeof( PresentMsgUp_T );
-const size_t	SERVICE_MSG_DOWN_SIZE = sizeof( ServiceMsgDown_T );
 
 #endif //MOARSTACK_MOARPRESENTATIONSERVICE_H

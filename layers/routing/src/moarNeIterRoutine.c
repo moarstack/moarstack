@@ -131,6 +131,9 @@ int neIterFindRandNotNull( RoutingNeighborsStorage_T * storage, RouteAddr_T * ad
 	if( NULL == storage || NULL == address )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	if( 0 == storage->Count )
+		return FUNC_RESULT_FAILED_NEIGHBORS;
+
 	result = storageIterator( storage, &iterator );
 
 	if( FUNC_RESULT_SUCCESS != result )
@@ -168,6 +171,9 @@ int neIterFindRandNotNullOrUsed( RoutingNeighborsStorage_T * storage, RouteAddrS
 
 	if( NULL == storage || NULL == address )
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	if( 0 == storage->Count )
+		return FUNC_RESULT_FAILED_NEIGHBORS;
 
 	result = storageIterator( storage, &iterator );
 

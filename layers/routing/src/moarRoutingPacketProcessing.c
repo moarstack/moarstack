@@ -164,9 +164,8 @@ int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * pa
 	if( NULL == layer || NULL == packet || RoutePackType_Probe != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = FUNC_RESULT_FAILED;
-	// todo update tables
-    processProbePacket(layer, packet);
+	result = processProbePacket(layer, packet);
+//	CHECK_RESULT( result );
 
 	if( 0 < packet->XTL ) // if will be sent according to XTL
 		result = sendProbeNext( layer, packet );

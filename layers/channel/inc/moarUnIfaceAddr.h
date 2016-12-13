@@ -22,7 +22,7 @@ int unAddressReadFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* addres
 // write to socket
 int unAddressWriteToSocket(int fd, UnIfaceAddr_T* address);
 // compare
-bool unAddressCompare(UnIfaceAddr_T* addr1, UnIfaceAddr_T* addr2);
+bool unAddressCompare(const UnIfaceAddr_T* addr1, const UnIfaceAddr_T* addr2);
 // make copy
 int unAddressClone(UnIfaceAddr_T* from, UnIfaceAddr_T* to);
 // remove

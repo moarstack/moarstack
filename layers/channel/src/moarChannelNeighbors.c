@@ -29,7 +29,7 @@ int notifyRouting(ChannelLayer_T* layer, LayerCommandType_T type, ChannelAddr_T*
 int compareUnAddrs(const void* key1, const void* key2, size_t size){
 	if(NULL == key1 || NULL == key2 || 0 == size)
 		return 1;
-	return unAddressCompare(key1, key2)?0:1;
+	return unAddressCompare((UnIfaceAddr_T*)key1, (UnIfaceAddr_T*)key2)?0:1;
 }
 void freeUnAddress(void* addr){
 	UnIfaceAddr_T* address = (UnIfaceAddr_T*)addr;

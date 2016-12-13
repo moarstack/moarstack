@@ -4,6 +4,7 @@
 
 #include "moarChannelHello.h"
 #include <moarChannelMetadata.h>
+#include <memory.h>
 
 
 int channelHelloFill(ChannelLayer_T* layer){
@@ -31,10 +32,12 @@ int channelHelloUpdateInterface(ChannelLayer_T* layer){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	//create update structure
-	ChannelBeaconUpdateMetadata_T updateMetadata = {0};
+	ChannelBeaconUpdateMetadata_T updateMetadata;
+	memset( &updateMetadata, 0, sizeof( ChannelBeaconUpdateMetadata_T ) );
 	//fill metadata
 	//create command
-	LayerCommandStruct_T updateCommand = {0};
+	LayerCommandStruct_T updateCommand;
+	memset( &updateCommand, 0, sizeof( LayerCommandStruct_T ) );
 	updateCommand.Command = LayerCommandType_UpdateBeaconPayload;
 	updateCommand.MetaData = &updateMetadata;
 	updateCommand.MetaSize = sizeof(ChannelBeaconUpdateMetadata_T);

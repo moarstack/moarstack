@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <moarInterface.h>
 #include <moarConfigReader.h>
+#include <getopt.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
 #define IFACE_LOG_FILE				"/tmp/moarInterface.log"
@@ -29,6 +30,10 @@
 #else
 #define LAYERS_COUNT	(MoarLayer_LayersCount+1)
 #endif
+
+typedef struct{
+	char* ConfigFile;
+} MoardCliArgs_T;
 
 void signalHandler(int signo){
     if(SIGINT == signo){
@@ -106,10 +111,53 @@ int LogWorkIllustration( void ) {
 	return result;
 }
 
+int initCliArgs(MoardCliArgs_T* cliArgs){
+	if(NULL == cliArgs)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	cliArgs->ConfigFile = CONFIG_FILE;
+	return FUNC_RESULT_SUCCESS;
+}
+
+int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
+	if(NULL == cliArgs)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int optchar;
+	int optindex;
+	struct option longArgs[] = {
+			{"help", no_argument, 0,'h'},
+			{"config", required_argument, 0,'c'},
+			{0,0,0,0}
+	};
+	while((optchar = getopt_long(argc, argv, "hc:", longArgs, &optindex)) != -1){
+		switch(optchar){
+			case 'c':
+				cliArgs->ConfigFile = optarg;
+				break;
+			case 'h':
+				printf("Nobody helps you\n");
+				break;
+			case '?':
+				printf("Unknown argument\n");
+				break;
+			default:
+				return FUNC_RESULT_FAILED;
+		}
+	}
+
+	return FUNC_RESULT_SUCCESS;
+}
+
 int main(int argc, char** argv)
 {
 	//TODO add log error output
 	// TODO use get opts
+
+	MoardCliArgs_T cliArgs = {0};
+	int res = initCliArgs(&cliArgs);
+	CHECK_RESULT(res);
+	res = parseCliArgs(&cliArgs, argc, argv);
+	CHECK_RESULT(res);
+
 	hashTable_T config = {0};
 	{
 		int confPrepareRes = configInit(&config);
@@ -118,12 +166,9 @@ int main(int argc, char** argv)
 			fprintf(stderr, "Can not init config storage\r\n");
 			return 1;
 		}
-		char* configFile = CONFIG_FILE; // set propper path to config in clion args
-		if(argc == 2)
-			configFile = argv[1];
-		int confRes = configRead(&config, configFile);
+		int confRes = configRead(&config, cliArgs.ConfigFile);
 		if (FUNC_RESULT_SUCCESS != confRes) {
-			fprintf(stderr, "Can not read core config file %s\r\n", configFile);
+			fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
 			return 1;
 		}
 	}

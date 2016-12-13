@@ -10,6 +10,8 @@
 #include <ctype.h>
 #include <bits/string2.h>
 #include <stdio.h>
+#include <moarRouting.h>
+#include <moarChannel.h>
 #include <moarCommons.h>
 #include <inttypes.h>
 
@@ -185,6 +187,12 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			break;
 		case FieldType_char:
 			res = bindingSet_char(ptr, val);
+			break;
+		case FieldType_RouteAddr_T:
+			res = bindingSet_ByteArray(ptr, val, sizeof(RouteAddr_T));
+			break;
+		case FieldType_ChannelAddr_T:
+			res = bindingSet_ByteArray(ptr, val, sizeof(ChannelAddr_T));
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

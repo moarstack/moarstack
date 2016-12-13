@@ -19,12 +19,12 @@
 #include <moarInterface.h>
 #include <moarConfigReader.h>
 #include <moardSettings.h>
-#include <getopt.h>
 #include <moarCommonSettings.h>
 #include <libgen.h>
 #include <dirent.h>
 #include <moarLibrary.h>
 #include <queue.h>
+#include <getopt.h>
 
 #define PATH_SEPARATOR 				"/"
 
@@ -38,7 +38,9 @@ typedef struct{
 	char* ConfigFile;
 } MoardCliArgs_T;
 
+
 Queue_T layersRunning = {0};
+
 
 void signalHandler(int signo){
     if(SIGINT == signo){
@@ -158,7 +160,6 @@ int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
 	return FUNC_RESULT_SUCCESS;
 }
 
-
 char* concatPath(const char* dir, const char* file){
 	size_t pathSize = strlen(dir);
 	size_t dirLen = strlen(file);
@@ -181,7 +182,6 @@ char* getLayersEnabledPath(moardSettings* settings, char* configFile){
 int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
 	if(NULL == moardConfig || NULL == layersConfDirName)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-
 	DIR * d;
 	struct dirent *dir;
 	d = opendir(layersConfDirName);
@@ -192,27 +192,23 @@ int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
 				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
 
 				MoarLibrary_T library = {0};
-				int res = loadLayer(&library, fullName, &config, layerConfig);
 				int res = loadLayer(&library, fullName, moardConfig, layerConfig);
 
 				if (FUNC_RESULT_SUCCESS == res) {
 					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
 						   library.Info.TargetMoarApiVersion);
 					// start layer
-					runLayer(&library, layerConfig);
 					res = runLayer(&library, layerConfig);
 					if(FUNC_RESULT_SUCCESS == res)
 						queueEnqueue(&layersRunning, &library);
 				}
 				else
 					printf("%s load failed\n", fullName);
-
 				free(fullName);
 			}
 		}
 		closedir(d);
 	}
-	free(layersConfDirName);
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -234,35 +230,45 @@ int stopAllLayers() {
         else
             printf("close %s failed\n",lib.Filename);
 	}
-}int main(int argc, char** argv)
+}
+
+int main(int argc, char** argv)
 {
 	//TODO add log error output
-	// TODO use get opts
-
+	
 	MoardCliArgs_T cliArgs = {0};
 	int res = initCliArgs(&cliArgs);
 	CHECK_RESULT(res);
 	res = parseCliArgs(&cliArgs, argc, argv);
 	CHECK_RESULT(res);
 	
-	moardSettings settings = {0};
 
+	moardSettings settings = {0};
 	ifaceSocket ifaceSock = {0};
 	serviceSocket servSock = {0};
 
-	//LogWorkIllustration();
+	hashTable_T config = {0};
+	int settingsRes = settingsLoad(&settings, cliArgs.ConfigFile, &config);
+	CHECK_RESULT(settingsRes);
+	int isock = bindingBindStructFunc(&config, makeIfaceSockBinding, &ifaceSock);
+	CHECK_RESULT(isock);
+	int ssock = bindingBindStructFunc(&config, makeServSockBinding, &servSock);
+	CHECK_RESULT(ssock);
+
     //setup signal handler
+    signal(SIGINT, signalHandler);
+	// create all needed sockets
+	SocketsPrepare( ifaceSock.FileName, servSock.FileName );
 
 	queueInit(&layersRunning, sizeof(MoarLibrary_T));
 
-	char* layersConfDirName = getLayersEnabledPath(&settings, configFile);
+	char* layersConfDirName = getLayersEnabledPath(&settings, cliArgs.ConfigFile);
 
 	runAllLayers(&config, layersConfDirName);
 
 	free(layersConfDirName);
 
     pause();
-
 
 	stopAllLayers();
 

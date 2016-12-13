@@ -62,16 +62,16 @@ int processNewConnection(ServiceLayer_T* layer, int fd){
 	CHECK_RESULT(res);
 	return FUNC_RESULT_SUCCESS;
 }
-//close connection to interface
+//close connection to app
 int processCloseConnection(ServiceLayer_T* layer, int fd){
 	if(NULL == layer)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(fd <= 0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	struct epoll_event interfaceEvent;
-	interfaceEvent.events = EPOLL_APP_EVENTS;
-	interfaceEvent.data.fd = fd;
-	int resRouting = epoll_ctl(layer->EpollHandler, EPOLL_CTL_DEL, fd, &interfaceEvent);
+	struct epoll_event appEvent;
+	appEvent.events = EPOLL_APP_EVENTS;
+	appEvent.data.fd = fd;
+	int resRouting = epoll_ctl(layer->EpollHandler, EPOLL_CTL_DEL, fd, &appEvent);
 	if(0 != resRouting){
 		//TODO write error message
 		return FUNC_RESULT_FAILED;
@@ -121,21 +121,20 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 			//perror("Channel epoll_wait");
 		}
 		for(int i=0; i<epollRes;i++) {
-			//interface descriptors
 			uint32_t event = servicelayer.EpollEvent[i].events;
 			int fd = servicelayer.EpollEvent[i].data.fd;
-			// if new interface connected
+			// if new app connected
 			int res = FUNC_RESULT_FAILED;
 			if (fd == servicelayer.UpSocket) {
 				res = processNewConnection(&servicelayer, fd);
-			} // if command from routing
+			} // if command from presentation
 			else if (fd == servicelayer.DownSocket) {
 				res = ProcessCommand(&servicelayer, fd, event, EPOLL_PRESENTATION_EVENTS,
 									 servicelayer.PresentationProcessingRules);
-			} //data from interface
+			} //data from app
 			else {
 				//process disconnected event
-				// if interface disconnected
+				// if app disconnected
 				if ((event & EPOLL_APP_DISCONNECT_EVENTS) == 0) {
 					res = ProcessCommand(&servicelayer, fd, event, EPOLL_APP_EVENTS,
 										 servicelayer.AppProcessingRules);

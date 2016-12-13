@@ -21,16 +21,20 @@ typedef enum {
 
 // metadata of packet moving from presentation to service
 typedef struct {
-	PackStatePresent_T	State;	// state of packet moving from channel to routing
+	MessageId_T 		Mid; // mid of current packet
 	RouteAddr_T			Source; // source node of current packet
-} PresentMsgUp_T;
+} PresentReceivedMsg_T;
+
+typedef struct {
+	MessageId_T 		Mid; // mid of current packet
+	PackStatePresent_T State;
+} PresentMsgState_T;
 
 // metadata of packet moving from service to presentation
 typedef struct {
-	RouteAddr_T	Destination;
-} ServiceMsgDown_T;
+	MessageId_T 		Mid;  // mid of current packet
+	RouteAddr_T			Destination; // destination of packet
+} ServiceSendMsgDown_T;
 
-const size_t	PRESENT_MSG_UP_SIZE = sizeof( PresentMsgUp_T );
-const size_t	SERVICE_MSG_DOWN_SIZE = sizeof( ServiceMsgDown_T );
 
 #endif //MOARSTACK_MOARPRESENTATIONSERVICE_H

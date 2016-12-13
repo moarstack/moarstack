@@ -8,5 +8,6 @@
 #include <moarRoutingPrivate.h>
 
 int processPacketStorage(RoutingLayer_T* layer);
+int ProduceAndSendFinderPacketFurther(RoutingLayer_T *layer, RouteStoredPacket_T *packet, RouteAddr_T *next);
 
 #endif //MOARSTACK_MOARROUTINGPACKETPROCESSING_H

@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <moarLibrary.h>
 
 #define LM_ID LM_ID_BASE //use in debug, not support multiple loads of single library, soft/hard links does`t work
 
@@ -41,6 +42,10 @@ int loadLibrary(char* name, MoarLibrary_T* library){
     library->LayerEntryPointFunction = (moarLayerEntryPoint_F)dlsym(library->Handle, MOAR_LAYER_ENTRY_POINT_NAME);
     if(NULL == library->LayerEntryPointFunction)
         return FUNC_RESULT_FAILED_NONLAYER;
+
+    if(library->Info.TargetMoarApiVersion < MOAR_API_CURRENT_VERSION)
+        return FUNC_RESULT_FAILED_NOTCOMPATIBLE;
+
     return FUNC_RESULT_SUCCESS;
 }
 

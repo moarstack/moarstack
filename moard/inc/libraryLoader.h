@@ -10,6 +10,7 @@
 
 #define FUNC_RESULT_FAILED_NONMOAR 2
 #define FUNC_RESULT_FAILED_NONLAYER 3
+#define FUNC_RESULT_FAILED_NOTCOMPATIBLE 4
 
 int loadLibrary(char* name, MoarLibrary_T* library);
 int closeLibrary(MoarLibrary_T* library);

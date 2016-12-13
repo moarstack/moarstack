@@ -12,6 +12,17 @@ typedef int32_t MoarDesc_T;
 typedef int32_t AppId_T;
 
 typedef enum {
+    AppBind_OK = 0,
+    AppBind_Used,
+    AppBind_Error
+} AppBindResult_T;
+
+typedef enum {
+    AppSend_OK = 0,
+    AppSend_Failure
+} AppSentResult_T;
+
+typedef enum {
     MessageState_Unknown = 0,
     MessageState_Sending,
     MessageState_Sent,

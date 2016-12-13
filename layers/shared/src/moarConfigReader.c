@@ -182,7 +182,7 @@ int configMerge(hashTable_T* dest, hashTable_T* source){
 	hashIterator_T	iter = {0};
 	int res = hashIterator(source, &iter);
 	CHECK_RESULT(res);
-	while(!hashIteratorIsLast(&iter)){
+	while(!hashIteratorEnded( &iter )){
 
 		char* iterKey = *((char**)hashIteratorKey(&iter));
 		char* iterData = *((char**)hashIteratorData(&iter));

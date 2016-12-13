@@ -68,7 +68,7 @@ int neIterShift( hashIterator_T * iterator, size_t shift ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	for( index = 0; FUNC_RESULT_SUCCESS == result && index < shift; index++ )
-		if( hashIteratorIsLast( iterator ) )
+		if( hashIteratorEnded( iterator ) )
 			result = FUNC_RESULT_FAILED;
 		else
 			result = hashIteratorNext( iterator );
@@ -84,7 +84,7 @@ int neIterShiftWhileNull( hashIterator_T * iterator, size_t limit ) {
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	for( index = 0; FUNC_RESULT_SUCCESS == result && NULL == hashIteratorData( iterator ) && index < limit; index++ )
-		if( hashIteratorIsLast( iterator ) )
+		if( hashIteratorEnded( iterator ) )
 			result = FUNC_RESULT_FAILED;
 		else
 			result = hashIteratorNext( iterator );
@@ -112,7 +112,7 @@ int neIterShiftWhileUsed( hashIterator_T * iterator, size_t limit, RouteAddrSeek
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	for( index = 0; FUNC_RESULT_SUCCESS == result && neIterCheckNullOrUsed( iterator, rasl ) && index < limit; index++ )
-		if( hashIteratorIsLast( iterator ) )
+		if( hashIteratorEnded( iterator ) )
 			result = FUNC_RESULT_FAILED;
 		else
 			result = hashIteratorNext( iterator );

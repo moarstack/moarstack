@@ -17,11 +17,11 @@
 #include <moarLogger.h>
 #include <errno.h>
 #include <moarInterface.h>
+#include <moarConfigReader.h>
 
 #define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
 #define IFACE_LOG_FILE				"/tmp/moarInterface.log"
 #define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
-
 //#define LOAD_MULTIPLE_INTERFACES
 
 #ifndef LOAD_MULTIPLE_INTERFACES
@@ -108,6 +108,25 @@ int LogWorkIllustration( void ) {
 
 int main(int argc, char** argv)
 {
+	//TODO add log error output
+	// TODO use get opts
+	hashTable_T config = {0};
+	{
+		int confPrepareRes = configInit(&config);
+
+		if (FUNC_RESULT_SUCCESS != confPrepareRes) {
+			fprintf(stderr, "Can not init config storage\r\n");
+			return 1;
+		}
+		char* configFile = CONFIG_FILE; // set propper path to config in clion args
+		if(argc == 2)
+			configFile = argv[1];
+		int confRes = configRead(&config, configFile);
+		if (FUNC_RESULT_SUCCESS != confRes) {
+			fprintf(stderr, "Can not read core config file %s\r\n", configFile);
+			return 1;
+		}
+	}
     MoarLibrary_T libraries[LAYERS_COUNT];
 
 	LogWorkIllustration();

@@ -16,7 +16,6 @@ extern hashVal_T hashBytes(void* data, size_t size);
 extern hashVal_T hashInt32(void *data, size_t size);
 extern hashVal_T hashRoutingAddress(void* address, size_t size);
 extern hashVal_T hashChannelAddress(void* address, size_t size);
-
 #ifdef __cplusplus
 }
 #endif

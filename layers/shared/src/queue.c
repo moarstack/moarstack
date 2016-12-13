@@ -43,8 +43,10 @@ int queueEnqueue(Queue_T* queue, void* data){
 	if(NULL == entry)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	entry->Data = malloc(queue->DataSize);
-	if(NULL == entry->Data)
+	if(NULL == entry->Data) {
+		free(entry);
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
 	memcpy(entry->Data, data, queue->DataSize);
 
 	entry->Next = NULL;
@@ -115,8 +117,10 @@ int queuePushToFront(Queue_T* queue, void* data){
 	if(NULL == entry)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	entry->Data = malloc(queue->DataSize);
-	if(NULL == entry->Data)
+	if(NULL == entry->Data) {
+		free(entry);
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	}
 	memcpy(entry->Data, data, queue->DataSize);
 
 	entry->Next = queue->Head;

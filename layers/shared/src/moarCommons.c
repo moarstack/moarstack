@@ -106,7 +106,7 @@ int ReadCommand(int fd, LayerCommandStruct_T* command){
         free(command->Data);
         command->Data = NULL;
         free(command->MetaData);
-        command->MetaData = NULL;
+        command->MetaData = NULL; // no leak here
     }
     return res;
 }

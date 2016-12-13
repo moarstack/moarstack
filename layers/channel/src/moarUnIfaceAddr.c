@@ -38,7 +38,7 @@ int unAddressReadFromSocket(int fd, UnIfaceAddrLen_T size, UnIfaceAddr_T* addres
 		ssize_t addrReaded = read(fd, address->Value, size);
 		if(addrReaded != size) {
 			free(address->Value);
-			address->Value = NULL;
+			address->Value = NULL; // no leak here
 			return FUNC_RESULT_FAILED_IO;
 		}
 	}
@@ -88,7 +88,7 @@ int unAddressClone(UnIfaceAddr_T* from, UnIfaceAddr_T* to){
 		void* res = memcpy(to->Value,from->Value,from->Length);
 		if(res != to->Value) {
 			free(to->Value);
-			to->Value = NULL;
+			to->Value = NULL; // no leak here
 			to->Length = 0;
 			return FUNC_RESULT_FAILED;
 		}

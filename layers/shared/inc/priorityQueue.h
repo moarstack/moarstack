@@ -31,8 +31,8 @@ int pqEnqueue(PriorityQueue_T* queue, void* key, void* data); //copy data and ke
 int pqDequeue(PriorityQueue_T* queue, void* data); // copy data and free memory
 int pqRemove(PriorityQueue_T* queue, void* data);
 int pqTop(PriorityQueue_T* queue, void* data); // copy data
-void* pqTopData(PriorityQueue_T* queue); // pointer to top data
-void* pqTopPriority(PriorityQueue_T* queue); // pointer to top data
+void* pqTopData(PriorityQueue_T* queue); // pointer to top-entry data
+void* pqTopPriority(PriorityQueue_T* queue); // pointer to top-entry priority
 int pqChangePriority(PriorityQueue_T* queue, void* data, void* newKey); //change priority
 
 #endif //MOARSTACK_PRIORITYQUEUE_H

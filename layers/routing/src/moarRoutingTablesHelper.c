@@ -59,18 +59,24 @@ int helperRemoveNeighbor(RoutingLayer_T* layer, ChannelAddr_T* address){
 
 int helperUpdateRoute( RoutingLayer_T * layer, RouteAddr_T * dest, RouteAddr_T * relay ) {
 	RouteDataRecord_T	* row;
+	int					result;
 
 	if( NULL == layer || NULL == dest || NULL == relay )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	row = RouteTableGetRecord( &( layer->RouteTable ), *relay, *dest );
 
-	if( NULL == row )
-		RouteTableAdd( &( layer->RouteTable ), *relay, *dest );
-	else
-		RouteTableUpdate( row );
+	if( NULL == row ) {
+		RouteAddr_T	nullAddr = { 0 };
 
-	return FUNC_RESULT_SUCCESS;
+		RouteTableDelAll( &( layer->RouteTable ), nullAddr, *dest ); // remove all finder markers to that dest
+		result = helperAddRoute( layer, dest, relay );
+	} else {
+		RouteTableUpdate( row );
+		result = FUNC_RESULT_SUCCESS;
+	}
+
+	return result;
 }
 
 int helperUpdateNeighbor( RoutingLayer_T * layer ) {

@@ -20,10 +20,14 @@ typedef enum{
 	FieldType_uint32_t,
 	FieldType_uint16_t,
 	FieldType_uint8_t,
-//	FieldType_RouteAddr_t,
-//	FieldType_ChannelAddr_t,
-//	FieldType_IfaceAddr_t,
-//	FieldType_moarTime_t,
+//	FieldType_RouteAddr_T,
+//	FieldType_ChannelAddr_T,
+//	FieldType_IfaceAddr_T,
+//	FieldType_moarTime_T,
+    FieldType_int64_t,
+	FieldType_int32_t,
+	FieldType_int16_t,
+	FieldType_int8_t,
 } FieldType_T;
 
 typedef struct{

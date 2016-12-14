@@ -4,17 +4,16 @@
 #include <stddef.h>
 #include "moarCommons.h"
 #include "moarService.h"
-#include "moarApi.h"
-
+#include "moarApiCommon.h"
 
 typedef struct {
-    //ISSUE: empty? no metadata needed to send?
+    /* No metadata to send */
 } AppConnectMetadata_T;
 
 /* Send when the application is asking to create MOARStack socket */
 typedef struct {
     int MoarFd;
-} AppConnectResultMetadata_T;
+} ServiceConnectResultMetadata_T;
 
 typedef struct {
     int MoarFd;
@@ -23,7 +22,7 @@ typedef struct {
 
 typedef struct {
     AppBindResult_T BindResult;
-} AppBindResultMetadata_T;
+} ServiceBindResultMetadata_T;
 
 /* Sent by application to get state of message by MsgId */
 typedef struct {
@@ -33,10 +32,9 @@ typedef struct {
 
 /* Response from service level containing state of message */
 typedef struct {
-    int MoarFd;
     MessageId_T MsgId;
     MessageState_T MsgState;
-} AppMsgStateResultMetadata_T;
+} ServiceMsgStateResultMetadata_T;
 
 /* Command sent by application to start receiving data from all */
 typedef struct {
@@ -46,15 +44,15 @@ typedef struct {
 
 /* Command received by application when packet is arrived */
 typedef struct {
-    AppId_T appId;
+    AppId_T RemoteAppId;
     RouteAddr_T RemoteAddr;
-} AppPacketReceivedMetadata_T;
+} ServicePacketReceivedMetadata_T;
 
 /* Command sent by application to push packet to Service level */
 typedef struct {
     int MoarFd;
+    AppId_T RemoteAppId;
     RouteAddr_T RemoteAddr;
-    AppId_T  appId;
 } AppStartSendMetadata_T;
 
 /* Command received by application from moarSendTo. It does not
@@ -62,6 +60,6 @@ typedef struct {
 typedef struct {
     AppSentResult_T SendResult;
     MessageId_T MsgId;
-} AppSendResultMetadata_T;
+} ServiceSendResultMetadata_T;
 
 #endif

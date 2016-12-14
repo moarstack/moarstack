@@ -7,7 +7,11 @@
 #include <moarMessageId.h>
 #include <moarRouting.h>
 
-typedef int32_t MoarDesc_T;
+typedef struct {
+    int MoarFd;
+    int SocketFd;
+    //TODO: Possibly add mutex for multithreading apps
+} MoarDesc_T;
 
 typedef int32_t AppId_T;
 

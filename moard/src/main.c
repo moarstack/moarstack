@@ -18,12 +18,15 @@
 #include <errno.h>
 #include <moarInterface.h>
 #include <moarConfigReader.h>
+#include <moardSettings.h>
+#include <moarCommonSettings.h>
+#include <libgen.h>
+#include <dirent.h>
+#include <moarLibrary.h>
+#include <queue.h>
 #include <getopt.h>
 
-#define IFACE_CHANNEL_SOCKET_FILE	"/tmp/moarChannel.sock"
-#define IFACE_LOG_FILE				"/tmp/moarInterface.log"
-#define SERVICE_APP_SOCKET_FILE		"/tmp/moarService.sock"
-//#define LOAD_MULTIPLE_INTERFACES
+#define PATH_SEPARATOR 				"/"
 
 #ifndef LOAD_MULTIPLE_INTERFACES
 #define LAYERS_COUNT	(MoarLayer_LayersCount)
@@ -35,6 +38,10 @@ typedef struct{
 	char* ConfigFile;
 } MoardCliArgs_T;
 
+
+Queue_T layersRunning = {0};
+
+
 void signalHandler(int signo){
     if(SIGINT == signo){
         printf("Received SIGINT, terminating\n");
@@ -43,38 +50,44 @@ void signalHandler(int signo){
         printf("Received signal %d\n",signo);
 }
 
-int runLayer( MoarLibrary_T * layerLibrary ) {
-	int				result;
-    void			* vsp;
-    MoarLayerType_T	layerType = layerLibrary->Info.LayerType;
+int runLayer( MoarLibrary_T * layerLibrary, hashTable_T *config) {
+	int result;
+	MoarLayerType_T layerType = layerLibrary->Info.LayerType;
+	MoarLayerStartupParams_T *layerStartupParams;
 
-    if( MoarLayer_Interface == layerType ) {  // I DONT LIKE THIS PLACE
-		MoarIfaceStartupParams_T	* spIface;
+	layerStartupParams = (MoarLayerStartupParams_T *) calloc(1, sizeof(MoarLayerStartupParams_T));
 
-		spIface = ( MoarIfaceStartupParams_T * )calloc( 1, sizeof( MoarIfaceStartupParams_T ) );
+	if (NULL == layerStartupParams)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
-		if( NULL == spIface )
-			return -1;
+	layerStartupParams->DownSocketHandler = SocketDown(layerType);
+	layerStartupParams->UpSocketHandler = SocketUp(layerType);
+	layerStartupParams->LayerConfig = config;
 
-		strncpy( spIface->socketToChannel, IFACE_CHANNEL_SOCKET_FILE, SOCKET_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE
-		strncpy( spIface->filepathToLog, IFACE_LOG_FILE, LOG_FILEPATH_SIZE ); // I DONT LIKE THIS PLACE TOO
-		vsp = spIface;
-    } else {
-        MoarLayerStartupParams_T	* spNonIface;
-
-		spNonIface = ( MoarLayerStartupParams_T * )calloc( 1, sizeof( MoarLayerStartupParams_T ) );
-
-        if( NULL == spNonIface )
-            return -1;
-
-		spNonIface->DownSocketHandler = SocketDown( layerType );
-		spNonIface->UpSocketHandler = SocketUp( layerType );
-        vsp = spNonIface;
-    }
-
-	result = createThread( layerLibrary, vsp );
-	printf( FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName );
+	result = createThread(layerLibrary, layerStartupParams);
+	printf(FUNC_RESULT_SUCCESS == result ? "%s started\n" : "failed starting %s\n", layerLibrary->Info.LibraryName);
 	return result;
+}
+
+int loadLayer(MoarLibrary_T* library, char* fileName, hashTable_T* moardConfig, hashTable_T* layerConfig){
+	if(NULL == library || NULL == fileName || NULL == moardConfig || NULL == layerConfig)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	//init config
+	int res = configInit(layerConfig);
+	CHECK_RESULT(res);
+	// get config
+	res = configRead(layerConfig, fileName);
+	CHECK_RESULT(res);
+	// merge without override
+	res = configMerge(layerConfig, moardConfig);
+	CHECK_RESULT(res);
+	// get file name
+	libraryLocation location = {0};
+	res = bindingBindStructFunc(layerConfig, makeLibraryLocationBinding, &location);
+	CHECK_RESULT(res);
+	// load layer
+	res = loadLibrary(location.FileName, library);
+	return res;
 }
 
 int LogWorkIllustration( void ) {
@@ -147,79 +160,118 @@ int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
 	return FUNC_RESULT_SUCCESS;
 }
 
+char* concatPath(const char* dir, const char* file){
+	size_t pathLen = strlen(dir);
+	size_t dirLen = strlen(file);
+	size_t fullPathLen = pathLen+dirLen+2;
+	char* enabledPath = malloc(fullPathLen);
+	char* separator = PATH_SEPARATOR;
+	strncpy(enabledPath, dir, fullPathLen);
+	strncpy(enabledPath+fullPathLen, separator, strlen(separator));
+	strncpy(enabledPath+fullPathLen+1, file, dirLen+1);
+
+	return enabledPath;
+}
+
+char* getLayersEnabledPath(moardSettings* settings, char* configFile){
+	//make directory for enabled layers
+	char* confPath = dirname(configFile);
+	return concatPath(confPath, settings->LayersEnabledDir);
+}
+
+int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
+	if(NULL == moardConfig || NULL == layersConfDirName)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	DIR * d;
+	struct dirent *dir;
+	d = opendir(layersConfDirName);
+	if(d){
+		while((dir = readdir(d))!= NULL){
+			if(strstr(dir->d_name,".conf") != NULL) {
+				char* fullName = concatPath(layersConfDirName, dir->d_name);
+				hashTable_T *layerConfig = malloc(sizeof(hashTable_T));
+
+				MoarLibrary_T library = {0};
+				int res = loadLayer(&library, fullName, moardConfig, layerConfig);
+
+				if (FUNC_RESULT_SUCCESS == res) {
+					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
+						   library.Info.TargetMoarApiVersion);
+					// start layer
+					res = runLayer(&library, layerConfig);
+					if(FUNC_RESULT_SUCCESS == res)
+						queueEnqueue(&layersRunning, &library);
+				}
+				else
+					printf("%s load failed\n", fullName);
+				free(fullName);
+			}
+		}
+		closedir(d);
+	}
+	return FUNC_RESULT_SUCCESS;
+}
+
+int stopAllLayers() {
+	while(layersRunning.Count != 0){
+		MoarLibrary_T lib;
+		int res = queueDequeue(&layersRunning, &lib);
+		if(FUNC_RESULT_SUCCESS == res){
+			int res = exitThread(&lib);
+       if(FUNC_RESULT_SUCCESS == res)
+            printf("thread %s exited\n",lib.Info.LibraryName);
+        else
+            printf("failed thread exit for %s\n",lib.Info.LibraryName);
+		}
+		res = closeLibrary(&lib);
+        //check for empty lib closing
+        if (FUNC_RESULT_SUCCESS == res)
+            printf("library %s closed\n",lib.Filename);
+        else
+            printf("close %s failed\n",lib.Filename);
+	}
+}
+
 int main(int argc, char** argv)
 {
 	//TODO add log error output
-	// TODO use get opts
-
+	
 	MoardCliArgs_T cliArgs = {0};
 	int res = initCliArgs(&cliArgs);
 	CHECK_RESULT(res);
 	res = parseCliArgs(&cliArgs, argc, argv);
 	CHECK_RESULT(res);
+	
+
+	moardSettings settings = {0};
+	ifaceSocket ifaceSock = {0};
+	serviceSocket servSock = {0};
 
 	hashTable_T config = {0};
-	{
-		int confPrepareRes = configInit(&config);
-
-		if (FUNC_RESULT_SUCCESS != confPrepareRes) {
-			fprintf(stderr, "Can not init config storage\r\n");
-			return 1;
-		}
-		int confRes = configRead(&config, cliArgs.ConfigFile);
-		if (FUNC_RESULT_SUCCESS != confRes) {
-			fprintf(stderr, "Can not read core config file %s\r\n", cliArgs.ConfigFile);
-			return 1;
-		}
-	}
-    MoarLibrary_T libraries[LAYERS_COUNT];
-
-	LogWorkIllustration();
-
-    char *fileNames[LAYERS_COUNT];
-    fileNames[MoarLayer_Interface] = LIBRARY_PATH_INTERFACE;
-    fileNames[MoarLayer_Channel] = LIBRARY_PATH_CHANNEL;
-    fileNames[MoarLayer_Routing] = LIBRARY_PATH_ROUTING;
-    fileNames[MoarLayer_Presentation] = LIBRARY_PATH_PRESENTATION;
-    fileNames[MoarLayer_Service] = LIBRARY_PATH_SERVICE;
-    //testing multiple instances
-#ifdef LOAD_MULTIPLE_INTERFACES
-    fileNames[MoarLayer_Service+1] = LIBRARY_PATH_INTERFACE;
-#endif
+	int settingsRes = settingsLoad(&settings, cliArgs.ConfigFile, &config);
+	CHECK_RESULT(settingsRes);
+	int isock = bindingBindStructFunc(&config, makeIfaceSockBinding, &ifaceSock);
+	CHECK_RESULT(isock);
+	int ssock = bindingBindStructFunc(&config, makeServSockBinding, &servSock);
+	CHECK_RESULT(ssock);
 
     //setup signal handler
     signal(SIGINT, signalHandler);
-    //load
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = loadLibrary(fileNames[i], libraries+i);
-        if (FUNC_RESULT_SUCCESS == res)
-            printf("%s by %s loaded, %d\n", libraries[i].Info.LibraryName, libraries[i].Info.Author, libraries[i].Info.TargetMoarApiVersion);
-        else
-            printf("%s load failed\n",fileNames[i]);
-    }
-    SocketsPrepare( IFACE_CHANNEL_SOCKET_FILE, SERVICE_APP_SOCKET_FILE );
-    //start layers here
-	for(int i = 0; i < LAYERS_COUNT; i++)
-		runLayer( libraries + i );
+	// create all needed sockets
+	SocketsPrepare( ifaceSock.FileName, servSock.FileName );
 
-    //wait
+	queueInit(&layersRunning, sizeof(MoarLibrary_T));
+
+	char* layersConfDirName = getLayersEnabledPath(&settings, cliArgs.ConfigFile);
+
+	runAllLayers(&config, layersConfDirName);
+
+	free(layersConfDirName);
+
     pause();
-    //stop
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = exitThread(libraries+i);
-        if(FUNC_RESULT_SUCCESS == res)
-            printf("thread %s exited\n",libraries[i].Info.LibraryName);
-        else
-            printf("failed thread exit for %s\n",libraries[i].Info.LibraryName);
-    }
-    //unload
-    for(int i=0; i<LAYERS_COUNT;i++) {
-        int res = closeLibrary(libraries+i);
-        //check for empty lib closing
-        if (FUNC_RESULT_SUCCESS == res)
-            printf("library %s closed\n",libraries[i].Filename);
-        else
-            printf("close %s failed\n",libraries[i].Filename);
-    }
+
+	stopAllLayers();
+
+	queueDeinit(&layersRunning);
     return 0;
 }

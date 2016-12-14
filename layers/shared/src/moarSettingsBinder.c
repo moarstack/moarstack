@@ -6,9 +6,11 @@
 #include "funcResults.h"
 #include "stddef.h"
 #include <errno.h>
-#include <moarCommons.h>
+#include <string.h>
 #include <ctype.h>
+#include <bits/string2.h>
 #include <stdio.h>
+#include <moarCommons.h>
 #include <inttypes.h>
 
 void bindingFreeName(SettingsBind_T* binding){
@@ -45,6 +47,7 @@ int bindingSet_char(void* ptr, char* val){
 }
 int bindingSet_uint64_t(void* ptr, char* val){
 	uint64_t value = 0;
+
 	int res = sscanf(val, "%" SCNu64, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -61,6 +64,7 @@ int bindingSet_uint32_t(void* ptr, char* val){
 }
 int bindingSet_uint16_t(void* ptr, char* val){
 	uint16_t value = 0;
+	
 	int res = sscanf(val, "%" SCNu16, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -68,6 +72,7 @@ int bindingSet_uint16_t(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint8_t(void* ptr, char* val){
+	
 	uint8_t value = 0;
 	int res = sscanf(val, "%" SCNu8, &value);
 	if(1 != res)
@@ -76,6 +81,7 @@ int bindingSet_uint8_t(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_int64_t(void* ptr, char* val){
+	
 	int64_t value = 0;
 	int res = sscanf(val, "%" SCNd64, &value);
 	if(1 != res)
@@ -164,4 +170,15 @@ int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int bindCo
 		}
 	}
 	return FUNC_RESULT_SUCCESS;
+}
+int bindingBindStructFunc(hashTable_T* settings, bindingFunc_F func, void* targetStruct){
+	if(NULL == func)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	SettingsBind_T* bind;
+	int count = 0;
+	int res = func(&bind, &count);
+	CHECK_RESULT(res);
+	res = bindingBindStruct(settings, bind, count, targetStruct);
+	free(bind);
+	return res;
 }

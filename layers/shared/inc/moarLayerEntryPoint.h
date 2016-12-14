@@ -5,12 +5,15 @@
 #ifndef MOARSTACK_MOARLAYERENTRYPOINT_H
 #define MOARSTACK_MOARLAYERENTRYPOINT_H
 
+#include <hashTable.h>
+
 #define MOAR_LAYER_ENTRY_POINT MoarLayerEntryPoint
 #define MOAR_LAYER_ENTRY_POINT_NAME "MoarLayerEntryPoint"
 
 typedef struct{
     int UpSocketHandler;
     int DownSocketHandler;
+	hashTable_T* LayerConfig;
 } MoarLayerStartupParams_T;
 
 typedef void* (*moarLayerEntryPoint_F)(void *);

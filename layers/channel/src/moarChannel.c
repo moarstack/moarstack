@@ -123,8 +123,8 @@ int channelInit(ChannelLayer_T* layer, void* arg){
 
 	nodeAddress addr = {0};
 	int res = bindingBindStructFunc(startupParams->LayerConfig, makeAddressBinding, &addr);
-	CHECK_RESULT(res);
-	layer->LocalAddress = addr.Address;
+	if(FUNC_RESULT_SUCCESS == res)
+		layer->LocalAddress = addr.Address;
 
 	layer->UpSocket = startupParams->UpSocketHandler;
 	layer->DownSocket = startupParams->DownSocketHandler;

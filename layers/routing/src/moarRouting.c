@@ -60,8 +60,8 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 
 	nodeAddress addr = {0};
 	int res = bindingBindStructFunc(params->LayerConfig, makeAddressBinding, &addr);
-	CHECK_RESULT(res);
-	layer->LocalAddress = addr.Address;
+	if(FUNC_RESULT_SUCCESS == res)
+		layer->LocalAddress = addr.Address;
 
 	// init packet storege
 	int initRes = psInit(&layer->PacketStorage);

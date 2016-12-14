@@ -353,7 +353,7 @@ extern int LogCombMoar( LogHandle_T handle, int returnResult, LogLevel_T logLeve
 		return result;
 	} else {
 		result = LogErrMoar( handle, logLevelBad, returnResult, msgBad );
-		return FUNC_RESULT_FAILED;
+		return returnResult;
 	}
 }
 

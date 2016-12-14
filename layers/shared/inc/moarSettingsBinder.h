@@ -7,10 +7,11 @@
 
 #include <stdint.h>
 #include <hashTable.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 
-
-typedef uint64_t Offset_T;
+typedef ptrdiff_t Offset_T;
 
 typedef enum{
 	FieldType_int,
@@ -20,8 +21,8 @@ typedef enum{
 	FieldType_uint32_t,
 	FieldType_uint16_t,
 	FieldType_uint8_t,
-//	FieldType_RouteAddr_T,
-//	FieldType_ChannelAddr_T,
+	FieldType_RouteAddr_T,
+	FieldType_ChannelAddr_T,
 //	FieldType_IfaceAddr_T,
 //	FieldType_moarTime_T,
     FieldType_int64_t,

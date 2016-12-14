@@ -10,6 +10,8 @@
 #include <ctype.h>
 #include <bits/string2.h>
 #include <stdio.h>
+#include <moarRouting.h>
+#include <moarChannel.h>
 #include <moarCommons.h>
 #include <inttypes.h>
 
@@ -114,6 +116,41 @@ int bindingSet_int8_t(void* ptr, char* val){
 	return FUNC_RESULT_SUCCESS;
 }
 
+int hexToNum(char h){
+	if(h >= 'A' && h<= 'F')
+		return h - 'A' +10;
+	if(h >= 'a' && h<= 'f')
+		return h - 'a' +10;
+	if(h >= '0' && h<= '9')
+		return h - '0';
+	return -1;
+}
+char* readHexByte(char* s, uint8_t* val){
+	*val = 0;
+	for(int i=0;i<2;i++) {
+		*val <<= 4;
+		int num = -1;
+		while (*s && num < 0) {
+			num = hexToNum(*s);
+			s++;
+		}
+		if (num >= 0) {
+			*val |= (uint8_t) (num & 0x0F);
+		}
+	}
+	return s;
+}
+
+int bindingSet_ByteArray(void* ptr, char* val, size_t len){
+	uint8_t byte;
+	uint8_t* array = (uint8_t*)ptr;
+	for(size_t i=0; i<len;i++){
+		val = readHexByte(val, &byte);
+		array[i] = byte;
+	}
+	return FUNC_RESULT_SUCCESS;
+}
+
 int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 	if(NULL == binding || NULL == val || NULL == targetStruct)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -150,6 +187,12 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			break;
 		case FieldType_char:
 			res = bindingSet_char(ptr, val);
+			break;
+		case FieldType_RouteAddr_T:
+			res = bindingSet_ByteArray(ptr, val, sizeof(RouteAddr_T));
+			break;
+		case FieldType_ChannelAddr_T:
+			res = bindingSet_ByteArray(ptr, val, sizeof(ChannelAddr_T));
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

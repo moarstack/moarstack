@@ -14,9 +14,7 @@
 #define FUNC_RESULT_MINIMUM_VALUE			FUNC_RESULT_FAILED_NEIGHBORS // keep it minimal
 typedef int	FUNC_RESULT;
 
-#define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
-
-#define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
+#define CHECK_RESULT(r)			do{ int __res = (r); if( FUNC_RESULT_SUCCESS != __res ) return __res; }while( 0 )
 
 #endif //MOARSTACK_FUNCRESULTS_H
 

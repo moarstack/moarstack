@@ -61,6 +61,7 @@ int initInterface( IfaceState_T * layer, void * params ) {
 
 	mockIface ifaceSettings = {0};
 	res = bindingBindStructFunc(paramsStruct->LayerConfig, makeMockIfaceBinding, &ifaceSettings);
+	CHECK_RESULT(res);
 
 	strncpy( layer->Config.ChannelSocketFilepath, socketInfo.FileName, SOCKET_FILEPATH_SIZE );
 	strncpy( layer->Config.LogFilepath, ifaceSettings.LogPath, LOG_FILEPATH_SIZE );

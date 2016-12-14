@@ -3,7 +3,7 @@
 //
 
 #include <moarRouteFinder.h>
-
+#include <moarRoutingPrivate.h>
 
 
 int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop,
@@ -85,7 +85,7 @@ int getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, Paylo
     if (NULL == nextPayload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
     memcpy(nextPayload, prevPayload, prevPayloadSize);
-    *(RouteAddr_T*)(nextPayload + prevPayloadSize) = *nextHop;
+    *(RouteAddr_T*)(nextPayload + prevPayloadSize) = layer->LocalAddress;
     *nextPacketPayload =  nextPayload;
     return FUNC_RESULT_SUCCESS;
 }

@@ -42,7 +42,7 @@ int RouteTableClear( RouteDataTable_T * table ) {
 }
 
 int RouteTableDestroy( RouteDataTable_T * table ) {
-    if( RouteTableClear( table ) ) {
+    if( FUNC_RESULT_SUCCESS == RouteTableClear( table ) ) {
         free( table );
         return FUNC_RESULT_SUCCESS;
     }

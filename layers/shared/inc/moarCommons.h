@@ -68,9 +68,7 @@ typedef struct{
 
 #pragma pack(pop)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
@@ -90,8 +88,8 @@ extern int FreeCommand( LayerCommandStruct_T * command );
 
 extern int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, CommandProcessingRule_T* rules);
 extern CommandProcessingRule_T MakeProcessingRule(LayerCommandType_T type, CommandProcessor_T rule);
-#ifdef __cplusplus
-}
-#endif
+extern char * mStrDup( const char * source );
+
+__END_DECLS
 
 #endif //MOARSTACK_MOARCOMMONS_H

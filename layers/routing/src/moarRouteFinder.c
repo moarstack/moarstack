@@ -51,7 +51,7 @@ int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
 
     count = 0;
 
-    while( !hashIteratorIsLast( &iterator ) ) {
+    while( !hashIteratorEnded( &iterator ) ) {
         neInfo = storageIteratorData( &iterator );
         hashIteratorNext( &iterator );
 

@@ -165,7 +165,7 @@ int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* pack
             hashIterator_T iterator;
             hashIterator(&(layer->NeighborsStorage.Storage), &iterator);
 
-            while (!hashIteratorIsLast(&iterator)){
+            while (!hashIteratorEnded( &iterator )){
                 RouteAddr_T* neighbor_data = (RouteAddr_T *)hashIteratorData(&iterator);
                 ProduceAndSendFinderPacketFurther(layer, packet, neighbor_data);
             }

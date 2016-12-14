@@ -107,10 +107,14 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	ServiceLayer_T servicelayer = {0};
     // load configuration
 	int res = initService(&servicelayer, (MoarLayerStartupParams_T*)arg);
-	CHECK_RESULT(res);
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return NULL;
 
 	res = initEpoll(&servicelayer);
-	CHECK_RESULT(res);
+
+	if( FUNC_RESULT_SUCCESS != res )
+		return NULL;
 
 	servicelayer.Running = true;
 	while(servicelayer.Running) {

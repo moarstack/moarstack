@@ -1,23 +1,10 @@
 #ifndef __MOAR_API_H__
 #define __MOAR_API_H__
 
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
-#include <moarMessageId.h>
-#include <moarRouting.h>
+#include "moarApiCommon.h"
 
-
-typedef int32_t MoarDesc_T;
-
-typedef int32_t AppId_T;
-
-typedef enum {
-	MessageState_Unknown = 0,
-	MessageState_Sending,
-	MessageState_Sent,
-	MessageState_Lost,
-} MessageState_T;
+#define APP_READ_ATTEMPTS_COUNT 5
+#define SERVICE_APP_SOCKET_FILE "/tmp/moarService.sock"
 
 __BEGIN_DECLS
 

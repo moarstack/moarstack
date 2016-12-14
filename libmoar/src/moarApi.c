@@ -1,7 +1,10 @@
-#include "moarApi.h"
+#include "moarApiCommon.h"
+#include "moarApiCommands.h"
+#include "moarServiceApp.h"
+#include "funcResults.h"
 
 MoarDesc_T moarSocket(void) {
-
+   
 }
 
 int moarBind(MoarDesc_T fd, const AppId_T *appId) {

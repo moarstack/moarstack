@@ -43,7 +43,10 @@ int processPayloadFack( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 		CHECK_RESULT( result );
 
 		result = helperUpdateRoute( layer, &( packet->Source ), list + count - 1 );
+		CHECK_RESULT( result );
 	}
+
+	result = helperSolveRoutes( layer ); // it is just an example of usage
 
 	return result;
 }

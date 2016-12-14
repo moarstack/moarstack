@@ -6,7 +6,10 @@
 #include "funcResults.h"
 #include "stddef.h"
 #include <errno.h>
-
+#include <moarCommons.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 void bindingFreeName(SettingsBind_T* binding){
 	if(binding != NULL)
@@ -20,7 +23,7 @@ int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_
 	binding->Offset = offset;
 	binding->FieldType = type;
 
-	char* newLine = strdup(name);
+	char* newLine = mStrDup(name);
 	binding->Name = newLine;
 	// to lower
 	for(;*newLine;newLine++)
@@ -42,15 +45,15 @@ int bindingSet_char(void* ptr, char* val){
 }
 int bindingSet_uint64_t(void* ptr, char* val){
 	uint64_t value = 0;
-	int res = sscanf(val, "%llu", &value);
+	int res = sscanf(val, "%" SCNu64, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint64_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint32_t(void* ptr, char* val){
-	long long int value = 0;
-	int res = sscanf(val, "%lld", &value);
+	uint32_t value = 0;
+	int res = sscanf(val, "%" SCNu32, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint32_t*)ptr) = value;
@@ -58,47 +61,47 @@ int bindingSet_uint32_t(void* ptr, char* val){
 }
 int bindingSet_uint16_t(void* ptr, char* val){
 	uint16_t value = 0;
-	int res = sscanf(val, "%d", &value);
+	int res = sscanf(val, "%" SCNu16, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint16_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_uint8_t(void* ptr, char* val){
-	int value = 0;
-	int res = sscanf(val, "%d", &value);
+	uint8_t value = 0;
+	int res = sscanf(val, "%" SCNu8, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((uint8_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_int64_t(void* ptr, char* val){
-	long long int value = 0;
-	int res = sscanf(val, "%lld", &value);
+	int64_t value = 0;
+	int res = sscanf(val, "%" SCNd64, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((int64_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_int32_t(void* ptr, char* val){
-	long long int value = 0;
-	int res = sscanf(val, "%lld", &value);
+	int32_t value = 0;
+	int res = sscanf(val, "%" SCNd32, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((int32_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_int16_t(void* ptr, char* val){
-	int value = 0;
-	int res = sscanf(val, "%d", &value);
+	int16_t value = 0;
+	int res = sscanf(val, "%" SCNd16, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((int16_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
 int bindingSet_int8_t(void* ptr, char* val){
-	int value = 0;
-	int res = sscanf(val, "%d", &value);
+	int8_t value = 0;
+	int res = sscanf(val, "%" SCNd8, &value);
 	if(1 != res)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	*((int8_t*)ptr) = value;
@@ -109,7 +112,7 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 	if(NULL == binding || NULL == val || NULL == targetStruct)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_FAILED;
-	void* ptr = (void*)targetStruct+binding->Offset;
+	void* ptr = (uint8_t *)targetStruct + binding->Offset;
 	switch(binding->FieldType)
 	{
 		case FieldType_uint64_t:

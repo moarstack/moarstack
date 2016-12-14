@@ -15,7 +15,7 @@ int resetTimeForDest(RoutingLayer_T* layer, ChannelAddr_T* dest){
 	//foreach packet with same dest
 	hashIterator_T iterator = {0};
 	psGetDestFirst(&(layer->PacketStorage),dest, &iterator);
-	while(!hashIteratorIsLast(&iterator)){
+	while(!hashIteratorEnded( &iterator )){
 		RouteStoredPacket_T* pack = psIteratorData(&iterator);
 		pack->NextProcessing = timeGetCurrent();
 		psUpdateTime(&(layer->PacketStorage), pack);

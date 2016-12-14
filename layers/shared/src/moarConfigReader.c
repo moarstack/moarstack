@@ -179,10 +179,10 @@ int configRead(hashTable_T* config, char* fileName){
 int configMerge(hashTable_T* dest, hashTable_T* source){
 	if(NULL == dest || NULL == source)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	hashIterator_T iter = {0};
+	hashIterator_T	iter = {0};
 	int res = hashIterator(source, &iter);
 	CHECK_RESULT(res);
-	while(!hashIteratorIsLast(&iter)){
+	while(!hashIteratorEnded( &iter )){
 
 		char* iterKey = *((char**)hashIteratorKey(&iter));
 		char* iterData = *((char**)hashIteratorData(&iter));
@@ -191,10 +191,10 @@ int configMerge(hashTable_T* dest, hashTable_T* source){
 			res = hashRemoveExact(dest, &iterKey, &iterData);
 			CHECK_RESULT(res);
 			//copy two strings
-			char* newKey = strdup(iterKey);
+			char* newKey = mStrDup(iterKey);
 			if(NULL == newKey)
 				return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-			char* newData = strdup(iterData);
+			char* newData = mStrDup(iterData);
 			if(NULL == newData) {
 				free(newKey);
 				return FUNC_RESULT_FAILED_MEM_ALLOCATION;

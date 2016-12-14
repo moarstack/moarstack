@@ -15,6 +15,7 @@
 #include <moarChannelCommand.h>
 #include <moarChannelQueue.h>
 #include <moarChannelHello.h>
+#include <moarCommonSettings.h>
 
 int epollInit(ChannelLayer_T *layer) {
 	if(NULL == layer)
@@ -119,6 +120,11 @@ int channelInit(ChannelLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	if(startupParams->UpSocketHandler <=0)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	nodeAddress addr = {0};
+	int res = bindingBindStructFunc(startupParams->LayerConfig, makeAddressBinding, &addr);
+	CHECK_RESULT(res);
+	layer->LocalAddress = addr.Address;
 
 	layer->UpSocket = startupParams->UpSocketHandler;
 	layer->DownSocket = startupParams->DownSocketHandler;

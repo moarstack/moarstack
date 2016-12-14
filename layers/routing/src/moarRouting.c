@@ -14,6 +14,7 @@
 #include <moarRoutingPacketProcessing.h>
 #include <moarRouteTable.h>
 #include <moarRouteProbe.h>
+#include <moarCommonSettings.h>
 
 
 // инициализация работы с Epoll - прополка сокетов
@@ -56,6 +57,12 @@ int routingInit(RoutingLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
+
+	nodeAddress addr = {0};
+	int res = bindingBindStructFunc(params->LayerConfig, makeAddressBinding, &addr);
+	CHECK_RESULT(res);
+	layer->LocalAddress = addr.Address;
+
 	// init packet storege
 	int initRes = psInit(&layer->PacketStorage);
 	if(FUNC_RESULT_SUCCESS != initRes)

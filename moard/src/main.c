@@ -161,14 +161,14 @@ int parseCliArgs(MoardCliArgs_T* cliArgs, int argc, char** argv){
 }
 
 char* concatPath(const char* dir, const char* file){
-	size_t pathSize = strlen(dir);
+	size_t pathLen = strlen(dir);
 	size_t dirLen = strlen(file);
-	size_t fullPath = pathSize+dirLen+2;
-	char* enabledPath = malloc(fullPath);
+	size_t fullPathLen = pathLen+dirLen+2;
+	char* enabledPath = malloc(fullPathLen);
 	char* separator = PATH_SEPARATOR;
-	strncpy(enabledPath, dir, pathSize);
-	strncpy(enabledPath+pathSize, separator, 1);
-	strncpy(enabledPath+pathSize+1, file, dirLen+1);
+	strncpy(enabledPath, dir, fullPathLen);
+	strncpy(enabledPath+fullPathLen, separator, strlen(separator));
+	strncpy(enabledPath+fullPathLen+1, file, dirLen+1);
 
 	return enabledPath;
 }

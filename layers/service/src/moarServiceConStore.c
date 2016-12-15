@@ -37,7 +37,28 @@ int csDeinit(AppConnectionStorage_T* storage){
 	res = hashFree(&storage->fdTable);
 	return res;
 }
-int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){}
+int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){
+	if(NULL == storage || NULL == connection)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	AppConection_T* alloc = malloc(sizeof(AppConection_T));
+	if(NULL == alloc)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	memcpy(alloc, connection, sizeof(AppConection_T));
+
+	int res = hashAdd(&storage->fdTable, &alloc->fd, &alloc);
+	if(FUNC_RESULT_SUCCESS != res){
+		free(alloc);
+		return res;
+	}
+	res = hashAdd(&storage->appIdTable, &alloc->AppId, &alloc);
+	if(FUNC_RESULT_SUCCESS != res){
+		hashRemove(&storage->fdTable, &alloc->fd);
+		free(alloc);
+		return res;
+	}
+	return res;
+}
 int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){}
 int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){}
 int csGetByAppId(AppConnectionStorage_T* storage, AppConection_T* connection, AppId_T* appId){}

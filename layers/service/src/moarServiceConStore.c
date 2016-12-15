@@ -1,0 +1,45 @@
+//
+// Created by svalov on 12/15/16.
+//
+
+#include "moarServiceConStore.h"
+#include <funcResults.h>
+#include <moarServiceConStore.h>
+#include <hashTable.h>
+
+hashVal_T hashAppId(void *data, size_t size){
+	return hashInt32(data,size);
+}
+void freeStoredAppConnection(void* ptr){
+	if(ptr!=NULL)
+		free(*(AppConection_T**)ptr);
+	free(ptr);
+}
+
+int csInit(AppConnectionStorage_T* storage){
+	if(NULL == storage)
+		return  FUNC_RESULT_FAILED_ARGUMENT;
+	int res = hashInit(&storage->appIdTable, hashAppId, TABLE_SIZE, sizeof(AppId_T), sizeof(AppConection_T*));
+	CHECK_RESULT(res);
+	res = hashInit(&storage->fdTable, hashInt32, TABLE_SIZE, sizeof(uint32_t), sizeof(AppConection_T*));
+	storage->fdTable.DataFreeFunction = freeStoredAppConnection;
+	return res;
+}
+int csDeinit(AppConnectionStorage_T* storage){
+	if(NULL == storage)
+		return  FUNC_RESULT_FAILED_ARGUMENT;
+	int res = hashClear(&storage->appIdTable);
+	CHECK_RESULT(res);
+	res = hashClear(&storage->fdTable);
+	CHECK_RESULT(res);
+	res = hashFree(&storage->appIdTable);
+	CHECK_RESULT(res);
+	res = hashFree(&storage->fdTable);
+	return res;
+}
+int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){}
+int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){}
+int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){}
+int csGetByAppId(AppConnectionStorage_T* storage, AppConection_T* connection, AppId_T* appId){}
+AppConection_T* csGetByFdPtr(AppConnectionStorage_T* storage, int fd){}
+AppConection_T* csGetByAppIdPtr(AppConnectionStorage_T* storage, AppId_T* appId){}

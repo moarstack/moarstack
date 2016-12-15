@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 typedef uint16_t ServiceDataSize_T;
-
+// todo add pragme
 typedef struct{
 	AppId_T LocalAppId;
 	AppId_T RemoteAppId;

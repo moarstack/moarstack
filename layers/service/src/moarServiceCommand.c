@@ -53,5 +53,10 @@ int processMsgStateCommand(void* layerRef, int fd, LayerCommandStruct_T *command
 	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
 	PresentMsgState_T* msgStateMetadata = (PresentMsgState_T*)command->MetaData;
 
-	return FUNC_RESULT_FAILED;
+	PackStatePresent_T* ptr = hashGetPtr(&layer->MidStorage, &msgStateMetadata->Mid);
+	if(NULL == ptr) // some message, but not sent by service
+		return FUNC_RESULT_SUCCESS;
+	*ptr = msgStateMetadata->State;
+
+	return FUNC_RESULT_SUCCESS;
 }

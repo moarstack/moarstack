@@ -67,7 +67,37 @@ int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){
 	res = hashRemove(&storage->appIdTable, &connection->AppId);
 	return res;
 }
-int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){}
-int csGetByAppId(AppConnectionStorage_T* storage, AppConection_T* connection, AppId_T* appId){}
-AppConection_T* csGetByFdPtr(AppConnectionStorage_T* storage, int fd){}
-AppConection_T* csGetByAppIdPtr(AppConnectionStorage_T* storage, AppId_T* appId){}
+int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){
+	if(NULL == storage || NULL == connection)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	AppConection_T* ptr = csGetByFdPtr(storage, fd);
+	if(ptr == NULL)
+		return FUNC_RESULT_FAILED;
+	memcpy(connection,ptr, sizeof(AppConection_T));
+	return FUNC_RESULT_SUCCESS;
+}
+int csGetByAppId(AppConnectionStorage_T* storage, AppConection_T* connection, AppId_T* appId){
+	if(NULL == storage || NULL == connection)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	AppConection_T* ptr = csGetByAppIdPtr(storage, appId);
+	if(ptr == NULL)
+		return FUNC_RESULT_FAILED;
+	memcpy(connection,ptr, sizeof(AppConection_T));
+	return FUNC_RESULT_SUCCESS;
+}
+AppConection_T* csGetByFdPtr(AppConnectionStorage_T* storage, int fd){
+	if(NULL == storage)
+		return NULL;
+	AppConection_T** ptr = (AppConection_T**)hashGetPtr(&storage->fdTable, &fd);
+	if(ptr == NULL)
+		return NULL;
+	return *ptr;
+}
+AppConection_T* csGetByAppIdPtr(AppConnectionStorage_T* storage, AppId_T* appId){
+	if(NULL == storage)
+		return NULL;
+	AppConection_T** ptr = (AppConection_T**)hashGetPtr(&storage->appIdTable, appId);
+	if(ptr == NULL)
+		return NULL;
+	return *ptr;
+}

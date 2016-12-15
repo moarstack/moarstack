@@ -76,18 +76,23 @@ int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
 
 
 // по пейлоуду предыдущего пакета делаем пейлоуд для следующего
-int getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
-                                  RouteAddr_T *nextHop, void **nextPacketPayload) {
-    if( NULL == layer || NULL == prevPayload || 0 == prevPayloadSize || NULL == nextHop || NULL ==nextPacketPayload)
-        return FUNC_RESULT_FAILED_ARGUMENT;
+int getNextFinderPayload( RoutingLayer_T * layer, uint8_t * prevPayload, PayloadSize_T prevPayloadSize,
+						  void ** nextPacketPayload ) {
+	uint8_t	* nextPayload;
 
-    uint8_t * nextPayload =  malloc(prevPayloadSize + sizeof(RouteAddr_T));
-    if (NULL == nextPayload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	if( NULL == layer || NULL == prevPayload || 0 == prevPayloadSize || NULL == nextPacketPayload )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-    memcpy(nextPayload, prevPayload, prevPayloadSize);
-    *(RouteAddr_T*)(nextPayload + prevPayloadSize) = layer->LocalAddress;
-    *nextPacketPayload =  nextPayload;
-    return FUNC_RESULT_SUCCESS;
+	nextPayload = malloc( prevPayloadSize + sizeof( RouteAddr_T ) );
+
+	if( NULL == nextPayload )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	memcpy( nextPayload, prevPayload, prevPayloadSize );
+	*( RouteAddr_T * )( nextPayload + prevPayloadSize ) = layer->LocalAddress;
+	*nextPacketPayload = nextPayload;
+
+	return FUNC_RESULT_SUCCESS;
 }
 
 
@@ -121,8 +126,7 @@ int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacke
     }
     else {
         if (FUNC_RESULT_FAILED_MEM_ALLOCATION ==
-            getNextRouteFinderPayload(layer, prevPacket->Payload, prevPacket->PayloadSize,
-                                      nextHop, &new_packet->Payload))
+				getNextFinderPayload( layer, prevPacket->Payload, prevPacket->PayloadSize, &new_packet->Payload ))
             return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 
         new_packet->PayloadSize = prevPacket->PayloadSize + sizeof(RouteAddr_T);

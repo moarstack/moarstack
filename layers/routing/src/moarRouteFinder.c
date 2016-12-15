@@ -107,9 +107,8 @@ int getNextFinderPayload( RoutingLayer_T * layer, void * oldPayload, PayloadSize
 	return FUNC_RESULT_SUCCESS;
 }
 
-int produceNextRouteFinder( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket,
-							RouteAddr_T * nextHop, RouteStoredPacket_T * newPacket ) {
-	if( NULL == layer || NULL == oldPacket || NULL == nextHop )
+int produceNextRouteFinder( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteStoredPacket_T * newPacket ) {
+	if( NULL == layer || NULL == oldPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	CHECK_RESULT( midGenerate( &newPacket->InternalId, MoarLayer_Routing ) );
@@ -123,7 +122,6 @@ int produceNextRouteFinder( RoutingLayer_T * layer, RouteStoredPacket_T * oldPac
 	newPacket->PackType = RoutePackType_Finder;
 	newPacket->State = StoredPackState_InProcessing;
 	newPacket->TrysLeft = DEFAULT_ROUTE_TRYS;
-	newPacket->NextHop = *nextHop;
 
 	// todo push finderack back to origin if new chain started
 

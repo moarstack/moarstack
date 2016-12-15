@@ -11,6 +11,7 @@
 #include <sys/epoll.h>
 #include <moarTime.h>
 #include <moarCommons.h>
+#include <moarServiceConStore.h>
 
 #define EPOLL_APP_SOCKET_EVENTS 			EPOLLIN
 #define EPOLL_APP_EVENTS 					EPOLLIN
@@ -34,6 +35,8 @@ typedef struct{
 	//
 	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T AppProcessingRules[APP_PROCESSING_RULES_COUNT];
+	//
+	AppConnectionStorage_T  ConnectionStorage;
 }ServiceLayer_T;
 
 int processCloseConnection(ServiceLayer_T* layer, int fd);

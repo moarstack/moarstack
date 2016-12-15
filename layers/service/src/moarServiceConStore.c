@@ -23,6 +23,7 @@ int csInit(AppConnectionStorage_T* storage){
 	CHECK_RESULT(res);
 	res = hashInit(&storage->fdTable, hashInt32, TABLE_SIZE, sizeof(uint32_t), sizeof(AppConection_T*));
 	storage->fdTable.DataFreeFunction = freeStoredAppConnection;
+	storage->Count = 0;
 	return res;
 }
 int csDeinit(AppConnectionStorage_T* storage){
@@ -35,6 +36,7 @@ int csDeinit(AppConnectionStorage_T* storage){
 	res = hashFree(&storage->appIdTable);
 	CHECK_RESULT(res);
 	res = hashFree(&storage->fdTable);
+	storage->Count = 0;
 	return res;
 }
 int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){
@@ -57,6 +59,7 @@ int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){
 		free(alloc);
 		return res;
 	}
+	storage->Count = storage->fdTable.Count;
 	return res;
 }
 int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){
@@ -65,6 +68,7 @@ int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){
 	int res = hashRemove(&storage->fdTable, &connection->fd);
 	CHECK_RESULT(res);
 	res = hashRemove(&storage->appIdTable, &connection->AppId);
+	storage->Count = storage->fdTable.Count;
 	return res;
 }
 int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){

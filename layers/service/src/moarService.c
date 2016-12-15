@@ -81,6 +81,11 @@ int processCloseConnection(ServiceLayer_T* layer, int fd){
 	int closeRes = close( fd );
 
 	//TODO handle disconnection event
+	AppConection_T* con = csGetByFdPtr(&layer->ConnectionStorage, fd);
+	if(NULL != con){
+		int res = csRemove(&layer->ConnectionStorage,con);
+		CHECK_RESULT(res);
+	}
 
 	return FUNC_RESULT_SUCCESS;
 }

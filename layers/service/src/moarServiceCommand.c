@@ -90,7 +90,7 @@ int processBindCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	AppBindResult_T result = AppBind_Error;
 
 	AppConection_T* conId = csGetByAppIdPtr(&layer->ConnectionStorage,&metadata->appId);
-	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,&fd);
+	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
 	// check
 	if(conFd != NULL)
 		result = AppBind_Error;

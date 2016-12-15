@@ -90,6 +90,8 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	int res = FUNC_RESULT_SUCCESS;
 	// TODO load config here
+
+	res = csInit(&layer->ConnectionStorage);
 	// add sockets
 	layer->DownSocket = params->DownSocketHandler;
 	layer->UpSocket = params->UpSocketHandler;
@@ -100,7 +102,7 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
 	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);
 	layer->PresentationProcessingRules[2] = MakeProcessingRule(LayerCommandType_None, NULL);
-	return FUNC_RESULT_SUCCESS;
+	return res;
 }
 
 void * MOAR_LAYER_ENTRY_POINT(void* arg){

@@ -24,6 +24,8 @@
 #define PRESENTATION_PROCESSING_RULES_COUNT	3
 #define APP_PROCESSING_RULES_COUNT			1
 
+#define MID_CACH_TABLE_SIZE					100
+
 typedef struct{
 	int 					UpSocket;
 	int 					DownSocket;
@@ -38,6 +40,7 @@ typedef struct{
 	CommandProcessingRule_T AppProcessingRules[APP_PROCESSING_RULES_COUNT];
 	//
 	AppConnectionStorage_T  ConnectionStorage;
+	hashTable_T				MidStorage;
 }ServiceLayer_T;
 
 int processCloseConnection(ServiceLayer_T* layer, int fd);

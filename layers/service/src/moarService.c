@@ -92,6 +92,9 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	// TODO load config here
 
 	res = csInit(&layer->ConnectionStorage);
+	CHECK_RESULT(res);
+	res = hashInit(&layer->MidStorage,midHash, MID_CACH_TABLE_SIZE, sizeof(MessageId_T), sizeof(PackStatePresent_T));
+	CHECK_RESULT(res);
 	// add sockets
 	layer->DownSocket = params->DownSocketHandler;
 	layer->UpSocket = params->UpSocketHandler;

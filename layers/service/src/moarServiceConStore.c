@@ -59,7 +59,14 @@ int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){
 	}
 	return res;
 }
-int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){}
+int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){
+	if(NULL == storage || NULL == connection)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = hashRemove(&storage->fdTable, &connection->fd);
+	CHECK_RESULT(res);
+	res = hashRemove(&storage->appIdTable, &connection->AppId);
+	return res;
+}
 int csGetByFd(AppConnectionStorage_T* storage, AppConection_T* connection, int fd){}
 int csGetByAppId(AppConnectionStorage_T* storage, AppConection_T* connection, AppId_T* appId){}
 AppConection_T* csGetByFdPtr(AppConnectionStorage_T* storage, int fd){}

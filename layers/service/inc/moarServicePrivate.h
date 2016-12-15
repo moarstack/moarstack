@@ -12,6 +12,7 @@
 #include <moarTime.h>
 #include <moarCommons.h>
 #include <moarServiceConStore.h>
+#include <moarService.h>
 
 #define EPOLL_APP_SOCKET_EVENTS 			EPOLLIN
 #define EPOLL_APP_EVENTS 					EPOLLIN

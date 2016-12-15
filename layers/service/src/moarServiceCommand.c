@@ -69,9 +69,27 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	AppStartSendMetadata_T* metadata = (AppStartSendMetadata_T*)command->MetaData;
 
 	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+	if(conFd==NULL)
+		return FUNC_RESULT_FAILED;
+	size_t dataSize = sizeof(ServiceLayerHeader_T)+command->DataSize;
+	ServiceLayerHeader_T* header = malloc(dataSize);
+	header->LocalAppId = conFd->AppId;
+	header->PayloadSize = (ServiceDataSize_T) command->DataSize;
+	header->RemoteAppId = metadata->RemoteAppId;
+	memcpy(header+1,command->Data, command->DataSize);
 
+	LayerCommandStruct_T com = {0};
+	ServiceSendMsgDown_T meta = {0};
+	meta.Destination = metadata->RemoteAddr;
+	meta.Mid = metadata->Mid;
+	com.Command = LayerCommandType_Send;
+	com.DataSize = dataSize;
+	com.Data = header;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(meta);
+	int res = WriteCommand(layer->DownSocket, &com);
 
-	return FUNC_RESULT_SUCCESS;
+	return res;
 }
 int processConnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(NULL == layerRef || fd <= 0 || NULL == command)

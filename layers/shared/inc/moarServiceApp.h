@@ -53,6 +53,7 @@ typedef struct {
     int MoarFd;
     AppId_T RemoteAppId;
     RouteAddr_T RemoteAddr;
+	MessageId_T Mid;
 } AppStartSendMetadata_T;
 
 /* Command received by application from moarSendTo. It does not

@@ -68,6 +68,9 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
 	AppStartSendMetadata_T* metadata = (AppStartSendMetadata_T*)command->MetaData;
 
+	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+
+
 	return FUNC_RESULT_SUCCESS;
 }
 int processConnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
@@ -94,16 +97,17 @@ int processBindCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	// check
 	if(conFd != NULL)
 		result = AppBind_Error;
-	if(conId != NULL)
+	else if(conId != NULL)
 		result = AppBind_Used;
-	// add
-	AppConection_T con = {0};
-	con.fd = fd;
-	con.AppId = metadata->appId;
-	int res = csAdd(&layer->ConnectionStorage, &con);
-	if(FUNC_RESULT_SUCCESS == res)
-		result = AppBind_OK;
-
+	else {
+		// add
+		AppConection_T con = {0};
+		con.fd = fd;
+		con.AppId = metadata->appId;
+		int res = csAdd(&layer->ConnectionStorage, &con);
+		if (FUNC_RESULT_SUCCESS == res)
+			result = AppBind_OK;
+	}
 	// send command
 	LayerCommandStruct_T com = {0};
 	ServiceBindResultMetadata_T meta = {0};
@@ -113,7 +117,7 @@ int processBindCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	com.Data = NULL;
 	com.MetaData = &meta;
 	com.MetaSize = sizeof(ServiceBindResultMetadata_T);
-	res = WriteCommand(fd, &com);
+	int res = WriteCommand(fd, &com);
 
 	return res;
 }

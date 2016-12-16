@@ -1,4 +1,4 @@
-/tmp/mockitSocket.file
+/tmp/moarMockIt.sock
 900
 10
 1 0 0 -90

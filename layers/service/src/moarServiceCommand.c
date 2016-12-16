@@ -164,25 +164,30 @@ int processAppMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T *
 
 	MessageState_T msgState = MessageState_Unknown;
 	bool exist = hashContain(&layer->MidStorage,&metadata->MsgId);
+	bool remove = false;
 	if(exist) {
-		PackStatePresent_T state = PackStatePresent_None;
-		hashGet(&layer->MidStorage, &metadata->MsgId, &state);
+		PackStatePresent_T* state = hashGetPtr(&layer->MidStorage, &metadata->MsgId);
 
-		switch (state) {
+		switch (*state) {
 			case PackStatePresent_None:
 				msgState = MessageState_Sending;
 				break;
 			case PackStatePresent_Sent:
 				msgState = MessageState_Sent;
+				remove = true;
 				break;
 			case PackStatePresent_NotSent:
 				msgState = MessageState_Lost;
+				remove = true;
 				break;
 			case PackStatePresent_Received:
 				msgState = MessageState_Unknown;
+				remove = true;
 				break;
 		}
 	}
+	if(remove)
+		hashRemove(&layer->MidStorage, &metadata->MsgId);
 	// send command
 	LayerCommandStruct_T com = {0};
 	ServiceMsgStateResultMetadata_T meta = {0};

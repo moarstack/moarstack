@@ -80,7 +80,6 @@ int processCloseConnection(ServiceLayer_T* layer, int fd){
 	int shutRes = shutdown( fd, SHUT_RDWR );
 	int closeRes = close( fd );
 
-	//TODO handle disconnection event
 	AppConection_T* con = csGetByFdPtr(&layer->ConnectionStorage, fd);
 	if(NULL != con){
 		int res = csRemove(&layer->ConnectionStorage,con);

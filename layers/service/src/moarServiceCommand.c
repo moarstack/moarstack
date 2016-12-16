@@ -162,5 +162,38 @@ int processAppMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T *
 	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
 	AppMsgStateMetadata_T* metadata = (AppMsgStateMetadata_T*)command->MetaData;
 
-	return FUNC_RESULT_SUCCESS;
+	MessageState_T msgState = MessageState_Unknown;
+	bool exist = hashContain(&layer->MidStorage,&metadata->MsgId);
+	if(exist) {
+		PackStatePresent_T state = PackStatePresent_None;
+		hashGet(&layer->MidStorage, &metadata->MsgId, &state);
+
+		switch (state) {
+			case PackStatePresent_None:
+				msgState = MessageState_Sending;
+				break;
+			case PackStatePresent_Sent:
+				msgState = MessageState_Sent;
+				break;
+			case PackStatePresent_NotSent:
+				msgState = MessageState_Lost;
+				break;
+			case PackStatePresent_Received:
+				msgState = MessageState_Unknown;
+				break;
+		}
+	}
+	// send command
+	LayerCommandStruct_T com = {0};
+	ServiceMsgStateResultMetadata_T meta = {0};
+	meta.MsgId = metadata->MsgId;
+	meta.MsgState = msgState;
+	com.Command = LayerCommandType_MessageStateResult;
+	com.DataSize = 0;
+	com.Data = NULL;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(ServiceMsgStateResultMetadata_T);
+	int res = WriteCommand(fd, &com);
+
+	return res;
 }

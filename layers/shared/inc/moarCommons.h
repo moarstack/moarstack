@@ -26,6 +26,7 @@ typedef enum {
     LayerCommandType_LostNeighbor,
 	LayerCommandType_UpdateNeighbor,
 	LayerCommandType_MessageState,
+	LayerCommandType_MessageStateResult,
 	LayerCommandType_RegisterInterface,
 	LayerCommandType_RegisterInterfaceResult,
 	LayerCommandType_UnregisterInterface,

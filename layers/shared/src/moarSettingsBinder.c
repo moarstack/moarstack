@@ -13,6 +13,7 @@
 #include <moarRouting.h>
 #include <moarChannel.h>
 #include <moarCommons.h>
+#include <moarInterface.h>
 #include <inttypes.h>
 
 void bindingFreeName(SettingsBind_T* binding){
@@ -193,6 +194,9 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			break;
 		case FieldType_ChannelAddr_T:
 			res = bindingSet_ByteArray(ptr, val, sizeof(ChannelAddr_T));
+			break;
+		case FieldType_IfaceAddr_T:
+			res = bindingSet_ByteArray(ptr, val, sizeof(IfaceAddr_T));
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

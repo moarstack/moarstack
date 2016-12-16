@@ -22,7 +22,6 @@
 #include <funcResults.h>
 #include <moarLogger.h>
 
-#define IFACE_ADDR_SIZE					sizeof( unsigned int )
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
 #define CHANNEL_SEND_METADATA_SIZE		sizeof( ChannelSendMetadata_T )
@@ -50,10 +49,6 @@ typedef enum {
 } IfacePackType_T;
 
 #pragma pack(push, 1)
-
-typedef struct {
-	uint8_t	Value[ IFACE_ADDR_SIZE ];
-} IfaceAddr_T;
 
 // type for usual iface header
 typedef struct {

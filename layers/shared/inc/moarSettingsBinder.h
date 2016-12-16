@@ -23,7 +23,7 @@ typedef enum{
 	FieldType_uint8_t,
 	FieldType_RouteAddr_T,
 	FieldType_ChannelAddr_T,
-//	FieldType_IfaceAddr_T,
+	FieldType_IfaceAddr_T,
 //	FieldType_moarTime_T,
     FieldType_int64_t,
 	FieldType_int32_t,

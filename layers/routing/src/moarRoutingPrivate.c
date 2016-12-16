@@ -130,7 +130,7 @@ int prepareQueue( RoutingLayer_T * layer, PriorityQueue_T * order ) {
 	result = pqInit( order, layer->RouteTable.Count, routeChancesCompare, sizeof( RouteChance_T ), sizeof( RouteDataRecord_T ) );
 	CHECK_RESULT( result );
 
-	while( !hashIteratorIsLast( &iterator ) ) {
+	while( !hashIteratorEnded( &iterator ) ) {
 		neInfo = hashIteratorData( &iterator );
 		current.Dest = neInfo->Address;
 		current.Relay = neInfo->Address;
@@ -226,7 +226,7 @@ int saveSolvedRoutes( RoutingLayer_T * layer, hashTable_T * aims ) {
 	result = RouteTableClear( &( layer->RouteTableSolved ) );
 	CHECK_RESULT( result );
 
-	while( !hashIteratorIsLast( &iterator ) ) {
+	while( !hashIteratorEnded( &iterator ) ) {
 		aim = hashIteratorData( &iterator );
 		destination = hashIteratorKey( &iterator );
 		result = RouteTableAdd( &( layer->RouteTableSolved ), aim->Relay, *destination );

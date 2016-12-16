@@ -222,6 +222,9 @@ int bindingBindStructFunc(hashTable_T* settings, bindingFunc_F func, void* targe
 	int res = func(&bind, &count);
 	CHECK_RESULT(res);
 	res = bindingBindStruct(settings, bind, count, targetStruct);
+
+	for(int i=0;i<count;i++)
+		bindingFreeName(bind+i);
 	free(bind);
 	return res;
 }

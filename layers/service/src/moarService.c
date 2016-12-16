@@ -118,6 +118,18 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	return res;
 }
 
+int deinitService(ServiceLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res;
+	res = csDeinit(&layer->ConnectionStorage);
+	CHECK_RESULT(res);
+	res = hashClear(&layer->MidStorage);
+	CHECK_RESULT(res);
+	res = hashFree(&layer->MidStorage);
+	return res;
+}
+
 void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	ServiceLayer_T servicelayer = {0};
     // load configuration

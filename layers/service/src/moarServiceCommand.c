@@ -78,6 +78,12 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	header->RemoteAppId = metadata->RemoteAppId;
 	memcpy(header+1,command->Data, command->DataSize);
 
+	PackStatePresent_T state = PackStatePresent_None;
+	bool exist = hashContain(&layer->MidStorage,&metadata->Mid);
+	if(exist)
+		return FUNC_RESULT_FAILED;
+	hashAdd(&layer->MidStorage,&metadata->Mid, &state);
+
 	LayerCommandStruct_T com = {0};
 	ServiceSendMsgDown_T meta = {0};
 	meta.Destination = metadata->RemoteAddr;
@@ -88,7 +94,7 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	com.MetaData = &meta;
 	com.MetaSize = sizeof(meta);
 	int res = WriteCommand(layer->DownSocket, &com);
-
+	free(header);
 	return res;
 }
 int processConnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){

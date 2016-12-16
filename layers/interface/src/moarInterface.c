@@ -64,7 +64,9 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	CHECK_RESULT(res);
 
 	strncpy( layer->Config.ChannelSocketFilepath, socketInfo.FileName, SOCKET_FILEPATH_SIZE );
+	strncpy( layer->Config.MockitSocketFilepath, ifaceSettings.MockItSocket, SOCKET_FILEPATH_SIZE );
 	strncpy( layer->Config.LogFilepath, ifaceSettings.LogPath, LOG_FILEPATH_SIZE );
+	layer->Config.Address = ifaceSettings.Address;
 
 	result = LogOpen( layer->Config.LogFilepath, &( layer->Config.LogHandle) );
 

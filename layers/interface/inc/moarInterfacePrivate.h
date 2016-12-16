@@ -87,7 +87,8 @@ typedef struct {
 						IsConnectedToChannel,
 						IsConnectedToMockit,
 						IsRunning;
-	SocketFilepath_T	ChannelSocketFilepath;
+	SocketFilepath_T	ChannelSocketFilepath,
+						MockitSocketFilepath;
 	LogFilepath_T 		LogFilepath;
 	LogHandle_T			LogHandle;
 	size_t				BeaconPayloadSize;

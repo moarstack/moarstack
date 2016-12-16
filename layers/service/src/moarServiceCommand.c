@@ -60,3 +60,145 @@ int processMsgStateCommand(void* layerRef, int fd, LayerCommandStruct_T *command
 
 	return FUNC_RESULT_SUCCESS;
 }
+
+int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+	AppStartSendMetadata_T* metadata = (AppStartSendMetadata_T*)command->MetaData;
+
+	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+	if(conFd==NULL)
+		return FUNC_RESULT_FAILED;
+	size_t dataSize = sizeof(ServiceLayerHeader_T)+command->DataSize;
+	ServiceLayerHeader_T* header = malloc(dataSize);
+	header->LocalAppId = conFd->AppId;
+	header->PayloadSize = (ServiceDataSize_T) command->DataSize;
+	header->RemoteAppId = metadata->RemoteAppId;
+	memcpy(header+1,command->Data, command->DataSize);
+
+	PackStatePresent_T state = PackStatePresent_None;
+	bool exist = hashContain(&layer->MidStorage,&metadata->Mid);
+	if(exist)
+		return FUNC_RESULT_FAILED;
+	hashAdd(&layer->MidStorage,&metadata->Mid, &state);
+
+	LayerCommandStruct_T com = {0};
+	ServiceSendMsgDown_T meta = {0};
+	meta.Destination = metadata->RemoteAddr;
+	meta.Mid = metadata->Mid;
+	com.Command = LayerCommandType_Send;
+	com.DataSize = dataSize;
+	com.Data = header;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(meta);
+	int res = WriteCommand(layer->DownSocket, &com);
+	free(header);
+	return res;
+}
+int processConnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+	AppConnectMetadata_T* metadata = (AppConnectMetadata_T*)command->MetaData;
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processBindCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+	AppBindMetadata_T* metadata = (AppBindMetadata_T*)command->MetaData;
+
+	AppBindResult_T result = AppBind_Error;
+
+	AppConection_T* conId = csGetByAppIdPtr(&layer->ConnectionStorage,&metadata->appId);
+	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+	// check
+	if(conFd != NULL)
+		result = AppBind_Error;
+	else if(conId != NULL)
+		result = AppBind_Used;
+	else {
+		// add
+		AppConection_T con = {0};
+		con.fd = fd;
+		con.AppId = metadata->appId;
+		int res = csAdd(&layer->ConnectionStorage, &con);
+		if (FUNC_RESULT_SUCCESS == res)
+			result = AppBind_OK;
+	}
+	// send command
+	LayerCommandStruct_T com = {0};
+	ServiceBindResultMetadata_T meta = {0};
+	meta.BindResult = result;
+	com.Command = LayerCommandType_BindResult;
+	com.DataSize = 0;
+	com.Data = NULL;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(ServiceBindResultMetadata_T);
+	int res = WriteCommand(fd, &com);
+
+	return res;
+}
+int processDisonnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+//	App* metadata = (*)command->MetaData;
+
+	return FUNC_RESULT_SUCCESS;
+}
+
+int processAppMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+	AppMsgStateMetadata_T* metadata = (AppMsgStateMetadata_T*)command->MetaData;
+
+	MessageState_T msgState = MessageState_Unknown;
+	bool exist = hashContain(&layer->MidStorage,&metadata->MsgId);
+	bool remove = false;
+	if(exist) {
+		PackStatePresent_T* state = hashGetPtr(&layer->MidStorage, &metadata->MsgId);
+
+		switch (*state) {
+			case PackStatePresent_None:
+				msgState = MessageState_Sending;
+				break;
+			case PackStatePresent_Sent:
+				msgState = MessageState_Sent;
+				remove = true;
+				break;
+			case PackStatePresent_NotSent:
+				msgState = MessageState_Lost;
+				remove = true;
+				break;
+			case PackStatePresent_Received:
+				msgState = MessageState_Unknown;
+				remove = true;
+				break;
+		}
+	}
+	if(remove)
+		hashRemove(&layer->MidStorage, &metadata->MsgId);
+	// send command
+	LayerCommandStruct_T com = {0};
+	ServiceMsgStateResultMetadata_T meta = {0};
+	meta.MsgId = metadata->MsgId;
+	meta.MsgState = msgState;
+	com.Command = LayerCommandType_MessageStateResult;
+	com.DataSize = 0;
+	com.Data = NULL;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(ServiceMsgStateResultMetadata_T);
+	int res = WriteCommand(fd, &com);
+
+	return res;
+}

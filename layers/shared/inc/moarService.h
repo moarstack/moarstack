@@ -9,11 +9,12 @@
 #include <stdint.h>
 
 typedef uint16_t ServiceDataSize_T;
-// todo add pragme
+#pragma pack(push, 1)
 typedef struct{
 	AppId_T LocalAppId;
 	AppId_T RemoteAppId;
 	ServiceDataSize_T PayloadSize;
 }ServiceLayerHeader_T;
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARSERVICE_H_H

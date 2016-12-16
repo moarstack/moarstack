@@ -80,7 +80,11 @@ int processCloseConnection(ServiceLayer_T* layer, int fd){
 	int shutRes = shutdown( fd, SHUT_RDWR );
 	int closeRes = close( fd );
 
-	//TODO handle disconnection event
+	AppConection_T* con = csGetByFdPtr(&layer->ConnectionStorage, fd);
+	if(NULL != con){
+		int res = csRemove(&layer->ConnectionStorage,con);
+		CHECK_RESULT(res);
+	}
 
 	return FUNC_RESULT_SUCCESS;
 }
@@ -100,11 +104,28 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	layer->UpSocket = params->UpSocketHandler;
 	//add unified handlers
 	//app
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_ConnectApplication, processConnectCommand);
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_DisconnectApplication, processDisonnectCommand);
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_MessageState, processAppMessageStateCommand);
+	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_Bind, processBindCommand);
 	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
 	//presentation
 	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
 	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);
 	layer->PresentationProcessingRules[2] = MakeProcessingRule(LayerCommandType_None, NULL);
+	return res;
+}
+
+int deinitService(ServiceLayer_T* layer){
+	if(NULL == layer)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res;
+	res = csDeinit(&layer->ConnectionStorage);
+	CHECK_RESULT(res);
+	res = hashClear(&layer->MidStorage);
+	CHECK_RESULT(res);
+	res = hashFree(&layer->MidStorage);
 	return res;
 }
 

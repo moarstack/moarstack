@@ -166,9 +166,9 @@ char* concatPath(const char* dir, const char* file){
 	size_t fullPathLen = pathLen+dirLen+2;
 	char* enabledPath = malloc(fullPathLen);
 	char* separator = PATH_SEPARATOR;
-	strncpy(enabledPath, dir, fullPathLen);
-	strncpy(enabledPath+fullPathLen, separator, strlen(separator));
-	strncpy(enabledPath+fullPathLen+1, file, dirLen+1);
+	strncpy(enabledPath, dir, pathLen);
+	strncpy(enabledPath+pathLen, separator, strlen(separator));
+	strncpy(enabledPath+pathLen+1, file, dirLen+1);
 
 	return enabledPath;
 }

@@ -36,7 +36,7 @@ int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T *
 		row = RouteTableGetRelayBest( &( layer->RouteTableSolved ), *dest );
 
 		if( NULL == row )
-			return FUNC_RESULT_FAILED;
+			return FUNC_RESULT_FAILED_NEIGHBORS;
 
 		result = helperRoute2Channel( &( row->Relay ), relay );
 	}

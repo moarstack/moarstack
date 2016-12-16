@@ -4,6 +4,7 @@
 
 #include <moarRouteFinder.h>
 #include <moarRoutingPrivate.h>
+#include <moarRoutingStoredPacket.h>
 
 
 int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop,
@@ -76,58 +77,56 @@ int sendFindersFirst(RoutingLayer_T *layer, RouteAddr_T *dest) {
 
 
 // по пейлоуду предыдущего пакета делаем пейлоуд для следующего
-int getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T prevPayloadSize,
-                                  RouteAddr_T *nextHop, void **nextPacketPayload) {
-    if( NULL == layer || NULL == prevPayload || 0 == prevPayloadSize || NULL == nextHop || NULL ==nextPacketPayload)
-        return FUNC_RESULT_FAILED_ARGUMENT;
+int getNextFinderPayload( RoutingLayer_T * layer, void * oldPayload, PayloadSize_T oldSize, void ** newPayload, PayloadSize_T * newSize ) {
+	RouteInitialPayloadFinder_T	* nextPayload;
+	RouteAddr_T					* newAddress;
+	PayloadSize_T				recCount;
 
-    uint8_t * nextPayload =  malloc(prevPayloadSize + sizeof(RouteAddr_T));
-    if (NULL == nextPayload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	if( NULL == layer || NULL == oldPayload || 0 == oldSize || NULL == newPayload || NULL == newSize )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-    memcpy(nextPayload, prevPayload, prevPayloadSize);
-    *(RouteAddr_T*)(nextPayload + prevPayloadSize) = layer->LocalAddress;
-    *nextPacketPayload =  nextPayload;
-    return FUNC_RESULT_SUCCESS;
+	recCount = ( oldSize - sizeof( RouteInitialPayloadFinder_T ) ) / sizeof( RouteAddr_T );
+	*newSize = ( MaxRouteFinderPacketSize > recCount ? oldSize : sizeof( RouteInitialPayloadFinder_T ) );
+	*newSize += sizeof( RouteAddr_T );
+	nextPayload = malloc( *newSize );
+
+	if( NULL == nextPayload )
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+
+	newAddress = ( RouteAddr_T * )( nextPayload + 1 );
+
+	if( MaxRouteFinderPacketSize > recCount ) {
+		newAddress += recCount;
+		memcpy( nextPayload, oldPayload, oldSize );
+	} else
+		nextPayload->MaxSize = MaxRouteFinderPacketSize;
+
+	*newAddress = layer->LocalAddress;
+	*newPayload = nextPayload;
+
+	return FUNC_RESULT_SUCCESS;
 }
 
+int produceNextRouteFinder( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteStoredPacket_T * newPacket ) {
+	if( NULL == layer || NULL == oldPacket )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket,
-                           RouteAddr_T *nextHop, RouteStoredPacket_T *new_packet) {
+	CHECK_RESULT( midGenerate( &newPacket->InternalId, MoarLayer_Routing ) );
 
-    if( NULL == layer || NULL == prevPacket || NULL == nextHop)
-        return FUNC_RESULT_FAILED_ARGUMENT;
+	newPacket->MessageId = oldPacket->MessageId;
+	newPacket->Source = oldPacket->Source;
+	newPacket->Destination = oldPacket->Destination;
+	newPacket->XTL = oldPacket->XTL;
 
-    midGenerate(&new_packet->InternalId, MoarLayer_Routing);
-    new_packet->MessageId = prevPacket->MessageId;
+	newPacket->NextProcessing = 0;
+	newPacket->PackType = RoutePackType_Finder;
+	newPacket->State = StoredPackState_InProcessing;
+	newPacket->TrysLeft = DEFAULT_ROUTE_TRYS;
 
-    new_packet->Source = layer->LocalAddress;
-    new_packet->Destination = prevPacket->Destination;
-    new_packet->NextProcessing = 0;
-    new_packet->PackType = RoutePackType_Finder;
-    new_packet->State = StoredPackState_InProcessing;
-    new_packet->TrysLeft = DEFAULT_ROUTE_TRYS;
-    new_packet->NextHop = *nextHop;
-    new_packet->XTL = prevPacket->XTL;
+	// todo push finderack back to origin if new chain started
 
-    int recCount = (prevPacket->PayloadSize - sizeof(RouteInitialPayloadFinder_T)) / sizeof(RouteAddr_T); // todo get records count from prev packet as it may vary from packet to packet in different strategies
-    if (MaxRouteFinderPacketSize <= recCount)
-    {
-// todo push finderack back to origin
-        new_packet->PayloadSize = sizeof(RouteInitialPayloadFinder_T);
-        new_packet->Payload = malloc(new_packet->PayloadSize);
-        if (NULL == new_packet->Payload) return FUNC_RESULT_FAILED_MEM_ALLOCATION;
-        RouteInitialPayloadFinder_T* payload = (RouteInitialPayloadFinder_T*)new_packet->Payload;
-        payload->MaxSize = MaxRouteFinderPacketSize;
-    }
-    else {
-        if (FUNC_RESULT_FAILED_MEM_ALLOCATION ==
-            getNextRouteFinderPayload(layer, prevPacket->Payload, prevPacket->PayloadSize,
-                                      nextHop, &new_packet->Payload))
-            return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	CHECK_RESULT( getNextFinderPayload( layer, oldPacket->Payload, oldPacket->PayloadSize, &( newPacket->Payload ), &( newPacket->PayloadSize ) ) );
 
-        new_packet->PayloadSize = prevPacket->PayloadSize + sizeof(RouteAddr_T);
-    }
-
-    return FUNC_RESULT_SUCCESS;
+	return FUNC_RESULT_SUCCESS;
 }
 

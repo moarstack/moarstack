@@ -8,7 +8,9 @@
 #include <moarSettingsBinder.h>
 
 typedef struct{
-	char* LogPath;
+	char	* LogPath,
+			* MockItSocket;
+	int		Address;
 }mockIface;
 
 int makeMockIfaceBinding(SettingsBind_T** binding, int* count);

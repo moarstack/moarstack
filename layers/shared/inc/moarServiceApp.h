@@ -7,7 +7,7 @@
 #include "moarApiCommon.h"
 
 #define APP_READ_ATTEMPTS_COUNT 5
-#define SERVICE_APP_SOCKET_FILE "/tmp/moarService.sock"
+#define SERVICE_APP_SOCKET_FILE "/tmp/moarServiceApi.sock"
 
 typedef struct {
     /* No metadata to send */

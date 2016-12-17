@@ -15,7 +15,6 @@ int moarSocket(MoarDesc_T *MoarDesc) {
         perror("could not open socket");
         return FUNC_RESULT_FAILED_IO;
     }
-    printf("Socket opened\r\n");
     MoarDesc->SocketFd = socketValue;
     //Create command structure
     LayerCommandStruct_T command = {0};
@@ -27,43 +26,22 @@ int moarSocket(MoarDesc_T *MoarDesc) {
     result = WriteCommand(socketValue, &command);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Write command failed");
-        return FUNC_RESULT_FAILED_IO;
+        return result;
     }
-    LayerCommandStruct_T readCommand = {0};
-    int attempts = APP_READ_ATTEMPTS_COUNT;
-    do {
-        result = ReadCommand(socketValue, &readCommand);
-        if (result != FUNC_RESULT_SUCCESS && attempts > 0)
-            sleep(1);
-        attempts--;
-    } while (attempts > 0 && result != FUNC_RESULT_SUCCESS);
-    if (result != FUNC_RESULT_SUCCESS) {
-        perror("No response from service level");
-        return FUNC_RESULT_FAILED_IO;
-    }
-    // process incoming command
-    if (readCommand.Command != LayerCommandType_ConnectApplicationResult) {
-        perror("Invalid incoming command");
-        return FUNC_RESULT_UNEXPECTED_COMMAND;
-    }
-    ServiceConnectResultMetadata_T *metadata = readCommand.MetaData;
-    MoarDesc->SocketFd = socketValue;
-    MoarDesc->MoarFd = metadata->MoarFd;
-    FreeCommand(&readCommand);
     return FUNC_RESULT_SUCCESS;
 }
 
 int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     int result;
-    if (fd.SocketFd < 0 || fd.MoarFd < 0) {
+    if (fd.SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
     LayerCommandStruct_T command = {0};
     AppBindMetadata_T bindMetadata;
-    bindMetadata.MoarFd = fd.MoarFd;
+    //bindMetadata.MoarFd = fd.MoarFd;
     bindMetadata.appId = *appId;
-    command.Command = LayerCommandType_BindApplication;
+    command.Command = LayerCommandType_Bind;
     command.DataSize = NULL;
     command.DataSize = 0;
     command.MetaSize = sizeof(AppBindMetadata_T);
@@ -74,7 +52,6 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
         return FUNC_RESULT_FAILED_IO;
     }
     LayerCommandStruct_T readCommand = {0};
-    printf("Reading command\r\n");
     result = ReadCommand(fd.SocketFd, &readCommand);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Read command failed");
@@ -82,15 +59,27 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     }
     //validation incoming command
     //TODO: Possibly create macro for similar operations like validation or check return code
-    if (readCommand.Command != LayerCommandType_BindApplicationResult) {
+    if (readCommand.Command != LayerCommandType_BindResult) {
         perror("Invalid incoming command");
+        printf("expected %d; found %d\r\n", LayerCommandType_BindResult, readCommand.Command);
         return FUNC_RESULT_UNEXPECTED_COMMAND;
     }
     ServiceBindResultMetadata_T *bindResultMetadata = readCommand.MetaData;
-    result =  bindResultMetadata->BindResult;
-    printf("ret code = %d\r\n", bindResultMetadata->BindResult);
+    switch (bindResultMetadata->BindResult) {
+        case AppBind_Error:
+            result = FUNC_RESULT_FAILED;
+            break;
+        case AppBind_OK:
+            result = FUNC_RESULT_SUCCESS;
+            break;
+        case AppBind_Used:
+            result = FUNC_RESULT_APPID_INUSE;
+            break;
+        default:
+            result = FUNC_RESULT_FAILED;
+    }
     FreeCommand(&readCommand);
-    return result;//Bind Result
+    return result;
 }
 
 ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {

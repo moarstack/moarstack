@@ -196,7 +196,8 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 			res = bindingSet_ByteArray(ptr, val, sizeof(ChannelAddr_T));
 			break;
 		case FieldType_IfaceAddr_T:
-			res = bindingSet_ByteArray(ptr, val, sizeof(IfaceAddr_T));
+			//res = bindingSet_ByteArray(ptr, val, sizeof(IfaceAddr_T));
+			res = bindingSet_int(ptr, val);
 			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;

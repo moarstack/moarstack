@@ -11,13 +11,13 @@
 #define FUNC_RESULT_FAILED_IO				-3
 #define FUNC_RESULT_FAILED_MEM_ALLOCATION	-4
 #define FUNC_RESULT_FAILED_NEIGHBORS		-5
-#define FUNC_RESULT_UNEXPECTED_COMMAND      -6
-#define FUNC_RESULT_APPID_INUSE             -7
+#define FUNC_RESULT_FAILED_UNEXPECTED_COMMAND      -6
+#define FUNC_RESULT_FAILED_APPID_INUSE             -7
 
-#define FUNC_RESULT_MINIMUM_VALUE			FUNC_RESULT_FAILED_NEIGHBORS // keep it minimal
+#define FUNC_RESULT_MINIMUM_VALUE	        FUNC_RESULT_FAILED_APPID_INUSE  // keep it minimal
 typedef int	FUNC_RESULT;
 
-#define CHECK_RESULT(r)			do{ if( FUNC_RESULT_SUCCESS != r ) return r; }while( 0 )
+#define CHECK_RESULT(r)			do{ int __res = (r); if( FUNC_RESULT_SUCCESS != __res ) return __res; }while( 0 )
 
 #endif //MOARSTACK_FUNCRESULTS_H
 

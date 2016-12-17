@@ -62,7 +62,7 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     if (readCommand.Command != LayerCommandType_BindResult) {
         perror("Invalid incoming command");
         printf("expected %d; found %d\r\n", LayerCommandType_BindResult, readCommand.Command);
-        return FUNC_RESULT_UNEXPECTED_COMMAND;
+        return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
     }
     ServiceBindResultMetadata_T *bindResultMetadata = readCommand.MetaData;
     switch (bindResultMetadata->BindResult) {
@@ -73,7 +73,7 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
             result = FUNC_RESULT_SUCCESS;
             break;
         case AppBind_Used:
-            result = FUNC_RESULT_APPID_INUSE;
+            result = FUNC_RESULT_FAILED_APPID_INUSE;
             break;
         default:
             result = FUNC_RESULT_FAILED;

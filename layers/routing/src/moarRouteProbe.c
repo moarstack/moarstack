@@ -56,11 +56,22 @@ RouteAddr_T * getProbePayloadAddress( void * probePayload, RouteProbeDepth_T ind
 	return ( RouteAddr_T * )( start + 1 ) + index;
 }
 
-int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next, RouteStoredPacket_T * newPacket ) {
-	RoutePayloadProbe_T	* newPayload,
-						* oldPayload;
-	RouteProbeDepth_T	newDepthCurrent;
-	int 				result;
+bool probeIsFinished( RouteStoredPacket_T * probe ) {
+	RoutePayloadProbe_T	* payload;
+
+	if( NULL == probe || NULL == probe->Payload || sizeof( RoutePayloadProbe_T ) > probe->PayloadSize )
+		return true;
+
+	payload = ( RoutePayloadProbe_T * )probe->Payload;
+	return payload->DepthCurrent >= payload->DepthMax;
+}
+
+int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteAddr_T * next,
+					  RouteStoredPacket_T * newPacket ) {
+	RoutePayloadProbe_T * newPayload,
+			* oldPayload;
+	RouteProbeDepth_T newDepthCurrent;
+	int result;
 
 	if( NULL == layer || NULL == oldPacket || NULL == next || NULL == newPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -86,12 +97,12 @@ int produceProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, R
 	newPayload->DepthMax = oldPayload->DepthMax;
 	newPayload->DepthCurrent = newDepthCurrent;
 	memcpy( getProbePayloadAddress( newPayload, 0 ),
-            getProbePayloadAddress( oldPayload, 0 ),
-            oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
+			getProbePayloadAddress( oldPayload, 0 ),
+			oldPayload->DepthCurrent * sizeof( RouteAddr_T ) );
 	memcpy( getProbePayloadAddress( newPayload,
-                                    oldPayload->DepthCurrent ),
-            &( layer->LocalAddress ),
-            sizeof( RouteAddr_T ) );
+									oldPayload->DepthCurrent ),
+			&( layer->LocalAddress ),
+			sizeof( RouteAddr_T ) );
 	newPacket->PackType = RoutePackType_Probe;
 	newPacket->Source = oldPacket->Source;
 	newPacket->Destination = *next;
@@ -176,7 +187,7 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	if( NULL == layer || NULL == oldPacket )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	if( 0 == layer->NeighborsStorage.Count )
+	if( 0 == layer->NeighborsStorage.Count || probeIsFinished( oldPacket ) )
 		return FUNC_RESULT_SUCCESS;
 
 	layer->NextProbeSentTime = timeAddInterval( timeGetCurrent(), DEFAULT_PROBE_SEND_PERIOD );
@@ -214,35 +225,18 @@ int sendProbeNext( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 	return result;
 }
 
+int processProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	RouteAddr_T			* relay;
+	RoutePayloadProbe_T	* payload;
+	RouteProbeDepth_T	count;
 
-int processProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ){
-    FUNC_RESULT result;
-
-    if (NULL == layer || NULL == packet){
+    if( NULL == layer || NULL == packet || NULL == packet->Payload || sizeof( RoutePayloadProbe_T ) > packet->PayloadSize )
         return FUNC_RESULT_FAILED_ARGUMENT;
-    }
 
-    RoutePayloadProbe_T* payload = packet->Payload;
-
-    if(NULL == payload){
-        return FUNC_RESULT_FAILED;
-    }
-
-    RouteAddr_T* relay = getProbePayloadAddress(payload,payload->DepthCurrent - 1);
-    if(NULL == relay){
-        return FUNC_RESULT_FAILED;
-    }
-
-    for (int i = 0; i < payload->DepthCurrent; ++i) {
-        RouteAddr_T* addr = getProbePayloadAddress(payload,i);
-        if(NULL == addr){
-            return FUNC_RESULT_FAILED;
-        }
-        result = (FUNC_RESULT)helperUpdateRoute(layer, addr, relay);
-        if (FUNC_RESULT_SUCCESS != result){
-            return result;
-        }
-    }
+	payload = ( RoutePayloadProbe_T * )packet->Payload;
+	count = payload->DepthCurrent - ( RouteProbeDepth_T )1;
+    relay = getProbePayloadAddress( payload, count );
+	CHECK_RESULT( helperUpdateRouteAddrChainBefore( layer, relay, count ) );
 
     return FUNC_RESULT_SUCCESS;
 }

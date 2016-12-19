@@ -21,11 +21,14 @@ typedef uint32_t	Crc_T; // type for values of CRC calculating result
 typedef enum {
 	LayerCommandType_None,
     LayerCommandType_Send,
+	LayerCommandType_SendWR,
+	LayerCommandType_SendResult,
 	LayerCommandType_Receive,
     LayerCommandType_NewNeighbor,
     LayerCommandType_LostNeighbor,
 	LayerCommandType_UpdateNeighbor,
 	LayerCommandType_MessageState,
+	LayerCommandType_MessageStateResult,
 	LayerCommandType_RegisterInterface,
 	LayerCommandType_RegisterInterfaceResult,
 	LayerCommandType_UnregisterInterface,
@@ -33,7 +36,6 @@ typedef enum {
 	LayerCommandType_ConnectApplicationResult,
 	LayerCommandType_Bind,
 	LayerCommandType_BindResult,
-	LayerCommandType_SendResult,
 	LayerCommandType_DisconnectApplication,
 	LayerCommandType_InterfaceState,
 	LayerCommandType_UpdateBeaconPayload,
@@ -71,9 +73,7 @@ typedef struct{
 
 #pragma pack(pop)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 // function to use if bytes order needs to be changed
 // do nothing if size = 0 or input = NULL
@@ -93,8 +93,8 @@ extern int FreeCommand( LayerCommandStruct_T * command );
 
 extern int ProcessCommand(void* layer, int fd, uint32_t event, uint32_t eventMask, CommandProcessingRule_T* rules);
 extern CommandProcessingRule_T MakeProcessingRule(LayerCommandType_T type, CommandProcessor_T rule);
-#ifdef __cplusplus
-}
-#endif
+extern char * mStrDup( const char * source );
+
+__END_DECLS
 
 #endif //MOARSTACK_MOARCOMMONS_H

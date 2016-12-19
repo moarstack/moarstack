@@ -126,7 +126,7 @@ RemoteInterface_T* neighborIfaceFind(ChannelNeighbor_T* neighbor){
 		return NULL;
 	hashIterator_T iterator = {0};
 	hashIterator(&(neighbor->Interfaces),&iterator);
-	while(!hashIteratorIsLast(&iterator)){
+	while(!hashIteratorEnded( &iterator )){
 		RemoteInterface_T* iface = (RemoteInterface_T*)hashIteratorData(&iterator);
 		if(NULL != iface->BridgeInterface && iface->BridgeInterface->Ready)
 			return iface;
@@ -251,12 +251,12 @@ int neighborsRemoveAssociated(ChannelLayer_T* layer, int localSocket){
 
 	hashIterator_T neighborsIterator = {0};
 	hashIterator(&(layer->Neighbors), &neighborsIterator);
-	while(!hashIteratorIsLast(&neighborsIterator)){
+	while(!hashIteratorEnded( &neighborsIterator )){
 		ChannelNeighbor_T* neighbor = (ChannelNeighbor_T*)hashIteratorData(&neighborsIterator);
 		//foreach interface
 		hashIterator_T interfaceIterator = {0};
 		hashIterator(&(neighbor->Interfaces), &interfaceIterator);
-		while(!hashIteratorIsLast(&interfaceIterator)){
+		while(!hashIteratorEnded( &interfaceIterator )){
 			RemoteInterface_T* remoteInterface = (RemoteInterface_T*)hashIteratorData(&interfaceIterator);
 			//check socket
 			if(NULL != remoteInterface && NULL != remoteInterface->BridgeInterface
@@ -320,7 +320,7 @@ int neighborNonResProcess(ChannelLayer_T* layer){
 	moarTime_T currentTime = timeGetCurrent();
 	hashIterator_T iterator = {0};
 	hashIterator(&(layer->NeighborsNonResolved), &iterator);
-	while(!hashIteratorIsLast(&iterator)){
+	while(!hashIteratorEnded( &iterator )){
 		NonResolvedNeighbor_T* neighbor = (NonResolvedNeighbor_T*)hashIteratorData(&iterator);
 		int compRes = timeCompare(currentTime, neighbor->NextProcessingTime);
 		if(compRes >= 0){

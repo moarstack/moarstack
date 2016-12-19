@@ -46,7 +46,7 @@ int channelHelloUpdateInterface(ChannelLayer_T* layer){
 	//foreach interface
 	hashIterator_T iterator = {0};
 	hashIterator(&(layer->Interfaces), &iterator);
-	while(!hashIteratorIsLast(&iterator)){
+	while(!hashIteratorEnded( &iterator )){
 		InterfaceDescriptor_T* interface = (InterfaceDescriptor_T*)hashIteratorData(&iterator);
 		//send
 		int res = WriteCommand(interface->Socket, &updateCommand);

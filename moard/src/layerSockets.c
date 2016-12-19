@@ -36,14 +36,10 @@ int SocketsPrepare( const SocketFilepath_T ifaceSocketFilePath, const SocketFile
 	socketValues = ( int * )calloc( socketsCount, sizeof( int ) );
 
 	result = SocketOpenFile( ifaceSocketFilePath, true, socketValues ); // channel down socket
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = SocketOpenFile( serviceSocketFilePath, true, socketValues + socketsCount - 1 ); // service up socket
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+	CHECK_RESULT( result );
 
 	result = 0;
 

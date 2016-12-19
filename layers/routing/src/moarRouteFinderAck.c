@@ -91,8 +91,10 @@ int sendFack( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
 
 	result = produceFack( layer, oldPacket, &newPacket ); // create finder ack
 
-	if( FUNC_RESULT_SUCCESS != result )
+	if( FUNC_RESULT_SUCCESS != result ) {
 		clearStoredPacket( &newPacket );
+		return result;
+	}
 
 	result = psAdd( &( layer->PacketStorage ), &newPacket ); // add finder ack with procesing state
 

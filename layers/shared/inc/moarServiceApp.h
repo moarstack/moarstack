@@ -56,7 +56,15 @@ typedef struct {
     int MoarFd;
     AppId_T RemoteAppId;
     RouteAddr_T RemoteAddr;
+	MessageId_T Mid;
 } AppStartSendMetadata_T;
+
+/* Command sent by application to push packet to Service level */
+typedef struct {
+	int MoarFd;
+	AppId_T RemoteAppId;
+	RouteAddr_T RemoteAddr;
+} AppSendMetadata_T;
 
 /* Command received by application from moarSendTo. It does not
  * report message status but return messageId and return code */

@@ -33,8 +33,8 @@ int sendFindersFirst( RoutingLayer_T * layer, RouteAddr_T * dest );
 int produceInitialRouteFinder(RoutingLayer_T *layer, RouteAddr_T *destination, RouteAddr_T *next_hop,
                               RouteStoredPacket_T *ptr);
 
-int produceNextRouteFinder(RoutingLayer_T *layer, RouteStoredPacket_T *prevPacket,  RouteAddr_T *nextHop, RouteStoredPacket_T* next_packet);
+int produceNextRouteFinder( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket, RouteStoredPacket_T * newPacket );
 
-int getNextRouteFinderPayload(RoutingLayer_T *layer, uint8_t *prevPayload, PayloadSize_T  prevPayloadSize, RouteAddr_T *nextHop, void** nextPacketPayload);
+int getNextFinderPayload( RoutingLayer_T * layer, void * oldPayload, PayloadSize_T oldSize, void ** newPayload, PayloadSize_T * newSize );
 
 #endif //MOARSTACK_MOARROUTEFINDER_H

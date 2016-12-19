@@ -11,6 +11,8 @@
 #include <sys/epoll.h>
 #include <moarTime.h>
 #include <moarCommons.h>
+#include <moarServiceConStore.h>
+#include <moarService.h>
 
 #define EPOLL_APP_SOCKET_EVENTS 			EPOLLIN
 #define EPOLL_APP_EVENTS 					EPOLLIN
@@ -21,6 +23,8 @@
 #define EPOLL_EVENTS_COUNT					(10)
 #define PRESENTATION_PROCESSING_RULES_COUNT	3
 #define APP_PROCESSING_RULES_COUNT			1
+
+#define MID_CACH_TABLE_SIZE					100
 
 typedef struct{
 	int 					UpSocket;
@@ -34,6 +38,9 @@ typedef struct{
 	//
 	CommandProcessingRule_T PresentationProcessingRules[PRESENTATION_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T AppProcessingRules[APP_PROCESSING_RULES_COUNT];
+	//
+	AppConnectionStorage_T  ConnectionStorage;
+	hashTable_T				MidStorage;
 }ServiceLayer_T;
 
 int processCloseConnection(ServiceLayer_T* layer, int fd);

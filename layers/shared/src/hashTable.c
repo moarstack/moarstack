@@ -271,7 +271,7 @@ int hashIterator(hashTable_T* table, hashIterator_T* iterator){
 	iterator->NextItem = iterator->Item!=NULL ? iterator->Item->ListPrev : NULL;
 	return FUNC_RESULT_SUCCESS;
 }
-bool hashIteratorIsLast(hashIterator_T *item){
+bool hashIteratorEnded( hashIterator_T * item ){
 	if(NULL == item)
 		return false;
 	return (NULL == item->Item);
@@ -286,7 +286,7 @@ int hashIteratorNext(hashIterator_T* item){
 		do {
 			item->Item = item->NextItem;
 			item->NextItem = item->NextItem!=NULL ? item->NextItem->Next : NULL;
-		}while(!hashIteratorIsLast(item) &&
+		}while(!hashIteratorEnded( item ) &&
 				!checkEquality(item->Item, item->HashValue, item->Key, item->KeySize, item->EqualFunction));
 		return FUNC_RESULT_SUCCESS;
 

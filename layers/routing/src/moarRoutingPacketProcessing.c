@@ -137,58 +137,66 @@ int processReceivedFinderAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T 
 	return result;
 }
 
-int processReceivedFinderPacket(RoutingLayer_T* layer, RouteStoredPacket_T* packet) {
-	if (NULL == layer)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (NULL == packet)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	if (RoutePackType_Finder != packet->PackType)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-	int res = FUNC_RESULT_FAILED;
-	// todo process content
-	// if destination
-	if(routeAddrEqualPtr(&layer->LocalAddress, &packet->Destination)) {
-		res = sendFack( layer, packet );
-		CHECK_RESULT( res );
-	}else if( 0 < packet->XTL ) {// else if will be sent according to XTL
-		//// todo create new packet
-		//// todo try to send
-		// also multiple stage finders process here
-		ChannelAddr_T relayAddrChannel;
-		RouteAddr_T   relayAddr;
-		int result = helperFindRelay(layer, &(packet->Destination), &relayAddrChannel);
-		if (FUNC_RESULT_SUCCESS == result){
-			helperChannel2Route(&relayAddrChannel, &relayAddr);
-            ProduceAndSendFinderPacketFurther(layer, packet, &relayAddr);
+int sendFinderFurther( RoutingLayer_T * layer, RouteStoredPacket_T * oldPacket ) {
+	RouteStoredPacket_T	newPacket;
+	int					result;
+
+	CHECK_RESULT( produceNextRouteFinder( layer, oldPacket, &newPacket ) );
+	result = helperFindRelay( layer, &( newPacket.Destination ), &( newPacket.NextHop ) );
+
+	if( FUNC_RESULT_SUCCESS == result )
+		result = sendPacketToChannel( layer, &newPacket );
+	else if( FUNC_RESULT_FAILED_NEIGHBORS == result ) {
+		RoutingNeighborInfo_T	* neInfo;
+		hashIterator_T			iterator;
+		int						count = 0;
+
+		result = hashIterator( &( layer->NeighborsStorage.Storage ), &iterator );
+
+		if( FUNC_RESULT_SUCCESS == result ) {
+			while( !hashIteratorEnded( &iterator ) ) {
+				neInfo = hashIteratorData( &iterator );
+				result = helperRoute2Channel( &( neInfo->Address ), &( newPacket.NextHop ) );
+
+				if( FUNC_RESULT_SUCCESS == result )
+					result = sendPacketToChannel( layer, &newPacket );
+
+				if( FUNC_RESULT_SUCCESS == result )
+					count++;
+
+				result = hashIteratorNext( &iterator );
+
+				if( FUNC_RESULT_SUCCESS != result )
+					break;
+			}
+
+			result = ( 0 < count ? FUNC_RESULT_SUCCESS : FUNC_RESULT_FAILED );
 		}
-        else{
-            hashIterator_T iterator;
-            hashIterator(&(layer->NeighborsStorage.Storage), &iterator);
-
-            while (!hashIteratorIsLast(&iterator)){
-                RouteAddr_T* neighbor_data = (RouteAddr_T *)hashIteratorData(&iterator);
-                ProduceAndSendFinderPacketFurther(layer, packet, neighbor_data);
-            }
-
-        }
 	}
-	// dispose packet
-	res = psRemove(&layer->PacketStorage, packet);
-	return res;
+
+	CHECK_RESULT( clearStoredPacket( &newPacket ) );
+	return result;
 }
 
-int ProduceAndSendFinderPacketFurther(RoutingLayer_T *layer, RouteStoredPacket_T *packet, RouteAddr_T *next){
-    RouteStoredPacket_T new_packet = {0};
-    int result = produceNextRouteFinder(layer, packet, next, &new_packet);
-    if(FUNC_RESULT_SUCCESS == result){
-        result = sendPacketToChannel(layer, &new_packet);
-        clearStoredPacket(&new_packet);
-        return result;
-    }
+int processReceivedFinderPacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
+	int result;
 
-    return FUNC_RESULT_FAILED;
-}
+	if( NULL == layer || NULL == packet || RoutePackType_Finder != packet->PackType || 0 == packet->PayloadSize ||
+		NULL == packet->Payload )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	// todo process content
+
+	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) // if destination
+		result = sendFack( layer, packet );
+	else if( 0 < packet->XTL ) // else if will be sent according to XTL
+		result = sendFinderFurther( layer, packet );
+	else
+		result = FUNC_RESULT_SUCCESS; // packet disposing due to XTL, its normal
+
+	CHECK_RESULT( psRemove( &( layer->PacketStorage ), packet ) ); // dispose packet
+	return result;
+	}
 
 int processReceivedProbePacket( RoutingLayer_T * layer, RouteStoredPacket_T * packet ) {
 	int result;

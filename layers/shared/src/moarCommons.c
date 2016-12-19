@@ -251,3 +251,13 @@ CommandProcessingRule_T MakeProcessingRule(LayerCommandType_T type, CommandProce
 	processingRule.CommandType = type;
 	return processingRule;
 }
+
+char * mStrDup( const char * source ) {
+	size_t	len = strlen( source );
+	char	* temp = calloc( 1, len + 1 );
+
+	if( NULL != temp )
+		strncpy( temp, source, len );
+
+	return temp;
+}

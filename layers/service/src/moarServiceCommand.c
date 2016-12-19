@@ -11,6 +11,36 @@
 #include <moarServicePrivate.h>
 #include <moarServiceConStore.h>
 
+int pushSendToPresentation(ServiceLayer_T* layer, void* data, ssize_t dataSize,
+						   MessageId_T* mid, RouteAddr_T* dest, AppId_T* srcAppId, AppId_T* destAppId){
+	if(NULL == layer || NULL == data || 0 == dataSize || NULL == mid || NULL == dest || NULL == destAppId)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	PackStatePresent_T state = PackStatePresent_None;
+	hashAdd(&layer->MidStorage,mid, &state);
+
+
+	size_t dataSizeFull = sizeof(ServiceLayerHeader_T)+dataSize;
+	ServiceLayerHeader_T* header = malloc(dataSizeFull);
+	header->LocalAppId = *srcAppId;
+	header->PayloadSize = (ServiceDataSize_T) dataSize;
+	header->RemoteAppId = *destAppId;
+	memcpy(header+1,data, dataSize);
+
+	LayerCommandStruct_T com = {0};
+	ServiceSendMsgDown_T meta = {0};
+	meta.Destination = *dest;
+	meta.Mid = *mid;
+	com.Command = LayerCommandType_Send;
+	com.DataSize = dataSizeFull;
+	com.Data = header;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(meta);
+	int res = WriteCommand(layer->DownSocket, &com);
+	free(header);
+	return res;
+}
+
 int processReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(NULL == layerRef || fd <= 0 || NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -71,32 +101,55 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
 	if(conFd==NULL)
 		return FUNC_RESULT_FAILED;
-	size_t dataSize = sizeof(ServiceLayerHeader_T)+command->DataSize;
-	ServiceLayerHeader_T* header = malloc(dataSize);
-	header->LocalAppId = conFd->AppId;
-	header->PayloadSize = (ServiceDataSize_T) command->DataSize;
-	header->RemoteAppId = metadata->RemoteAppId;
-	memcpy(header+1,command->Data, command->DataSize);
 
-	PackStatePresent_T state = PackStatePresent_None;
 	bool exist = hashContain(&layer->MidStorage,&metadata->Mid);
 	if(exist)
 		return FUNC_RESULT_FAILED;
-	hashAdd(&layer->MidStorage,&metadata->Mid, &state);
 
-	LayerCommandStruct_T com = {0};
-	ServiceSendMsgDown_T meta = {0};
-	meta.Destination = metadata->RemoteAddr;
-	meta.Mid = metadata->Mid;
-	com.Command = LayerCommandType_Send;
-	com.DataSize = dataSize;
-	com.Data = header;
-	com.MetaData = &meta;
-	com.MetaSize = sizeof(meta);
-	int res = WriteCommand(layer->DownSocket, &com);
-	free(header);
+	int res = pushSendToPresentation(layer, command->Data, command->DataSize,
+									 &metadata->Mid, &metadata->RemoteAddr, &conFd->AppId, &metadata->RemoteAppId);
 	return res;
 }
+
+int processSendWRCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+	AppSendMetadata_T* metadata = (AppSendMetadata_T*)command->MetaData;
+
+	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+	if(conFd==NULL)
+		return FUNC_RESULT_FAILED;
+	int res = FUNC_RESULT_FAILED;
+
+	// build uniq mid
+	MessageId_T mid;
+	do{
+		res = midGenerate(&mid, MoarLayer_Service);
+		CHECK_RESULT(res);
+	}while(hashContain(&layer->MidStorage,&mid));
+
+	res = pushSendToPresentation(layer, command->Data, command->DataSize,
+									 &mid, &metadata->RemoteAddr, &conFd->AppId, &metadata->RemoteAppId);
+
+	//send response
+	LayerCommandStruct_T com = {0};
+
+	ServiceSendResultMetadata_T meta = {0};
+	meta.MsgId = mid;
+	meta.SendResult = (FUNC_RESULT_SUCCESS == res)?AppSend_OK:AppSend_Failure;
+
+	com.Command = LayerCommandType_SendResult;
+	com.DataSize = 0;
+	com.Data = NULL;
+	com.MetaData = &meta;
+	com.MetaSize = sizeof(meta);
+	res = WriteCommand(fd, &com);
+
+	return res;
+}
+
 int processConnectCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(NULL == layerRef || fd <= 0 || NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;

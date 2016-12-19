@@ -3,12 +3,9 @@
 
 #include "moarApiCommon.h"
 
-#define APP_READ_ATTEMPTS_COUNT 5
-#define SERVICE_APP_SOCKET_FILE "/tmp/moarService.sock"
-
 __BEGIN_DECLS
 
-extern MoarDesc_T moarSocket(void);
+extern int moarSocket(MoarDesc_T *fd);
 
 extern int moarBind(MoarDesc_T fd, const AppId_T *appId);
 

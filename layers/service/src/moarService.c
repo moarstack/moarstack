@@ -105,12 +105,12 @@ int initService(ServiceLayer_T* layer, MoarLayerStartupParams_T* params){
 	//add unified handlers
 	//app
 	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_SendWR, processSendWRCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_ConnectApplication, processConnectCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_DisconnectApplication, processDisonnectCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_MessageState, processAppMessageStateCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_Bind, processBindCommand);
-	layer->AppProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
+	layer->AppProcessingRules[1] = MakeProcessingRule(LayerCommandType_SendWR, processSendWRCommand);
+	layer->AppProcessingRules[2] = MakeProcessingRule(LayerCommandType_ConnectApplication, processConnectCommand);
+	layer->AppProcessingRules[3] = MakeProcessingRule(LayerCommandType_DisconnectApplication, processDisonnectCommand);
+	layer->AppProcessingRules[4] = MakeProcessingRule(LayerCommandType_MessageState, processAppMessageStateCommand);
+	layer->AppProcessingRules[5] = MakeProcessingRule(LayerCommandType_Bind, processBindCommand);
+	layer->AppProcessingRules[6] = MakeProcessingRule(LayerCommandType_None, NULL);
 	//presentation
 	layer->PresentationProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
 	layer->PresentationProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);

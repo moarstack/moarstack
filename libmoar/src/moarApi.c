@@ -42,7 +42,7 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     //bindMetadata.MoarFd = fd.MoarFd;
     bindMetadata.appId = *appId;
     command.Command = LayerCommandType_Bind;
-    command.DataSize = NULL;
+    command.Data = NULL;
     command.DataSize = 0;
     command.MetaSize = sizeof(AppBindMetadata_T);
     command.MetaData = &bindMetadata;
@@ -58,10 +58,9 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
         return FUNC_RESULT_FAILED_IO;
     }
     //validation incoming command
-    //TODO: Possibly create macro for similar operations like validation or check return code
     if (readCommand.Command != LayerCommandType_BindResult) {
         perror("Invalid incoming command");
-        printf("expected %d; found %d\r\n", LayerCommandType_BindResult, readCommand.Command);
+        FreeCommand(&readCommand);
         return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
     }
     ServiceBindResultMetadata_T *bindResultMetadata = readCommand.MetaData;

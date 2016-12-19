@@ -33,6 +33,7 @@ typedef enum {
 	LayerCommandType_ConnectApplicationResult,
 	LayerCommandType_Bind,
 	LayerCommandType_BindResult,
+	LayerCommandType_SendResult,
 	LayerCommandType_DisconnectApplication,
 	LayerCommandType_InterfaceState,
 	LayerCommandType_UpdateBeaconPayload,

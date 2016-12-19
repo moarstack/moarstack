@@ -9,27 +9,28 @@ int clearCommand( IfaceState_T * layer ) {
 	return FreeCommand( &( layer->Memory.Command ) );
 }
 
-int processCommandIface( IfaceState_T * layer, LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {
-	static size_t	sizes[ LayerCommandType_TypesCount ] = { 0,	// LayerCommandType_None
-															  0,	// LayerCommandType_Send
-															  IFACE_RECEIVE_METADATA_SIZE,	// LayerCommandType_Receive
-															  IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_NewNeighbor
-															  IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_LostNeighbor
-															  IFACE_NEIGHBOR_METADATA_SIZE,	// LayerCommandType_UpdateNeighbor
-															  IFACE_PACK_STATE_METADATA_SIZE,	// LayerCommandType_MessageState
-															  IFACE_REGISTER_METADATA_SIZE,	// LayerCommandType_RegisterInterface
-															  0,	// LayerCommandType_RegisterInterfaceResult
-															  IFACE_UNREGISTER_METADATA_SIZE,	// LayerCommandType_UnregisterInterface
-															  0,	// LayerCommandType_ConnectApplication
-															  0,	// LayerCommandType_ConnectApplicationResult
-															  0,	// LayerCommandType_DisconnectApplication
-															  IFACE_MODE_STATE_METADATA_SIZE,	// LayerCommandType_InterfaceState
-															  0	// LayerCommandType_UpdateBeaconPayload
-	};
+size_t commandMetaSize( LayerCommandType_T type ) {
+	size_t	size;
 
+	switch( type ) {
+		case LayerCommandType_Receive : size = IFACE_RECEIVE_METADATA_SIZE; break;
+		case LayerCommandType_NewNeighbor :
+		case LayerCommandType_LostNeighbor :
+		case LayerCommandType_UpdateNeighbor : size = IFACE_NEIGHBOR_METADATA_SIZE; break;
+		case LayerCommandType_MessageState : size = IFACE_PACK_STATE_METADATA_SIZE; break;
+		case LayerCommandType_RegisterInterface : size = IFACE_REGISTER_METADATA_SIZE; break;
+		case LayerCommandType_UnregisterInterface : size = IFACE_UNREGISTER_METADATA_SIZE; break;
+		case LayerCommandType_InterfaceState : size = IFACE_MODE_STATE_METADATA_SIZE; break;
+		default : size = 0;
+	}
+
+	return size;
+}
+
+int processCommandIface( IfaceState_T * layer, LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {
 	clearCommand( layer );
 	layer->Memory.Command.Command = commandType;
-	layer->Memory.Command.MetaSize = sizes[ commandType ];
+	layer->Memory.Command.MetaSize = commandMetaSize( commandType );
 	layer->Memory.Command.MetaData = metaData;
 	layer->Memory.Command.DataSize = dataSize;
 	layer->Memory.Command.Data = data;

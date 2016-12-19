@@ -40,7 +40,7 @@ typedef struct{
 
 
 Queue_T layersRunning = {0};
-
+int layersCount[MoarLayer_LayersCount] = {0};
 
 void signalHandler(int signo){
     if(SIGINT == signo){
@@ -127,7 +127,7 @@ int LogWorkIllustration( void ) {
 int initCliArgs(MoardCliArgs_T* cliArgs){
 	if(NULL == cliArgs)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	cliArgs->ConfigFile = CONFIG_FILE;
+	cliArgs->ConfigFile = mStrDup(CONFIG_FILE);
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -193,14 +193,25 @@ int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
 
 				MoarLibrary_T library = {0};
 				int res = loadLayer(&library, fullName, moardConfig, layerConfig);
-
 				if (FUNC_RESULT_SUCCESS == res) {
-					printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
-						   library.Info.TargetMoarApiVersion);
-					// start layer
-					res = runLayer(&library, layerConfig);
-					if(FUNC_RESULT_SUCCESS == res)
-						queueEnqueue(&layersRunning, &library);
+
+					if((layersCount[library.Info.LayerType] == 0 && library.Info.LayerType != MoarLayer_Interface) ||
+							(library.Info.LayerType == MoarLayer_Interface)) {
+
+						printf("%s by %s loaded, %d\n", library.Info.LibraryName, library.Info.Author,
+							   library.Info.TargetMoarApiVersion);
+						// start layer
+						res = runLayer(&library, layerConfig);
+						if (FUNC_RESULT_SUCCESS == res) {
+							layersCount[library.Info.LayerType]++;
+							queueEnqueue(&layersRunning, &library);
+						}
+					}
+					else {
+						printf("%s by %s ignored, same layer type was already loaded\n", library.Info.LibraryName,
+							   library.Info.Author);
+						closeLibrary(&library);
+					}
 				}
 				else
 					printf("%s load failed\n", fullName);
@@ -229,6 +240,12 @@ int stopAllLayers() {
             printf("library %s closed\n",lib.Filename);
         else
             printf("close %s failed\n",lib.Filename);
+	}
+}
+bool validateLayersCount(){
+	for(int i= MoarLayer_Interface; i<MoarLayer_LayersCount; i++){
+		if(layersCount[i]<=0)
+			return false;
 	}
 }
 
@@ -268,10 +285,16 @@ int main(int argc, char** argv)
 
 	free(layersConfDirName);
 
-    pause();
+	int returnCode = 0;
+	if(validateLayersCount())
+    	pause();
+	else {
+		printf("Not all needed layers was loaded\n");
+		returnCode = 1;
+	}
 
 	stopAllLayers();
 
 	queueDeinit(&layersRunning);
-    return 0;
+    return returnCode;
 }

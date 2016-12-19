@@ -65,9 +65,10 @@ int csAdd(AppConnectionStorage_T* storage, AppConection_T* connection){
 int csRemove(AppConnectionStorage_T* storage, AppConection_T* connection){
 	if(NULL == storage || NULL == connection)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+	AppId_T id = connection->AppId;
 	int res = hashRemove(&storage->fdTable, &connection->fd);
 	CHECK_RESULT(res);
-	res = hashRemove(&storage->appIdTable, &connection->AppId);
+	res = hashRemove(&storage->appIdTable, &id);
 	storage->Count = storage->fdTable.Count;
 	return res;
 }

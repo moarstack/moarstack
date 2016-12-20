@@ -107,7 +107,11 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     }
     // Read send status
     LayerCommandStruct_T readCommand = {0};
-    ReadCommand(fd.SocketFd, &readCommand);
+    result = ReadCommand(fd.SocketFd, &readCommand);
+    if (result != FUNC_RESULT_SUCCESS) {
+        perror("Read command failed");
+        return result;
+    }
     if (readCommand.Command != LayerCommandType_SendResult) {
         perror("Invalid incoming command");
         FreeCommand(&readCommand);

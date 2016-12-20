@@ -81,6 +81,36 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     return result;
 }
 
+/* Traditional receive function. Places data to msg limiting by size len */
+ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
+#ifndef MIN
+#define MIN(x,y) (((x)>(y))?(y):(x))
+#endif
+    int result;
+    if (fd.SocketFd < 0) {
+        perror("Invalid socket descriptor");
+        return FUNC_RESULT_FAILED_ARGUMENT;
+    }
+    LayerCommandStruct_T readCommand = {0};
+    result = ReadCommand(fd.SocketFd, &readCommand);
+    if (result != FUNC_RESULT_SUCCESS) {
+        perror("Read command failed");
+        return result;
+    }
+    if (readCommand.Command != LayerCommandType_Receive) {
+        perror("Invalid incoming command");
+        FreeCommand(&readCommand);
+        return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
+    }
+    ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
+    *appId = metadata->RemoteAppId;
+    *routeAddr = metadata->RemoteAddr;
+    size_t copyLen = MIN(readCommand.DataSize, len);
+    memcpy(msg, readCommand.Data, copyLen);
+    FreeCommand(&readCommand);
+    return copyLen;
+}
+
 /* Raw variant of Read. Return allocated message buffer */
 ssize_t moarRecvFromRaw(MoarDesc_T fd, void *msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
     int result;
@@ -107,10 +137,6 @@ ssize_t moarRecvFromRaw(MoarDesc_T fd, void *msg, RouteAddr_T *routeAddr, AppId_
     ssize_t len = readCommand.DataSize;
     FreeCommand(&readCommand);
     return len;
-}
-
-ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
-
 }
 
 ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {

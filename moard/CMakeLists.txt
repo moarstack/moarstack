@@ -35,3 +35,8 @@ add_executable(moard ${SRC_FILES})
 target_link_libraries(moard moar_shared)
 target_link_libraries(moard dl)
 target_link_libraries(moard pthread)
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_OUTPUT_PATH})

@@ -17,3 +17,21 @@ include_directories(inc)
 #add library
 add_library(moar_channel SHARED ${SRC_FILES})
 target_link_libraries(moar_channel moar_shared)
+
+#copy of config
+if(DEFINED CHANNEL_ENABLED)
+
+else (DEFINED CHANNEL_ENABLED)
+	set(CHANNEL_ENABLED 1)
+endif(DEFINED CHANNEL_ENABLED)
+
+if(${CHANNEL_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYAERS_ENABLED_OUTPUT_PATH})
+else(${CHANNEL_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYAERS_OUTPUT_PATH})
+endif(${CHANNEL_ENABLED})
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_TARGET_PATH})

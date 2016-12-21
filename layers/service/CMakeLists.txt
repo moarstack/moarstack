@@ -17,3 +17,21 @@ include_directories(inc)
 #add library
 add_library(moar_service SHARED ${SRC_FILES})
 target_link_libraries(moar_service moar_shared)
+
+#copy of config
+if(DEFINED SERIVCE_ENABLED)
+
+else (DEFINED SERIVCE_ENABLED)
+	set(SERIVCE_ENABLED 1)
+endif(DEFINED SERIVCE_ENABLED)
+
+if(${SERIVCE_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_ENABLED_OUTPUT_PATH})
+else(${SERIVCE_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_OUTPUT_PATH})
+endif(${SERIVCE_ENABLED})
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_TARGET_PATH})

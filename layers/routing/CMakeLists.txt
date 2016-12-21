@@ -17,3 +17,21 @@ include_directories(inc)
 #add library
 add_library(moar_routing SHARED ${SRC_FILES})
 target_link_libraries(moar_routing moar_shared)
+
+#copy of config
+if(DEFINED ROUTING_ENABLED)
+
+else (DEFINED ROUTING_ENABLED)
+	set(ROUTING_ENABLED 1)
+endif(DEFINED ROUTING_ENABLED)
+
+if(${ROUTING_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_ENABLED_OUTPUT_PATH})
+else(${ROUTING_ENABLED})
+	set(CONFIG_TARGET_PATH ${CONFIG_LAYERS_OUTPUT_PATH})
+endif(${ROUTING_ENABLED})
+
+file(GLOB LAYER_CONFIG
+  "config/*.conf"
+)
+file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_TARGET_PATH})

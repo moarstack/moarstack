@@ -20,9 +20,34 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	PresentationLayer_T* layer = (PresentationLayer_T*)layerRef;
 
+	if(NULL == command->Data || 0 > command->DataSize || NULL == command->MetaData)
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	ServiceSendMsgDown_T* metadata = command->MetaData;
+	size_t fullDatasize = command->DataSize + sizeof(PresentSendMetadata_T);
+	PresentSendMetadata_T* header = malloc(fullDatasize);
+	if(NULL == header)
+		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
+	// fill header
+	memcpy(header+1, command->Data, command->DataSize);
 
-	return FUNC_RESULT_FAILED;
+	// make meta
+	PresentSendMetadata_T meta = {0};
+	meta.Id = metadata->Mid;
+	meta.Destination = metadata->Destination;
+	// make command
+	LayerCommandStruct_T downCom = {0};
+	downCom.Command = LayerCommandType_Send;
+	downCom.Data = header;
+	downCom.DataSize = fullDatasize;
+	downCom.MetaData = &meta;
+	downCom.MetaSize = sizeof(PresentSendMetadata_T);
+
+	int res = WriteCommand(layer->RoutingSocket, &downCom);
+
+	free(header);
+
+	return res;
 }
 
 // msgstate from routing

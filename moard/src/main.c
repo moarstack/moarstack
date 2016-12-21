@@ -208,13 +208,13 @@ int runAllLayers(hashTable_T *moardConfig, const char *layersConfDirName) {
 						}
 					}
 					else {
-						printf("%s by %s ignored, same layer type was already loaded\n", library.Info.LibraryName,
+						printf("%s by %s ignored, layer of same type was already loaded\n", library.Info.LibraryName,
 							   library.Info.Author);
 						closeLibrary(&library);
 					}
 				}
 				else
-					printf("%s load failed\n", fullName);
+					printf("Loading layer from %s failed\n", fullName);
 				free(fullName);
 			}
 		}

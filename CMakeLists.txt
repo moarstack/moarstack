@@ -4,8 +4,8 @@ project(moarstack)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH  ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CONFIG_OUTPUT_PATH  ${CMAKE_CURRENT_BINARY_DIR}/config/moarstack)
-set(CONFIG_LAYAERS_OUTPUT_PATH  ${CONFIG_OUTPUT_PATH}/layers_available)
-set(CONFIG_LAYAERS_ENABLED_OUTPUT_PATH  ${CONFIG_OUTPUT_PATH}/layers_enabled)
+set(CONFIG_LAYERS_OUTPUT_PATH  ${CONFIG_OUTPUT_PATH}/layers_available)
+set(CONFIG_LAYERS_ENABLED_OUTPUT_PATH  ${CONFIG_OUTPUT_PATH}/layers_enabled)
 
 #if(DEFINED CSTD)
 #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=" ${CSTD})
@@ -56,8 +56,3 @@ add_subdirectory(moard)
 add_subdirectory(libmoar)
 
 add_subdirectory(tools)
-
-file(GLOB LAYER_CONFIG
-  "config/*.conf"
-)
-file(COPY ${LAYER_CONFIG} DESTINATION ${CONFIG_OUTPUT_PATH})

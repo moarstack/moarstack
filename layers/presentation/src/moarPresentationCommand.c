@@ -35,8 +35,35 @@ int processMsgStateCommand(void* layerRef, int fd, LayerCommandStruct_T* command
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	PresentationLayer_T* layer = (PresentationLayer_T*)layerRef;
 
+	RouteMessageStateMetadata_T* metadata = command->MetaData;
 
-	return FUNC_RESULT_FAILED;
+	PresentMsgStateMetadata_T meta = {0};
+	meta.Mid = metadata->Id;
+	switch (metadata->State){
+		case PackStateRoute_None:
+			meta.State = PackStatePresent_None;
+			break;
+		case PackStateRoute_Sent:
+			meta.State = PackStatePresent_Sent;
+			break;
+		case PackStateRoute_NotSent:
+			meta.State = PackStatePresent_NotSent;
+			break;
+		case PackStateRoute_Received:
+			meta.State = PackStatePresent_Received;
+			break;
+	}
+
+	LayerCommandStruct_T upCom = {0};
+	upCom.Command = LayerCommandType_MessageState;
+	upCom.Data = NULL;
+	upCom.DataSize = 0;
+	upCom.MetaData = &meta;
+	upCom.MetaSize = sizeof(PresentMsgStateMetadata_T);
+
+	int res = WriteCommand(layer->ServiceSocket, &upCom);
+
+	return res;
 }
 
 // receive from routing

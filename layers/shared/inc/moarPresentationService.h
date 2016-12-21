@@ -28,7 +28,7 @@ typedef struct {
 typedef struct {
 	MessageId_T 		Mid; // mid of current packet
 	PackStatePresent_T State;
-} PresentMsgState_T;
+} PresentMsgStateMetadata_T;
 
 // metadata of packet moving from service to presentation
 typedef struct {

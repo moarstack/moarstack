@@ -13,7 +13,8 @@ extern ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *r
 
 extern ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId);
 
-extern MessageState_T moarMsgState(MoarDesc_T fd, const MessageId_T *msgId);
+//extern MessageState_T moarMsgState(MoarDesc_T fd, const MessageId_T *msgId);
+extern int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state);
 
 __END_DECLS
 

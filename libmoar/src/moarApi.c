@@ -135,6 +135,39 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     return result;
 }
 
-MessageState_T moarMsgState(MoarDesc_T fd, const MessageId_T *msgId) {
-
+int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state) {
+    int result;
+    if (fd.SocketFd < 0) {
+        perror("Invalid socket descriptor");
+        return FUNC_RESULT_FAILED_ARGUMENT;
+    }
+    LayerCommandStruct_T command = {0};
+    AppMsgStateMetadata_T stateMetadata;
+    stateMetadata.MsgId = *msgId;
+    command.Command = LayerCommandType_MessageState;
+    command.Data = NULL;
+    command.DataSize = 0;
+    command.MetaData = &stateMetadata;
+    command.MetaSize = sizeof(stateMetadata);
+    result = WriteCommand(fd.SocketFd, &command);
+    if (result != FUNC_RESULT_SUCCESS) {
+        perror("Write command failed");
+        return result;
+    }
+    LayerCommandStruct_T readCommand = {0};
+    result = ReadCommand(fd.SocketFd, &readCommand);
+    if (result != FUNC_RESULT_SUCCESS) {
+        perror("Read command failed");
+        return result;
+    }
+    //validation incoming command
+    if (readCommand.Command != LayerCommandType_MessageStateResult) {
+        perror("Invalid incoming command");
+        FreeCommand(&readCommand);
+        return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
+    }
+    ServiceMsgStateResultMetadata_T *metadata = readCommand.MetaData;
+    *state = metadata->MsgState;
+    FreeCommand(&readCommand);
+    return FUNC_RESULT_SUCCESS;
 }

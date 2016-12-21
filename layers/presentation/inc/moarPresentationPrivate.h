@@ -5,6 +5,10 @@
 #ifndef MOARSTACK_MOARPRESENTATIONPRIVATE_H
 #define MOARSTACK_MOARPRESENTATIONPRIVATE_H
 
+#include <sys/epoll.h>
+#include <stdbool.h>
+#include <moarCommons.h>
+
 #define EPOLL_SOCKETS_COUNT 				2
 #define EPOLL_SERVICE_EVENTS 				EPOLLIN
 #define EPOLL_ROUTING_EVENTS 				EPOLLIN

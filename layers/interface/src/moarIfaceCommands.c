@@ -131,7 +131,7 @@ int processCommandIfaceReceived( IfaceState_T * layer ) {
 		return result;
 
 	metadata.From = layer->Memory.BufferHeader.From;
-	result = processCommandIface( layer, LayerCommandType_Receive, &metadata, layer->Memory.Buffer, layer->Memory.BufferHeader.Size );
+	result = processCommandIface( layer, LayerCommandType_Receive, &metadata, layer->Memory.Payload, layer->Memory.BufferHeader.Size );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceReceived()" );

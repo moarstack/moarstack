@@ -5,11 +5,14 @@
 #include <moarIfaceChannelRoutine.h>
 #include <moarInterfacePrivate.h>
 
-int writeUp( IfaceState_T * layer ) {
+int writeUp( IfaceState_T * layer, LayerCommandStruct_T * command ) {
 	int result;
 
+	if( NULL == layer || NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = WriteCommand( layer->Config.ChannelSocket, &( layer->Memory.Command ) );
+		result = WriteCommand( layer->Config.ChannelSocket, command );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			break;
@@ -23,11 +26,14 @@ int writeUp( IfaceState_T * layer ) {
 	return result;
 }
 
-int readUp( IfaceState_T * layer ) {
+int readUp( IfaceState_T * layer, LayerCommandStruct_T * command ) {
 	int result;
 
+	if( NULL == layer || NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	for( int attempt = 0; attempt < IFACE_PUSH_ATTEMPTS_COUNT; attempt++ ) {
-		result = ReadCommand( layer->Config.ChannelSocket, &( layer->Memory.Command ) );
+		result = ReadCommand( layer->Config.ChannelSocket, command );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			break;

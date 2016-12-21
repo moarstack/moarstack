@@ -13,6 +13,7 @@
 #include <moarCommonSettings.h>
 #include <moarLayerEntryPoint.h>
 #include <mockIfaceSettings.h>
+#include <moarTime.h>
 #include "mockIfaceSettings.h"
 
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
@@ -49,9 +50,11 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	int							result;
 	MoarLayerStartupParams_T	* paramsStruct;
 
-	if( NULL == params )
+	if( NULL == layer || NULL == params )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	memset( layer, 0, sizeof( IfaceState_T ) );
+	layer->Memory.LastBeacon = timeGetCurrent();
 	paramsStruct = ( MoarLayerStartupParams_T * )params;
 
 	ifaceSocket socketInfo = {0};
@@ -85,7 +88,7 @@ int initInterface( IfaceState_T * layer, void * params ) {
 		result = processChannelConnection( layer );
 
 	if( FUNC_RESULT_SUCCESS == result ) {
-		layer->Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL; // for cases when beaconIntervalCurrent will change
+		layer->Config.WaitIntervalCurrent = IFACE_BEACON_INTERVAL; // for cases when WaitIntervalCurrent will change
 		layer->Config.IsRunning = true;
 	}
 
@@ -101,6 +104,18 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	return result;
 }
 
+int ifaceEpollTimeout( IfaceState_T * layer ) {
+	moarTime_T			start;
+	moarTimeInterval_T	interval;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT; // what is negative timeout? Jump to the past???
+
+	start = ( layer->Config.IsWaitingForResponse ? layer->Memory.LastNeedResponse : layer->Memory.LastBeacon );
+	interval = ( layer->Config.IsWaitingForResponse ? IFACE_RESPONSE_WAIT_INTERVAL : IFACE_BEACON_INTERVAL );
+	return ( int )timeGetDifference( timeAddInterval( start, interval ), timeGetCurrent() );
+}
+
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	IfaceState_T		state = { 0 };
 	int					result,
@@ -112,7 +127,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		return NULL;
 
 	while( state.Config.IsRunning ) {
-		eventsCount = epoll_wait( state.Config.EpollHandler, state.Memory.EpollEvents, IFACE_OPENING_SOCKETS, state.Config.BeaconIntervalCurrent );
+		eventsCount = epoll_wait( state.Config.EpollHandler, state.Memory.EpollEvents, IFACE_OPENING_SOCKETS, ifaceEpollTimeout( &state ) );
 
 		if( 0 == eventsCount ) {// timeout
 			if( state.Config.IsWaitingForResponse )

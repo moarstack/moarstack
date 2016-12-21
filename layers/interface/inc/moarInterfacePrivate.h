@@ -21,6 +21,7 @@
 #include <moarInterfaceChannel.h>
 #include <funcResults.h>
 #include <moarLogger.h>
+#include <moarTime.h>
 
 #define IFACE_HEADER_SIZE				sizeof( IfaceHeader_T )
 #define IFACE_FOOTER_SIZE				sizeof( IfaceFooter_T )
@@ -35,6 +36,7 @@
 #define IFACE_BUFFER_SIZE				17 // keep it max of 12 (to keep address) and strlen(REGISTRATION_OK)
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_MAX_NEIGHBOR_COUNT		10
+#define IFACE_PACKTYPE_HEADER_BITS		8
 
 typedef float	PowerFloat_T;
 typedef uint8_t PowerInt_T;
@@ -52,11 +54,11 @@ typedef enum {
 
 // type for usual iface header
 typedef struct {
-	IfaceAddr_T		To,			// receiver of packet
-					From;		// sender of packet
+	IfaceAddr_T		To;			// receiver of packet
+	IfaceAddr_T		From;		// sender of packet
 	Crc_T			CRC;		// CRC summ of current packet (assuming part of From field instead of CRC bytes while calculating them)
 	PowerInt_T		TxPower;	// power level of packet transmitting
-	IfacePackType_T	Type;		// type of the packet
+	IfacePackType_T	Type:IFACE_PACKTYPE_HEADER_BITS;		// type of the packet
 	size_t			Size;		// size of payload in current packet
 } IfaceHeader_T;
 
@@ -79,7 +81,7 @@ typedef struct {
 	int					MockitSocket,
 						ChannelSocket,
 						NeighborsCount,
-						BeaconIntervalCurrent,
+						WaitIntervalCurrent,
 						EpollHandler;
 	PowerFloat_T		CurrentSensitivity,
 						CurrentBeaconPower;
@@ -102,9 +104,10 @@ typedef struct {
 	IfaceHeader_T			BufferHeader;
 	IfaceFooter_T			BufferFooter;
 	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
-	LayerCommandStruct_T	Command;
 	MessageId_T				ProcessingMessageId;
 	struct epoll_event		EpollEvents[ IFACE_OPENING_SOCKETS ];
+	moarTime_T				LastBeacon,
+							LastNeedResponse;
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

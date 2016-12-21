@@ -4,6 +4,8 @@
 
 #include <math.h>						// roundf
 #include <moarIfaceTransmitReceive.h>
+#include <moarInterfacePrivate.h>
+#include <moarTime.h>
 
 int getFloat( PowerFloat_T * value, char * buffer, int * bytesLeft ) {
 	char	* end;
@@ -19,14 +21,15 @@ int getFloat( PowerFloat_T * value, char * buffer, int * bytesLeft ) {
 	if( 0 == end - buffer )
 		return FUNC_RESULT_FAILED;
 
-	if( NULL != bytesLeft && 0 < *bytesLeft )
+	if( NULL != bytesLeft )
 		*bytesLeft -= ( end - buffer );
 
 	return FUNC_RESULT_SUCCESS;
 }
 
 int receiveDataPiece( IfaceState_T * layer, void * destination, int expectedSize, char ** bufStart, int * bytesLeft ) {
-	int	bytesDone = 0;
+	int	bytesDone = 0,
+		newBytes;
 
 	if( NULL == bufStart || NULL == *bufStart || NULL == bytesLeft )
 		return FUNC_RESULT_FAILED_ARGUMENT;
@@ -38,8 +41,14 @@ int receiveDataPiece( IfaceState_T * layer, void * destination, int expectedSize
 		*bytesLeft -= bytesDone;
 	}
 
-	if( bytesDone < expectedSize )
-		bytesDone += readDown( layer, ( char * )destination + bytesDone, expectedSize - bytesDone );
+	while( bytesDone < expectedSize ) {
+		newBytes = readDown( layer, ( char * )destination + bytesDone, expectedSize - bytesDone );
+
+		if( 0 < newBytes )
+			bytesDone += newBytes;
+		else if( 0 > newBytes )
+			break;
+	}
 
 	if( bytesDone < expectedSize )
 		return FUNC_RESULT_FAILED_IO;
@@ -49,36 +58,55 @@ int receiveDataPiece( IfaceState_T * layer, void * destination, int expectedSize
 
 int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
 	int		bytesLeft = 0,
-		 	result = FUNC_RESULT_SUCCESS;
-	char	* buffer = layer->Memory.Buffer;
+			bytesWas,
+		 	result = FUNC_RESULT_SUCCESS,
+			pos;
+	char	* buffer = layer->Memory.Buffer,
+			temp;
+
+	memset( buffer, 0, IFACE_BUFFER_SIZE );
 
 	if( NULL == finishPower )
-		result = FUNC_RESULT_FAILED_ARGUMENT;
-	else {
-		bytesLeft = readDown( layer, buffer, IFACE_BUFFER_SIZE );
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-		if( 0 >= bytesLeft )
-			result = FUNC_RESULT_FAILED_IO;
-	}
+	bytesLeft = readDown( layer, buffer, IFACE_BUFFER_SIZE );
 
-	if( FUNC_RESULT_SUCCESS == result )
-		result = getFloat( finishPower, buffer, &bytesLeft ); // we assume that buffer is big enough to contain float
+	if( 0 >= bytesLeft )
+		return FUNC_RESULT_FAILED_IO;
+
+	for( pos = 0; pos < bytesLeft; pos++ )
+		if( ' ' != buffer[ pos ] )
+			break;
+
+	bytesLeft -= pos;
+	buffer += pos;
+	bytesWas = bytesLeft;
+	result = getFloat( finishPower, buffer, &bytesLeft ); // we assume that buffer is big enough to contain float
 
 	if( FUNC_RESULT_SUCCESS == result ) {
+		buffer += bytesWas - bytesLeft;
 		bytesLeft--; // extra byte is for space (aka delimiter) symbol
 		buffer++;
 		result = receiveDataPiece( layer, &( layer->Memory.BufferHeader ), IFACE_HEADER_SIZE, &buffer, &bytesLeft );
+		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving header via mockit", LogLevel_DebugVerbose, "received header via mockit" );
 
-		if( FUNC_RESULT_SUCCESS != result && 0 < layer->Memory.BufferHeader.Size )
-			result = receiveDataPiece( layer, layer->Memory.Payload, ( int )( layer->Memory.BufferHeader.Size ), &buffer,
-									   &bytesLeft );
+		result = receiveDataPiece( layer, layer->Memory.Payload, ( int )( layer->Memory.BufferHeader.Size ), &buffer, &bytesLeft );
+		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving payload via mockit", LogLevel_DebugVerbose, "received payload via mockit" );
 
-		if( FUNC_RESULT_SUCCESS != result && IfacePackType_Beacon == layer->Memory.BufferHeader.Type )
+		if( IfacePackType_Beacon == layer->Memory.BufferHeader.Type ) {
 			result = receiveDataPiece( layer, &( layer->Memory.BufferFooter ), IFACE_FOOTER_SIZE, &buffer, &bytesLeft );
+			LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving footer via mockit", LogLevel_DebugVerbose, "received footer via mockit" );
+		}
+	} else {
+		do
+			result = readDown( layer, &temp, 1 );
+		while( 1 == result && temp != 0x0A );
+
+		if( 1 == result )
+			result = FUNC_RESULT_SUCCESS;
 	}
 
-	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "data receiving via mockit" );
+	LogCombMoar( layer->Config.LogHandle, result, LogLevel_Error, "error receiving message via mockit", LogLevel_DebugQuiet, "received message via mockit"  );
 
 	return result;
 }
@@ -150,17 +178,17 @@ int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T cr
 	return result;
 }
 
-int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse ) {
+int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse, LayerCommandStruct_T * command ) {
 	void			* messagePacket,
 					* messagePayload;
 	int				result = FUNC_RESULT_SUCCESS,
 					messageSize;
 	IfaceHeader_T	* messageHeader;
 
-	if( NULL == receiver )
+	if( NULL == layer || NULL == receiver || NULL == command )
 		result = FUNC_RESULT_FAILED_ARGUMENT;
 	else {
-		messageSize = IFACE_HEADER_SIZE + layer->Memory.Command.DataSize;
+		messageSize = IFACE_HEADER_SIZE + command->DataSize;
 		messagePacket = malloc( ( size_t )messageSize );
 
 		if( NULL == messagePacket )
@@ -173,12 +201,12 @@ int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool need
 
 		messageHeader->From = layer->Config.Address;
 		messageHeader->To = receiver->Address;
-		messageHeader->Size = layer->Memory.Command.DataSize;
+		messageHeader->Size = command->DataSize;
 		messageHeader->CRC = 0; // that`s not implemented yet TODO
 		messageHeader->TxPower = ( PowerInt_T )roundf( receiver->MinPower );
 		messageHeader->Type = ( needResponse ? IfacePackType_NeedResponse : IfacePackType_NeedNoResponse );
 
-		memcpy( messagePayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
+		memcpy( messagePayload, command->Data, command->DataSize );
 
 		result = transmitAnyData( layer, receiver->MinPower, messagePacket, messageSize );
 		free( messagePacket );
@@ -212,7 +240,7 @@ int transmitBeacon( IfaceState_T * layer ) {
 		beaconHeader->From = layer->Config.Address;
 		memset( &( beaconHeader->To ), 0, IFACE_ADDR_SIZE );
 		beaconHeader->Size = layer->Config.BeaconPayloadSize;
-		beaconHeader->CRC = 0; // that`s not implemented yet TODO
+		beaconHeader->CRC = 0xABADBEEF; // that`s not implemented yet TODO
 		beaconHeader->TxPower = ( PowerInt_T )roundf( layer->Config.CurrentBeaconPower );
 		beaconHeader->Type = IfacePackType_Beacon;
 
@@ -226,6 +254,8 @@ int transmitBeacon( IfaceState_T * layer ) {
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "beacon transmitting" );
+	else
+		layer->Memory.LastBeacon = timeGetCurrent();
 
 	return result;
 }

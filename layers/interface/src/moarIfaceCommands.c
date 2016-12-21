@@ -5,10 +5,6 @@
 #include <moarIfaceCommands.h>
 #include <moarInterfacePrivate.h>
 
-int clearCommand( IfaceState_T * layer ) {
-	return FreeCommand( &( layer->Memory.Command ) );
-}
-
 size_t commandMetaSize( LayerCommandType_T type ) {
 	size_t	size;
 
@@ -28,14 +24,18 @@ size_t commandMetaSize( LayerCommandType_T type ) {
 }
 
 int processCommandIface( IfaceState_T * layer, LayerCommandType_T commandType, void * metaData, void * data, size_t dataSize ) {
-	clearCommand( layer );
-	layer->Memory.Command.Command = commandType;
-	layer->Memory.Command.MetaSize = commandMetaSize( commandType );
-	layer->Memory.Command.MetaData = metaData;
-	layer->Memory.Command.DataSize = dataSize;
-	layer->Memory.Command.Data = data;
+	LayerCommandStruct_T	command = { 0 };
+	
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	return writeUp( layer );
+	command.Command = commandType;
+	command.MetaSize = commandMetaSize( commandType );
+	command.MetaData = metaData;
+	command.DataSize = dataSize;
+	command.Data = data;
+
+	return writeUp( layer, &command );
 }
 
 int processCommandIfaceRegister( IfaceState_T * layer ) {
@@ -74,9 +74,6 @@ int processCommandIfaceTimeoutFinished( IfaceState_T * layer, bool gotResponse )
 	metadata.State = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
 	result = processCommandIface( layer, LayerCommandType_MessageState, &metadata, NULL, 0 );
 	layer->Config.IsWaitingForResponse = false;
-
-	if( IFACE_BEACON_INTERVAL > IFACE_RESPONSE_WAIT_INTERVAL )
-		layer->Config.BeaconIntervalCurrent = IFACE_BEACON_INTERVAL - IFACE_RESPONSE_WAIT_INTERVAL;
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceTimeoutFinished()" );
@@ -142,11 +139,14 @@ int processCommandIfaceReceived( IfaceState_T * layer ) {
 	return result;
 }
 
-int processCommandChannelRegisterResult( IfaceState_T * layer ) {
+int processCommandChannelRegisterResult( IfaceState_T * layer, LayerCommandStruct_T * command ) {
 	int result;
 
-	layer->Config.IsConnectedToChannel = ( ( ChannelRegisterResultMetadata_T * ) layer->Memory.Command.MetaData )->Registred;
-	clearCommand( layer );
+	if( NULL == layer || NULL == command )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	layer->Config.IsConnectedToChannel = ( ( ChannelRegisterResultMetadata_T * ) command->MetaData )->Registred;
+	FreeCommand( command );
 
 	if( layer->Config.IsConnectedToChannel ) {
 		LogWrite( layer->Config.LogHandle, LogLevel_Information, "interface registered in channel layer" );
@@ -160,30 +160,30 @@ int processCommandChannelRegisterResult( IfaceState_T * layer ) {
 	return result;
 }
 
-int processCommandChannelSend( IfaceState_T * layer ) {
+int processCommandChannelSend( IfaceState_T * layer, LayerCommandStruct_T * command ) {
 	IfaceNeighbor_T			* neighbor;
 	ChannelSendMetadata_T	* metadata;
 	int						result;
 
-	metadata = ( ChannelSendMetadata_T * ) layer->Memory.Command.MetaData;
+	metadata = ( ChannelSendMetadata_T * ) command->MetaData;
 	neighbor = neighborFind( layer, &( metadata->To ) );
 	layer->Memory.ProcessingMessageId = metadata->Id;
 
 	if( NULL == neighbor )
 		result = processCommandIfaceUnknownDest( layer );
 	else {
-		result = transmitMessage( layer, neighbor, metadata->NeedResponse );
+		result = transmitMessage( layer, neighbor, metadata->NeedResponse, command );
 
 		if( FUNC_RESULT_SUCCESS == result ) {
 			if( metadata->NeedResponse ) {
-				layer->Config.BeaconIntervalCurrent = IFACE_RESPONSE_WAIT_INTERVAL;
 				layer->Config.IsWaitingForResponse = true;
+				layer->Memory.LastNeedResponse = timeGetCurrent();
 			} else
 				result = processCommandIfaceMessageSent( layer );
 		}
 	}
 
-	clearCommand( layer );
+	FreeCommand( command );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannelSend()" );
@@ -191,46 +191,48 @@ int processCommandChannelSend( IfaceState_T * layer ) {
 	return result;
 }
 
-int processCommandChannelUpdateBeacon( IfaceState_T * layer ) {
+int processCommandChannelUpdateBeacon( IfaceState_T * layer, LayerCommandStruct_T * command ) {
 	int result = FUNC_RESULT_SUCCESS;
 
-	if( ( NULL == layer->Memory.Command.Data && 0 < layer->Memory.Command.DataSize ) ||
-		( NULL != layer->Memory.Command.Data && 0 == layer->Memory.Command.DataSize ) ||
-		IFACE_MAX_PAYLOAD_BEACON_SIZE < layer->Memory.Command.DataSize )
+	if( NULL == layer || NULL == command ||
+		( NULL == command->Data && 0 < command->DataSize ) ||
+		( NULL != command->Data && 0 == command->DataSize ) ||
+		IFACE_MAX_PAYLOAD_BEACON_SIZE < command->DataSize )
 		result = FUNC_RESULT_FAILED_ARGUMENT;
 
 	if( FUNC_RESULT_SUCCESS == result ) {
-		memcpy( layer->Memory.BeaconPayload, layer->Memory.Command.Data, layer->Memory.Command.DataSize );
-		layer->Config.BeaconPayloadSize = layer->Memory.Command.DataSize;
+		memcpy( layer->Memory.BeaconPayload, command->Data, command->DataSize );
+		layer->Config.BeaconPayloadSize = command->DataSize;
 	} else
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandChannelUpdateBeacon()" );
 
-	clearCommand( layer );
+	FreeCommand( command );
 	return result;
 }
 
 int processCommandChannel( IfaceState_T * layer ) {
-	int	result;
+	LayerCommandStruct_T	command = { 0 };
+	int						result;
 
-	result = readUp( layer );
+	result = readUp( layer, &command );
 
 	if( FUNC_RESULT_SUCCESS == result ) {
 		if( layer->Config.IsConnectedToChannel )
-			switch( layer->Memory.Command.Command ) {
+			switch( command.Command ) {
 				case LayerCommandType_Send :
-					result = processCommandChannelSend( layer );
+					result = processCommandChannelSend( layer, &command );
 					break;
 
 				case LayerCommandType_UpdateBeaconPayload :
-					result = processCommandChannelUpdateBeacon( layer );
+					result = processCommandChannelUpdateBeacon( layer, &command );
 					break;
 
 				default :
 					result = FUNC_RESULT_FAILED_ARGUMENT;
-					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown command %d from channel", layer->Memory.Command.Command );
+					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown command %d from channel", command.Command );
 			}
-		else if( LayerCommandType_RegisterInterfaceResult == layer->Memory.Command.Command )
-			result = processCommandChannelRegisterResult( layer );
+		else if( LayerCommandType_RegisterInterfaceResult == command.Command )
+			result = processCommandChannelRegisterResult( layer, &command );
 	}
 
 	if( FUNC_RESULT_SUCCESS != result )

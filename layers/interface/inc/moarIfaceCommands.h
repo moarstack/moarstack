@@ -14,9 +14,6 @@
 #define IFACE_RESPONSE_WAIT_INTERVAL	300 // in milliseconds
 #define IFACE_ARRAY_CHANNEL_POSITION	1 // position in array preallocated in layer state
 
-// clear inner preallocated command
-int clearCommand( IfaceState_T * layer );
-
 // push to the channel command register
 int processCommandIfaceRegister( IfaceState_T * layer );
 
@@ -39,13 +36,13 @@ int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * addre
 int processCommandIfaceReceived( IfaceState_T * layer );
 
 // pop from the channel command register result
-int processCommandChannelRegisterResult( IfaceState_T * layer );
+int processCommandChannelRegisterResult( IfaceState_T * layer, LayerCommandStruct_T * command );
 
 // pop from the channel command send
-int processCommandChannelSend( IfaceState_T * layer );
+int processCommandChannelSend( IfaceState_T * layer, LayerCommandStruct_T * command );
 
 // pop from the channel command update beacon payload
-int processCommandChannelUpdateBeacon( IfaceState_T * layer );
+int processCommandChannelUpdateBeacon( IfaceState_T * layer, LayerCommandStruct_T * command );
 
 // pop and process any command from the channel
 int processCommandChannel( IfaceState_T * layer );

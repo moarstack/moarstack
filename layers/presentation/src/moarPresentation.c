@@ -5,6 +5,7 @@
 #include <moarPresentationPrivate.h>
 #include <funcResults.h>
 #include <sys/epoll.h>
+#include <moarPresentationCommand.h>
 #include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
 #include "moarPresentation.h"
@@ -20,9 +21,12 @@ int presentationInit(PresentationLayer_T* layer, void* arg){
 
 	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
 
-	layer->RoutingProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
+	layer->RoutingProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
+	layer->RoutingProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);
+	layer->RoutingProcessingRules[2] = MakeProcessingRule(LayerCommandType_None, NULL);
 	//again
-	layer->ServiceProcessingRules[0] = MakeProcessingRule(LayerCommandType_None, NULL);
+	layer->ServiceProcessingRules[0] = MakeProcessingRule(LayerCommandType_Send, processSendCommand);
+	layer->ServiceProcessingRules[1] = MakeProcessingRule(LayerCommandType_None, NULL);
 	return FUNC_RESULT_SUCCESS;
 }
 //deinit layer

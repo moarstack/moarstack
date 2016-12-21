@@ -123,6 +123,7 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 		if( FUNC_RESULT_SUCCESS == result &&
 			IfacePackType_IsResponse != layer->Memory.BufferHeader.Type &&
+			IfacePackType_Beacon != layer->Memory.BufferHeader.Type &&
 			0 < layer->Memory.BufferHeader.Size ) // if contains payload
 			result = processCommandIfaceReceived( layer );
 

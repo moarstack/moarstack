@@ -169,7 +169,7 @@ float distance( float x1, float y1, float x2, float y2 ) {
 }
 
 float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, float coefficient ) {
-	float finishPower = startPower - coefficient + ( float )10.0 * log10f( distance( to->x, to->y, from->x, from->y ) );
+	float finishPower = startPower - coefficient - ( float )10.0 * log10f( distance( to->x, to->y, from->x, from->y ) );
 	return ( finishPower < startPower ? finishPower : startPower );
 }
 

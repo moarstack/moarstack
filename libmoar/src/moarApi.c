@@ -6,6 +6,10 @@
 #include "moarServiceApp.h"
 #include "funcResults.h"
 
+#ifndef MIN
+#define MIN(x,y) (((x)>(y))?(y):(x))
+#endif
+
 int moarSocket(MoarDesc_T *MoarDesc) {
     int result = 0;
     int socketValue;
@@ -83,9 +87,6 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
 
 /* Traditional receive function. Places data to msg limiting by size len */
 ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
-#ifndef MIN
-#define MIN(x,y) (((x)>(y))?(y):(x))
-#endif
     int result;
     if (fd.SocketFd < 0) {
         perror("Invalid socket descriptor");

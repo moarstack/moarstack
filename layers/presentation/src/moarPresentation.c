@@ -68,7 +68,6 @@ int initEpoll(PresentationLayer_T* layer){
 	epollEventService.events = EPOLL_SERVICE_EVENTS;
 	epollEventService.data.fd = layer->ServiceSocket;
 	int serviceRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, layer->ServiceSocket, &epollEventService);
-	perror("epoll");
 	CHECK_RESULT(serviceRes);
 	//return
 	return FUNC_RESULT_SUCCESS;

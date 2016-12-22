@@ -191,7 +191,7 @@ int routingMaintain( RoutingLayer_T * layer ) {
 		layer->NextTableRenewTime = timeAddInterval( now, DEFAULT_TABLE_RENEW_PERIOD );
 	}
 
-	//result = updateEpollTimeout( layer ); // calculate optimal sleep time & change pool timeout
+	result = updateEpollTimeout( layer ); // calculate optimal sleep time & change pool timeout
 	return result;
 }
 

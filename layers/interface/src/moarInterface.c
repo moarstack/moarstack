@@ -73,6 +73,9 @@ int initInterface( IfaceState_T * layer, void * params ) {
 
 	result = LogOpen( layer->Config.LogFilepath, &( layer->Config.LogHandle) );
 
+	LogSetLevelLog( layer->Config.LogHandle, LogLevel_DebugQuiet );
+	LogSetLevelDump( layer->Config.LogHandle, LogLevel_DebugQuiet );
+
 	if( FUNC_RESULT_SUCCESS == result )
 		result = LogWrite( layer->Config.LogHandle, LogLevel_Information, "interface starting with logging into %.*s\n", LOG_FILEPATH_SIZE, layer->Config.LogFilepath );
 
@@ -105,21 +108,29 @@ int initInterface( IfaceState_T * layer, void * params ) {
 }
 
 int ifaceEpollTimeout( IfaceState_T * layer ) {
-	moarTime_T			start;
+	moarTime_T			oldStart,
+						newStart,
+						now;
 	moarTimeInterval_T	interval;
 
 	if( NULL == layer )
 		return FUNC_RESULT_FAILED_ARGUMENT; // what is negative timeout? Jump to the past???
 
-	start = ( layer->Config.IsWaitingForResponse ? layer->Memory.LastNeedResponse : layer->Memory.LastBeacon );
+	oldStart = ( layer->Config.IsWaitingForResponse ? layer->Memory.LastNeedResponse : layer->Memory.LastBeacon );
 	interval = ( layer->Config.IsWaitingForResponse ? IFACE_RESPONSE_WAIT_INTERVAL : IFACE_BEACON_INTERVAL );
-	return ( int )timeGetDifference( timeAddInterval( start, interval ), timeGetCurrent() );
+	newStart = timeAddInterval( oldStart, interval );
+	now = timeGetCurrent();
+
+	return ( int )( 1 == timeCompare( newStart, now ) ? timeGetDifference( newStart, now ) : 0 );
 }
 
 void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 	IfaceState_T		state = { 0 };
 	int					result,
-						eventsCount;
+						eventsCount,
+						timeout,
+						count = 0,
+						start;
 
 	result = initInterface( &state, arg );
 
@@ -127,7 +138,15 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		return NULL;
 
 	while( state.Config.IsRunning ) {
-		eventsCount = epoll_wait( state.Config.EpollHandler, state.Memory.EpollEvents, IFACE_OPENING_SOCKETS, ifaceEpollTimeout( &state ) );
+		timeout = ifaceEpollTimeout( &state );
+		LogWrite( state.Config.LogHandle, LogLevel_Dump, "%d cycle iteration, will (or not) wait in epoll for %d msecs", ++count, timeout );
+
+		if( 0 < timeout ) {
+			start = timeGetCurrent();
+			eventsCount = epoll_wait( state.Config.EpollHandler, state.Memory.EpollEvents, IFACE_OPENING_SOCKETS, timeout );
+			LogWrite( state.Config.LogHandle, LogLevel_Dump, "%d cycle iteration epoll finished in %d msecs", count, timeGetDifference( timeGetCurrent(), start ) );
+		} else
+			eventsCount = 0;
 
 		if( 0 == eventsCount ) {// timeout
 			if( state.Config.IsWaitingForResponse )

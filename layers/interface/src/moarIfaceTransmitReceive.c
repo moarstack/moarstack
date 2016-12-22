@@ -6,6 +6,7 @@
 #include <moarIfaceTransmitReceive.h>
 #include <moarInterfacePrivate.h>
 #include <moarTime.h>
+#include <ctype.h>
 
 int getFloat( PowerFloat_T * value, char * buffer, int * bytesLeft ) {
 	char	* end;
@@ -59,10 +60,9 @@ int receiveDataPiece( IfaceState_T * layer, void * destination, int expectedSize
 int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
 	int		bytesLeft = 0,
 			bytesWas,
-		 	result = FUNC_RESULT_SUCCESS,
+		 	result,
 			pos;
-	char	* buffer = layer->Memory.Buffer,
-			temp;
+	char	* buffer = layer->Memory.Buffer;
 
 	memset( buffer, 0, IFACE_BUFFER_SIZE );
 
@@ -75,38 +75,39 @@ int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower ) {
 		return FUNC_RESULT_FAILED_IO;
 
 	for( pos = 0; pos < bytesLeft; pos++ )
-		if( ' ' != buffer[ pos ] )
+		if( isgraph( buffer[ pos ] ) )
 			break;
 
 	bytesLeft -= pos;
 	buffer += pos;
 	bytesWas = bytesLeft;
+	LogWrite( layer->Config.LogHandle, LogLevel_Dump, "buffer is %b", buffer, IFACE_BUFFER_SIZE );
 	result = getFloat( finishPower, buffer, &bytesLeft ); // we assume that buffer is big enough to contain float
 
 	if( FUNC_RESULT_SUCCESS == result ) {
+		LogWrite( layer->Config.LogHandle, LogLevel_DebugVerbose, "trying to receive via mockit with power %f", *finishPower );
+
 		buffer += bytesWas - bytesLeft;
 		bytesLeft--; // extra byte is for space (aka delimiter) symbol
 		buffer++;
 		result = receiveDataPiece( layer, &( layer->Memory.BufferHeader ), IFACE_HEADER_SIZE, &buffer, &bytesLeft );
-		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving header via mockit", LogLevel_DebugVerbose, "received header via mockit" );
+		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving header via mockit", LogLevel_Dump, "received header via mockit" );
 
 		result = receiveDataPiece( layer, layer->Memory.Payload, ( int )( layer->Memory.BufferHeader.Size ), &buffer, &bytesLeft );
-		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving payload via mockit", LogLevel_DebugVerbose, "received payload via mockit" );
+		LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving payload via mockit", LogLevel_Dump, "received payload via mockit" );
 
 		if( IfacePackType_Beacon == layer->Memory.BufferHeader.Type ) {
 			result = receiveDataPiece( layer, &( layer->Memory.BufferFooter ), IFACE_FOOTER_SIZE, &buffer, &bytesLeft );
-			LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving footer via mockit", LogLevel_DebugVerbose, "received footer via mockit" );
+			LOG_CHECK_RESULT_MOAR( result, layer->Config.LogHandle, LogLevel_Warning, "error receiving footer via mockit", LogLevel_Dump, "received footer via mockit" );
 		}
+
+		LogCombMoar( layer->Config.LogHandle, result, LogLevel_Error, "error receiving message via mockit", LogLevel_DebugQuiet, "received message via mockit"  );
+
+		layer->Memory.ReceivedData = ( FUNC_RESULT_SUCCESS == result );
 	} else {
-		do
-			result = readDown( layer, &temp, 1 );
-		while( 1 == result && temp != 0x0A );
-
-		if( 1 == result )
-			result = FUNC_RESULT_SUCCESS;
+		result = FUNC_RESULT_SUCCESS;
+		layer->Memory.ReceivedData = false;
 	}
-
-	LogCombMoar( layer->Config.LogHandle, result, LogLevel_Error, "error receiving message via mockit", LogLevel_DebugQuiet, "received message via mockit"  );
 
 	return result;
 }
@@ -226,6 +227,8 @@ int transmitBeacon( IfaceState_T * layer ) {
 	IfaceHeader_T	* beaconHeader;
 	IfaceFooter_T	* beaconFooter;
 
+	LogWrite( layer->Config.LogHandle, LogLevel_DebugVerbose, "trying to transmit beacon" );
+
 	beaconSize = IFACE_HEADER_SIZE + layer->Config.BeaconPayloadSize + IFACE_FOOTER_SIZE;
 	beaconPacket = malloc( ( size_t )beaconSize );
 
@@ -250,12 +253,11 @@ int transmitBeacon( IfaceState_T * layer ) {
 
 		result = transmitAnyData( layer, beaconHeader->TxPower, beaconPacket, beaconSize );
 		free( beaconPacket );
+
+		if( FUNC_RESULT_SUCCESS == result )
+			layer->Memory.LastBeacon = timeGetCurrent();
 	}
 
-	if( FUNC_RESULT_SUCCESS != result )
-		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "beacon transmitting" );
-	else
-		layer->Memory.LastBeacon = timeGetCurrent();
-
+	LogCombMoar( layer->Config.LogHandle, result, LogLevel_Warning, "error transmitting beacon", LogLevel_DebugQuiet, "beacon transmitted" );
 	return result;
 }

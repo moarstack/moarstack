@@ -108,6 +108,7 @@ typedef struct {
 	struct epoll_event		EpollEvents[ IFACE_OPENING_SOCKETS ];
 	moarTime_T				LastBeacon,
 							LastNeedResponse;
+	bool					ReceivedData;
 } IfacePreallocated_T;
 
 // struct to unify configuration and preallocated memory for interface layer

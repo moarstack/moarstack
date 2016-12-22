@@ -113,7 +113,7 @@ ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAdd
 }
 
 /* Raw variant of Read. Return allocated message buffer */
-ssize_t moarRecvFromRaw(MoarDesc_T fd, void *msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
+ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
     int result;
     if (fd.SocketFd < 0) {
         perror("Invalid socket descriptor");
@@ -133,7 +133,7 @@ ssize_t moarRecvFromRaw(MoarDesc_T fd, void *msg, RouteAddr_T *routeAddr, AppId_
     ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
     *appId = metadata->RemoteAppId;
     *routeAddr = metadata->RemoteAddr;
-    msg = readCommand.Data;
+    *msg = readCommand.Data;
     readCommand.Data = NULL; // prevent Data ptr from being disposed in FreeCommand()
     ssize_t len = readCommand.DataSize;
     FreeCommand(&readCommand);

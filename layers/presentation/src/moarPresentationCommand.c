@@ -24,8 +24,8 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T* command){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	ServiceSendMsgDown_T* metadata = command->MetaData;
-	size_t fullDatasize = command->DataSize + sizeof(PresentSendMetadata_T);
-	PresentSendMetadata_T* header = malloc(fullDatasize);
+	size_t fullDatasize = command->DataSize + sizeof(PresentHeader_T);
+	PresentHeader_T* header = malloc(fullDatasize);
 	if(NULL == header)
 		return FUNC_RESULT_FAILED_MEM_ALLOCATION;
 	// fill header

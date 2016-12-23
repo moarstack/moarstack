@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "moarApi.h"
 #include <getopt.h>
+#include <moarService.h>
 
 int AppIdFromStr(const char *str, AppId_T *appid) {
     int intValue;
@@ -92,18 +93,27 @@ int main (int argc, char **argv)  {
         }
     }
 
-    if (verbose) {
-        puts("verbose flag is set");
-        //fprintf(stderr, "%d\n", OwnAppId);
-        //DumpRouteAddr(stderr, &RemoteAddr);
-    }
     /* Print any remaining command line arguments (not options). */
-    if (optind < argc) {
+    /*if (optind < argc) {
         printf ("non-option ARGV-elements: ");
         while (optind < argc)
             printf ("%s ", argv[optind++]);
         putchar ('\n');
+    }*/
+    MoarDesc_T * md;
+    md = (CustomSocketPath)?moarSocketFile(CustomSocketPath):moarSocket();
+    if (!md) {
+        fprintf(stderr, "ERROR: Could not open MOARStack socket\n");
+        return EXIT_FAILURE;
+    }
+    if (moarBind(md, &OwnAppId) != FUNC_RESULT_SUCCESS) {
+        fprintf(stderr, "ERROR: Could not bind socket to appid %d", (int) OwnAppId);
+        return EXIT_FAILURE;
+    }
+    if (verbose) {
+        fprintf(stderr, "Socket successfully bint: fd=%d; appid=%d\n", md->SocketFd, OwnAppId);
     }
 
+    moarClose(md);
     return EXIT_SUCCESS;
 }

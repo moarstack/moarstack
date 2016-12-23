@@ -41,28 +41,26 @@ int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 	if( NULL == layer || NULL == packet || RoutePackType_Data != packet->PackType )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
-	result = helperChannel2Route( &( packet->LastHop ), &relayAddr );
+	if( !routeAddrEqualPtr( &layer->LocalAddress, &packet->Source ) ) {
+		result = helperChannel2Route( &( packet->LastHop ), &relayAddr );
+		CHECK_RESULT( result );
 
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
-
-	result = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
-
-	if( FUNC_RESULT_SUCCESS != result )
-		return result;
+		result = helperUpdateRoute( layer, &( packet->Source ), &relayAddr );
+		CHECK_RESULT( result );
+	}
 
 	// if destination
 	if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Destination ) ) {
 		//// forward up
 		result = sendPacketToPresentation( layer, packet );
+		CHECK_RESULT( result );
 
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
+		if( routeAddrEqualPtr( &layer->LocalAddress, &packet->Source ) )
+			result = notifyPresentation( layer, &( packet->InternalId ), PackStateRoute_Received );
+		else
+			result = produceAck( layer, packet );
 
-		result = produceAck( layer, packet );
-
-		if( FUNC_RESULT_SUCCESS != result )
-			return result;
+		CHECK_RESULT( result );
 
 		//// dispose packet
 		result = psRemove( &layer->PacketStorage, packet );
@@ -70,7 +68,11 @@ int processReceivedDataPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pac
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
 		result = FUNC_RESULT_SUCCESS;
+	} else {
+		packet->State = StoredPackState_Disposed;
+		result = FUNC_RESULT_SUCCESS;
 	}
+
 	return result;
 }
 
@@ -109,6 +111,9 @@ int processReceivedAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T * pack
 		//// change state to processing
 		packet->State = StoredPackState_InProcessing;
 		res = FUNC_RESULT_SUCCESS;
+	} else {
+		packet->State = StoredPackState_Disposed;
+		res = FUNC_RESULT_SUCCESS;
 	}
 	
 	return res;
@@ -131,7 +136,10 @@ int processReceivedFinderAckPacket( RoutingLayer_T * layer, RouteStoredPacket_T 
 		result = psRemove( &layer->PacketStorage, packet ); // dispose packet
 	else if( 0 < packet->XTL ) { // else if will be sent according to XTL
 		packet->State = StoredPackState_InProcessing;
-		return FUNC_RESULT_SUCCESS;
+		result = FUNC_RESULT_SUCCESS;
+	} else {
+		packet->State = StoredPackState_Disposed;
+		result = FUNC_RESULT_SUCCESS;
 	}
 
 	return result;

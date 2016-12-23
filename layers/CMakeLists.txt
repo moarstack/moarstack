@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.0)
+project(moarlayers)
+
+#set(LIBRARY_OUTPUT_PATH ../lib)
+
+set(curdir ${CMAKE_CURRENT_SOURCE_DIR})
+FILE(GLOB children ${curdir}/*)
+SET(dirlist "")
+FOREACH(child ${children})
+	IF(IS_DIRECTORY ${child})
+		IF( EXISTS  "${child}/CMakeLists.txt")
+			LIST(APPEND dirlist ${child})
+		ENDIF()
+	ENDIF()
+ENDFOREACH()
+
+FOREACH(subdir ${dirlist})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()
+
+#add_subdirectory(interface)
+#add_subdirectory(channel)
+#add_subdirectory(routing)
+#add_subdirectory(presentation)
+#add_subdirectory(service)

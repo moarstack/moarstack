@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.0)
+project(moartools) 
+
+#set(LIBRARY_OUTPUT_PATH ../lib)
+#set(EXECUTABLE_OUTPUT_PATH  ../bin)
+
+set(curdir ${CMAKE_CURRENT_SOURCE_DIR})
+FILE(GLOB children ${curdir}/*)
+SET(dirlist "")
+FOREACH(child ${children})
+	IF(IS_DIRECTORY ${child})
+		IF( EXISTS  "${child}/CMakeLists.txt")
+			LIST(APPEND dirlist ${child})
+		ENDIF()
+	ENDIF()
+ENDFOREACH()
+
+FOREACH(subdir ${dirlist})
+    ADD_SUBDIRECTORY(${subdir})
+ENDFOREACH()

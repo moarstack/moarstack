@@ -51,6 +51,7 @@ extern int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, Fie
 extern int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val);
 extern int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int bindCount, void* targetStruct);
 extern int bindingBindStructFunc(hashTable_T* settings, bindingFunc_F func, void* targetStruct);
+int bindingSet_ByteArray(void* ptr, char* val, size_t len);
 //__END_DECLS
 
 #endif //MOARSTACK_MOARSETTINGSBINDER_H

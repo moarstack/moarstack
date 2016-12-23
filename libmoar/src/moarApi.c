@@ -122,8 +122,10 @@ ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAdd
         return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
     }
     ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
-    *appId = metadata->RemoteAppId;
-    *routeAddr = metadata->RemoteAddr;
+	if(appId != NULL)
+    	*appId = metadata->RemoteAppId;
+	if(routeAddr != NULL)
+    	*routeAddr = metadata->RemoteAddr;
     size_t copyLen = MIN(readCommand.DataSize, len);
     memcpy(msg, readCommand.Data, copyLen);
     FreeCommand(&readCommand);
@@ -149,8 +151,10 @@ ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId
         return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
     }
     ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
-    *appId = metadata->RemoteAppId;
-    *routeAddr = metadata->RemoteAddr;
+	if(appId != NULL)
+    	*appId = metadata->RemoteAppId;
+	if(routeAddr != NULL)
+    	*routeAddr = metadata->RemoteAddr;
     *msg = readCommand.Data;
     readCommand.Data = NULL; // prevent Data ptr from being disposed in FreeCommand()
     ssize_t len = readCommand.DataSize;
@@ -180,31 +184,36 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     }
     // Read send status
     LayerCommandStruct_T readCommand = {0};
-    result = ReadCommand(fd.SocketFd, &readCommand);
-    if (result != FUNC_RESULT_SUCCESS) {
-        perror("Read command failed");
-        return result;
-    }
-    if (readCommand.Command != LayerCommandType_SendResult) {
-        perror("Invalid incoming command");
-        FreeCommand(&readCommand);
-        return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
-    }
-    ServiceSendResultMetadata_T *metadata = readCommand.MetaData;
-    switch (metadata->SendResult) {
-        case AppSend_OK:
-            *msgId = metadata->MsgId;
-            //result = FUNC_RESULT_SUCCESS;
-            result = (ssize_t) len;
-            break;
-        case AppSend_Failure:
-            result = FUNC_RESULT_FAILED;
-            break;
-        default:
-            perror("Unknown SendResult");
-            result = FUNC_RESULT_FAILED;
-    }
-    FreeCommand(&readCommand);
+	do {
+		result = ReadCommand(fd.SocketFd, &readCommand);
+		if (result != FUNC_RESULT_SUCCESS) {
+			perror("Read command failed");
+			return result;
+		}
+		if (readCommand.Command != LayerCommandType_SendResult) {
+			perror("Invalid incoming command");
+			WriteCommand(fd.SocketFd, &readCommand);
+			FreeCommand(&readCommand);
+			continue;
+		}
+	}while(readCommand.Command != LayerCommandType_SendResult);
+
+	ServiceSendResultMetadata_T *metadata = readCommand.MetaData;
+	switch (metadata->SendResult) {
+		case AppSend_OK:
+			if(msgId != NULL)
+				*msgId = metadata->MsgId;
+			//result = FUNC_RESULT_SUCCESS;
+			result = (ssize_t) len;
+			break;
+		case AppSend_Failure:
+			result = FUNC_RESULT_FAILED;
+			break;
+		default:
+			perror("Unknown SendResult");
+			result = FUNC_RESULT_FAILED;
+	}
+	FreeCommand(&readCommand);
     return result;
 }
 
@@ -228,6 +237,7 @@ int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state)
         return result;
     }
     LayerCommandStruct_T readCommand = {0};
+
 	do {
 		result = ReadCommand(fd.SocketFd, &readCommand);
 		if (result != FUNC_RESULT_SUCCESS) {

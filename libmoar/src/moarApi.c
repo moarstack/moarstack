@@ -155,6 +155,22 @@ ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppI
     return len;
 }
 
+int waitCommand(int fd, LayerCommandStruct_T* readCommand, const LayerCommandType_T commandType){
+	if(0 >= fd || NULL == readCommand)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	do {
+		int result = ReadCommand(fd, readCommand);
+		CHECK_RESULT(result);
+		if (commandType == readCommand->Command)
+			break;
+		result = WriteCommand(fd, readCommand);
+		FreeCommand(readCommand);
+		CHECK_RESULT(result);
+	}while(commandType != readCommand->Command);
+
+	return FUNC_RESULT_SUCCESS;
+}
+
 ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {
     int result;
     if (NULL == fd || fd->SocketFd < 0 || NULL == msg || 0 == len || NULL == routeAddr || NULL == appId) {
@@ -173,15 +189,8 @@ ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_
 	CHECK_RESULT(result);
     // Read send status
     LayerCommandStruct_T readCommand = {0};
-	do {
-		result = ReadCommand(fd->SocketFd, &readCommand);
-		CHECK_RESULT(result);
-		if (readCommand.Command != LayerCommandType_SendResult) {
-			WriteCommand(fd->SocketFd, &readCommand);
-			FreeCommand(&readCommand);
-			continue;
-		}
-	}while(readCommand.Command != LayerCommandType_SendResult);
+	result = waitCommand(fd->SocketFd, &readCommand, LayerCommandType_SendResult);
+	CHECK_RESULT(result);
 
 	ServiceSendResultMetadata_T *metadata = readCommand.MetaData;
 	switch (metadata->SendResult) {
@@ -218,15 +227,9 @@ int moarMsgState(MoarDesc_T* fd, const MessageId_T *msgId, MessageState_T *state
 	CHECK_RESULT(result);
     LayerCommandStruct_T readCommand = {0};
 
-	do {
-		result = ReadCommand(fd->SocketFd, &readCommand);
-		CHECK_RESULT(result);
-		//validation incoming command
-		if (readCommand.Command != LayerCommandType_MessageStateResult) {
-			WriteCommand(fd->SocketFd, &readCommand);
-			FreeCommand(&readCommand);
-		}
-	}while(readCommand.Command != LayerCommandType_MessageStateResult);
+	result = waitCommand(fd->SocketFd, &readCommand, LayerCommandType_MessageStateResult);
+	CHECK_RESULT(result);
+
     ServiceMsgStateResultMetadata_T *metadata = readCommand.MetaData;
     *state = metadata->MsgState;
     FreeCommand(&readCommand);

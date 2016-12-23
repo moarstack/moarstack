@@ -6,7 +6,7 @@
 __BEGIN_DECLS
 /**
  * Utility function. Gets address from its string representation.
- * @param address Node address in string form
+ * @param address Node address in hexademical string form
  * @param routeAddr Node address in MOAR form
  * @return Execution result, 0 if success, negative if failed
  */

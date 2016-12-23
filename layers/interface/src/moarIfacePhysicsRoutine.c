@@ -57,7 +57,7 @@ int connectDown( IfaceState_T * layer ) {
 	int	result;
 
 	for( int attempt = 0; attempt < IFACE_SEND_ATTEMPTS_COUNT; attempt++ ) {
-		result = SocketOpenFile( IFACE_MOCKIT_SOCKET_FILE, false, &( layer->Config.MockitSocket ) );
+		result = SocketOpenFile( layer->Config.MockitSocketFilepath, false, &( layer->Config.MockitSocket ) );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			break;

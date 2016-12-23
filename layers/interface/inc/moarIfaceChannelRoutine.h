@@ -11,10 +11,10 @@
 #define IFACE_CHANNEL_WAIT_INTERVAL	1 // in seconds
 
 // push to channel layer
-int writeUp( IfaceState_T * layer );
+int writeUp( IfaceState_T * layer, LayerCommandStruct_T * command );
 
 // pop from channel layer
-int readUp( IfaceState_T * layer );
+int readUp( IfaceState_T * layer, LayerCommandStruct_T * command );
 
 // connect to channel layer
 int connectUp( IfaceState_T * layer );

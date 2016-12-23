@@ -17,6 +17,7 @@ include_directories(inc)
 #add library
 add_library(moar_interface SHARED ${SRC_FILES})
 target_link_libraries(moar_interface moar_shared)
+target_link_libraries(moar_interface m)
 
 #copy of config
 if(DEFINED IFACE_MOCK_ENABLED)

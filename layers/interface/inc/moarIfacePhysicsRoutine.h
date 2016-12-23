@@ -7,7 +7,6 @@
 
 #include <moarInterfacePrivate.h>
 
-#define IFACE_MOCKIT_SOCKET_FILE	"/tmp/mockitSocket.file"
 #define IFACE_MOCKIT_WAIT_INTERVAL	1 // in seconds
 #define IFACE_SEND_ATTEMPTS_COUNT	3
 

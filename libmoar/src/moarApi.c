@@ -58,7 +58,7 @@ MoarDesc_T* moarSocket() {
     command.Command = LayerCommandType_ConnectApplication;
     result = WriteCommand(socketValue, &command);
     if (result != FUNC_RESULT_SUCCESS) {
-		free(moarDesc);
+		moarClose(moarDesc);
         return NULL;
     }
     return moarDesc;

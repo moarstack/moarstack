@@ -19,23 +19,25 @@ int moarAddrFromStr(char* address, RouteAddr_T* routeAddr){
 	return res;
 }
 
-int moarClose(MoarDesc_T *MoarDesc) {
-    shutdown(MoarDesc->SocketFd, SHUT_RDWR);
-    return (close(MoarDesc->SocketFd) == 0)?FUNC_RESULT_SUCCESS:FUNC_RESULT_FAILED;
+int moarClose(MoarDesc_T *fd) {
+    shutdown(fd->SocketFd, SHUT_RDWR);
+    return (close(fd->SocketFd) == 0)?FUNC_RESULT_SUCCESS:FUNC_RESULT_FAILED;
 }
 
 int moarSocketGetDescriptor(MoarDesc_T *fd) {
     return fd->SocketFd;
 }
 
-int moarSocket(MoarDesc_T *MoarDesc) {
+MoarDesc_T* moarSocket() {
     int result = 0;
+	MoarDesc_T* MoarDesc = malloc(sizeof(MoarDesc_T));
     int socketValue;
     result = SocketOpenFile(SERVICE_APP_SOCKET_FILE, false, &socketValue);
     if (result != FUNC_RESULT_SUCCESS) {
         //Opening socket error
         perror("could not open socket");
-        return FUNC_RESULT_FAILED_IO;
+		free(MoarDesc);
+        return NULL;
     }
     MoarDesc->SocketFd = socketValue;
     //Create command structure
@@ -48,14 +50,15 @@ int moarSocket(MoarDesc_T *MoarDesc) {
     result = WriteCommand(socketValue, &command);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Write command failed");
-        return result;
+		free(MoarDesc);
+        return NULL;
     }
-    return FUNC_RESULT_SUCCESS;
+    return MoarDesc;
 }
 
-int moarBind(MoarDesc_T fd, const AppId_T *appId) {
+int moarBind(MoarDesc_T* fd, const AppId_T *appId) {
     int result;
-    if (fd.SocketFd < 0) {
+    if (fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
@@ -68,13 +71,13 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
     command.DataSize = 0;
     command.MetaSize = sizeof(AppBindMetadata_T);
     command.MetaData = &bindMetadata;
-    result = WriteCommand(fd.SocketFd, &command);
+    result = WriteCommand(fd->SocketFd, &command);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Write command failed");
         return FUNC_RESULT_FAILED_IO;
     }
     LayerCommandStruct_T readCommand = {0};
-    result = ReadCommand(fd.SocketFd, &readCommand);
+    result = ReadCommand(fd->SocketFd, &readCommand);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Read command failed");
         return FUNC_RESULT_FAILED_IO;
@@ -104,14 +107,14 @@ int moarBind(MoarDesc_T fd, const AppId_T *appId) {
 }
 
 /* Traditional receive function. Places data to msg limiting by size len */
-ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
+ssize_t moarRecvFrom(MoarDesc_T* fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
     int result;
-    if (fd.SocketFd < 0) {
+    if (fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
     LayerCommandStruct_T readCommand = {0};
-    result = ReadCommand(fd.SocketFd, &readCommand);
+    result = ReadCommand(fd->SocketFd, &readCommand);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Read command failed");
         return result;
@@ -133,14 +136,14 @@ ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAdd
 }
 
 /* Raw variant of Read. Return allocated message buffer */
-ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
+ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
     int result;
-    if (fd.SocketFd < 0) {
+    if (fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
     LayerCommandStruct_T readCommand = {0};
-    result = ReadCommand(fd.SocketFd, &readCommand);
+    result = ReadCommand(fd->SocketFd, &readCommand);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Read command failed");
         return result;
@@ -162,9 +165,9 @@ ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId
     return len;
 }
 
-ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {
+ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {
     int result;
-    if (fd.SocketFd < 0) {
+    if (fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
@@ -177,7 +180,7 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     command.MetaSize = sizeof(AppStartSendMetadata_T);
     command.DataSize = len;
     command.Data = msg; //assignment const pointer to non-const pointer
-    result = WriteCommand(fd.SocketFd, &command);
+    result = WriteCommand(fd->SocketFd, &command);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Write command failed");
         return result;
@@ -185,14 +188,14 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     // Read send status
     LayerCommandStruct_T readCommand = {0};
 	do {
-		result = ReadCommand(fd.SocketFd, &readCommand);
+		result = ReadCommand(fd->SocketFd, &readCommand);
 		if (result != FUNC_RESULT_SUCCESS) {
 			perror("Read command failed");
 			return result;
 		}
 		if (readCommand.Command != LayerCommandType_SendResult) {
 			perror("Invalid incoming command");
-			WriteCommand(fd.SocketFd, &readCommand);
+			WriteCommand(fd->SocketFd, &readCommand);
 			FreeCommand(&readCommand);
 			continue;
 		}
@@ -217,9 +220,9 @@ ssize_t moarSendTo(MoarDesc_T fd, const void *msg, size_t len, const RouteAddr_T
     return result;
 }
 
-int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state) {
+int moarMsgState(MoarDesc_T* fd, const MessageId_T *msgId, MessageState_T *state) {
     int result;
-    if (fd.SocketFd < 0) {
+    if (fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
@@ -231,7 +234,7 @@ int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state)
     command.DataSize = 0;
     command.MetaData = &stateMetadata;
     command.MetaSize = sizeof(stateMetadata);
-    result = WriteCommand(fd.SocketFd, &command);
+    result = WriteCommand(fd->SocketFd, &command);
     if (result != FUNC_RESULT_SUCCESS) {
         perror("Write command failed");
         return result;
@@ -239,7 +242,7 @@ int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state)
     LayerCommandStruct_T readCommand = {0};
 
 	do {
-		result = ReadCommand(fd.SocketFd, &readCommand);
+		result = ReadCommand(fd->SocketFd, &readCommand);
 		if (result != FUNC_RESULT_SUCCESS) {
 			perror("Read command failed");
 			return result;
@@ -247,7 +250,7 @@ int moarMsgState(MoarDesc_T fd, const MessageId_T *msgId, MessageState_T *state)
 		//validation incoming command
 		if (readCommand.Command != LayerCommandType_MessageStateResult) {
 			perror("Invalid incoming command");
-			WriteCommand(fd.SocketFd, &readCommand);
+			WriteCommand(fd->SocketFd, &readCommand);
 			FreeCommand(&readCommand);
 		}
 	}while(readCommand.Command != LayerCommandType_MessageStateResult);

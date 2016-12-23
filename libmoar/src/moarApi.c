@@ -184,7 +184,7 @@ ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_
     command.MetaData = &sendMetadata;
     command.MetaSize = sizeof(AppStartSendMetadata_T);
     command.DataSize = len;
-    command.Data = msg; //assignment const pointer to non-const pointer
+    command.Data = ( void * )msg; //assignment const pointer to non-const pointer
     result = WriteCommand(fd->SocketFd, &command);
 	CHECK_RESULT(result);
     // Read send status

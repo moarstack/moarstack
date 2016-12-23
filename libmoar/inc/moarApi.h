@@ -31,7 +31,7 @@ extern int moarSocketGetDescriptor(MoarDesc_T *fd);
  * @return new socket descriptor.
  */
 extern MoarDesc_T* moarSocket();
-
+extern MoarDesc_T* moarSocketFile(char* fileName);
 /**
  * Binds application and socket. Meaning is similar to standard UDP socket.
  * @param fd Pointer to descriptor.

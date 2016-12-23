@@ -6,6 +6,7 @@
 #include <string.h>
 #include <moarMessageId.h>
 #include <moarRouting.h>
+#include <funcResults.h>
 
 typedef struct {
     int MoarFd;

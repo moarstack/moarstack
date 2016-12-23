@@ -5,9 +5,30 @@
 #include "moarApi.h"
 #include <getopt.h>
 
+int AppIdFromStr(const char *str, AppId_T *appid) {
+    int intValue;
+    if (sscanf(optarg, "%d", &intValue) == 0) {
+        fprintf(stderr, "ERROR: appid is invalid\n");
+        return FUNC_RESULT_FAILED_ARGUMENT;
+    }
+    *appid = intValue;
+    return FUNC_RESULT_SUCCESS;
+}
+
+void DumpRouteAddr(FILE *fp, const RouteAddr_T * addr) {
+    int i;
+    for (i=0; i<sizeof(RouteAddr_T)/sizeof(addr->Address[0]); i++) {
+        fprintf(fp, "%02x", addr->Address[i]);
+    }
+}
+
 int main (int argc, char **argv)  {
     /* Flag set by ‘--verbose’. */
     static int verbose = 0;
+    AppId_T OwnAppId;
+    AppId_T RemoteAppId;
+    RouteAddr_T RemoteAddr;
+    char * CustomSocketPath = NULL;
 
     static struct option long_options[] = {
             {"verbose", no_argument,      &verbose, 1}, // verbosity mode
@@ -19,6 +40,7 @@ int main (int argc, char **argv)  {
     };
     int c;
     while (1) {
+        int intValue;
         /* getopt_long stores the option index here. */
         int option_index = 0;
         c = getopt_long (argc, argv, "s:p:h:l:v", long_options, &option_index);
@@ -38,19 +60,29 @@ int main (int argc, char **argv)  {
 
             case 'v':
                 verbose = true;
-                puts ("option -v\n");
                 break;
             case 's':
-                printf ("option -s with value `%s'\n", optarg);
+                CustomSocketPath = optarg;
+                fprintf (stderr , "NOTE: using socket path \"%s\"\n", CustomSocketPath);
                 break;
             case 'p':
-                printf ("option -p with value `%s'\n", optarg);
+                if (AppIdFromStr(optarg, &OwnAppId) != FUNC_RESULT_SUCCESS) {
+                    fprintf(stderr, "ERROR: appid is invalid \"%s\"\n", optarg);
+                    return EXIT_FAILURE;
+                }
                 break;
             case 'h':
-                printf ("option -h with value `%s'\n", optarg);
+                if (moarAddrFromStr(optarg, &RemoteAddr) != FUNC_RESULT_SUCCESS) {
+                    fprintf(stderr, "ERROR: remote address is invalid \"%s\"\n", optarg);
+                    return EXIT_FAILURE;
+                }
                 break;
             case 'l':
                 printf ("option -l with value `%s'\n", optarg);
+                if (AppIdFromStr(optarg, &RemoteAppId) != FUNC_RESULT_SUCCESS) {
+                    fprintf(stderr, "ERROR: appid is invalid: \"%s\"\n", optarg);
+                    return EXIT_FAILURE;
+                }
                 break;
             case '?':
                 /* getopt_long already printed an error message. */
@@ -60,9 +92,11 @@ int main (int argc, char **argv)  {
         }
     }
 
-    if (verbose)
-        puts ("verbose flag is set");
-
+    if (verbose) {
+        puts("verbose flag is set");
+        //fprintf(stderr, "%d\n", OwnAppId);
+        //DumpRouteAddr(stderr, &RemoteAddr);
+    }
     /* Print any remaining command line arguments (not options). */
     if (optind < argc) {
         printf ("non-option ARGV-elements: ");

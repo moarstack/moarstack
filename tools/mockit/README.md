@@ -78,3 +78,20 @@ The whole MockIT output example:
     2016-07-16 17:48:25.598 : Node 000004D2 : + message from node 0000145D
     2016-07-16 17:59:39.804 : Socket    5 : node 0000145D unregistered
     2016-07-16 17:59:39.804 : Socket    5 : closed
+
+## Usage example ##
+
+MockIT allows to run several exemplars of MOAR stack on the single device under Linux OS. To do that perform the next steps:
+
+0. Make sure MockIface (mock interface layer) is compiled as a library for moard and is specified as its enabled layer (look through the MOAR stack documentation for details).
+1. Compose correct MockIT configuration (we have one right in the repo).
+2. Compose several moard configurations. There is no need to copy configuration of each layer into a new folder: any settings which differ you can specify right in the whole moard configuration file (we have ten examples right in the repo, see `config/test` folder). Any of these configurations should meet some requirements:
+    * filenames of interface-channel socket files should differ for every moard exemplar;
+    * filenames of service-application socket files should differ for every moard exemplar;
+    * filenames of log files of any layer should differ for every moard exemplar;
+    * filename of MockIT socket file should be the same as specified in MockIT configuration file;
+    * interface addresses should be any from the list specified in MockIT configuration file without repeatings.
+3. Run MockIT by the command `mockit -c <path-to-the-mockit-configuration>` or simple `mockit` (if `config.txt` is placed in the run folder).
+4. Run moard exemplar by the command `moard -c <path-to-the-one-of-moard-configurations>`.
+5. Repeat previous step as many times as many moard configurations you have composed; use different configuration files.
+6. Watch moard exemplars working by the MockIT output.

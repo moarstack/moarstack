@@ -8,9 +8,14 @@
 #include <moarCommons.h>	// SocketFilepath_T
 #include <moarLogger.h>		// LogFilepath_T
 
-typedef struct{
-	SocketFilepath_T	socketToChannel;
-	LogFilepath_T 		filepathToLog;
-} MoarIfaceStartupParams_T;
+#define IFACE_ADDR_SIZE					sizeof( unsigned int )
+
+#pragma pack(push, 1)
+
+typedef struct {
+	uint8_t	Value[ IFACE_ADDR_SIZE ];
+} IfaceAddr_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARINTERFACE_H

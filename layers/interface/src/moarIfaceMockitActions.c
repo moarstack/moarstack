@@ -97,14 +97,18 @@ int actMockitReceived( IfaceState_T * layer ) {
 		result = receiveAnyData( layer, &power );
 		address = layer->Memory.BufferHeader.From;
 
-		if( FUNC_RESULT_SUCCESS == result )
+		if( layer->Memory.ReceivedData ) {
 			switch( layer->Memory.BufferHeader.Type ) {
 				case IfacePackType_NeedNoResponse:
 					break;
 
 				case IfacePackType_NeedResponse :
 					sender = neighborFind( layer, &address );
-					result = transmitResponse( layer, sender, layer->Memory.BufferHeader.CRC, 0 ); // crc is not implemented yet TODO
+
+					if( NULL != sender )
+						result = transmitResponse( layer, sender, layer->Memory.BufferHeader.CRC,
+												   0 ); // crc is not implemented yet TODO
+
 					break;
 
 				case IfacePackType_IsResponse :
@@ -118,19 +122,26 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 				default :
 					result = FUNC_RESULT_FAILED_ARGUMENT;
-					LogWrite( layer->Config.LogHandle, LogLevel_Warning, "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
+					LogWrite( layer->Config.LogHandle, LogLevel_Warning,
+							  "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
 			}
 
-		if( FUNC_RESULT_SUCCESS == result &&
-			IfacePackType_IsResponse != layer->Memory.BufferHeader.Type &&
-			0 < layer->Memory.BufferHeader.Size ) // if contains payload
-			result = processCommandIfaceReceived( layer );
-
+			if( FUNC_RESULT_SUCCESS == result &&
+				IfacePackType_IsResponse != layer->Memory.BufferHeader.Type &&
+				0 < layer->Memory.BufferHeader.Size ) // if contains payload
+				result = processCommandIfaceReceived( layer );
+		}
 	} else
 		result = actMockitRegisterResult( layer );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "actMockitReceived()" );
+
+	memset( layer->Memory.Buffer, 0, IFACE_BUFFER_SIZE );
+	memset( &( layer->Memory.BufferHeader ), 0, IFACE_HEADER_SIZE );
+	memset( &( layer->Memory.Payload ), 0, IFACE_MAX_PAYLOAD_USUAL_SIZE );
+	memset( &( layer->Memory.BufferFooter ), 0, IFACE_FOOTER_SIZE );
+	layer->Memory.ReceivedData = false;
 
 	return result;
 }

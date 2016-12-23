@@ -5,6 +5,23 @@
 #include "moarApi.h"
 #include <getopt.h>
 #include <moarService.h>
+#include <sys/epoll.h>
+
+#define MAX_EPOLL_EVENTS 100
+
+int addToEpoll(int efd, int newfd) {
+    int rc;
+    struct epoll_event event = {
+            .data.fd = newfd,
+            .events = EPOLLIN | EPOLLET
+    };
+    if ((rc = epoll_ctl (efd, EPOLL_CTL_ADD, newfd, &event)) == -1) {
+        perror ("epoll_ctl: add");
+        return FUNC_RESULT_FAILED_IO;
+    }
+    printf("Add new fd to epoll\r\n");
+    return FUNC_RESULT_SUCCESS;
+}
 
 int AppIdFromStr(const char *str, AppId_T *appid) {
     int intValue;
@@ -110,8 +127,39 @@ int main (int argc, char **argv)  {
         fprintf(stderr, "ERROR: Could not bind socket to appid %d", (int) OwnAppId);
         return EXIT_FAILURE;
     }
-    if (verbose) {
+    if (verbose)
         fprintf(stderr, "Socket successfully bint: fd=%d; appid=%d\n", md->SocketFd, OwnAppId);
+
+    struct epoll_event events[MAX_EPOLL_EVENTS], event;
+    int efd;
+    if ((efd = epoll_create(MAX_EPOLL_EVENTS)) == -1) {
+        perror("epoll_create");
+        return EXIT_FAILURE;
+    }
+    addToEpoll(efd, STDIN_FILENO);
+    addToEpoll(efd, md->SocketFd);
+    while (true) {
+        int newFd;
+        // wait event via epoll
+        int n = epoll_wait (efd, events, MAX_EPOLL_EVENTS, -1);
+        int i;
+        for (i = 0; i < n; i++) {
+            event = events[i];
+            printf("NEW EVENT: %u [%d %d %d %d]\r\n", events[i].events,
+                   event.events & EPOLLIN,
+                   event.events & EPOLLOUT,
+                   event.events & EPOLLERR,
+                   event.events & EPOLLHUP
+            );
+            if (event.data.fd == STDIN_FILENO) {
+                printf("Event from stdin\n");
+                //Read data here
+                
+            }
+            else if (event.data.fd == md->SocketFd) {
+                printf("Event from moarstack\n");
+            }
+        }
     }
 
     moarClose(md);

@@ -79,14 +79,10 @@ int moarBind(MoarDesc_T* fd, const AppId_T *appId) {
     command.MetaSize = sizeof(AppBindMetadata_T);
     command.MetaData = &bindMetadata;
     result = WriteCommand(fd->SocketFd, &command);
-    if (result != FUNC_RESULT_SUCCESS) {
-        return FUNC_RESULT_FAILED_IO;
-    }
+    CHECK_RESULT(result);
     LayerCommandStruct_T readCommand = {0};
     result = ReadCommand(fd->SocketFd, &readCommand);
-    if (result != FUNC_RESULT_SUCCESS) {
-        return FUNC_RESULT_FAILED_IO;
-    }
+	CHECK_RESULT(result);
     //validation incoming command
     if (readCommand.Command != LayerCommandType_BindResult) {
         FreeCommand(&readCommand);
@@ -136,9 +132,7 @@ ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppI
     }
     LayerCommandStruct_T readCommand = {0};
     result = ReadCommand(fd->SocketFd, &readCommand);
-    if (result != FUNC_RESULT_SUCCESS) {
-        return result;
-    }
+	CHECK_RESULT(result);
     if (readCommand.Command != LayerCommandType_Receive) {
         FreeCommand(&readCommand);
         return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
@@ -176,16 +170,12 @@ ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_
     command.DataSize = len;
     command.Data = msg; //assignment const pointer to non-const pointer
     result = WriteCommand(fd->SocketFd, &command);
-    if (result != FUNC_RESULT_SUCCESS) {
-        return result;
-    }
+	CHECK_RESULT(result);
     // Read send status
     LayerCommandStruct_T readCommand = {0};
 	do {
 		result = ReadCommand(fd->SocketFd, &readCommand);
-		if (result != FUNC_RESULT_SUCCESS) {
-			return result;
-		}
+		CHECK_RESULT(result);
 		if (readCommand.Command != LayerCommandType_SendResult) {
 			WriteCommand(fd->SocketFd, &readCommand);
 			FreeCommand(&readCommand);
@@ -225,16 +215,12 @@ int moarMsgState(MoarDesc_T* fd, const MessageId_T *msgId, MessageState_T *state
     command.MetaData = &stateMetadata;
     command.MetaSize = sizeof(stateMetadata);
     result = WriteCommand(fd->SocketFd, &command);
-    if (result != FUNC_RESULT_SUCCESS) {
-        return result;
-    }
+	CHECK_RESULT(result);
     LayerCommandStruct_T readCommand = {0};
 
 	do {
 		result = ReadCommand(fd->SocketFd, &readCommand);
-		if (result != FUNC_RESULT_SUCCESS) {
-			return result;
-		}
+		CHECK_RESULT(result);
 		//validation incoming command
 		if (readCommand.Command != LayerCommandType_MessageStateResult) {
 			WriteCommand(fd->SocketFd, &readCommand);

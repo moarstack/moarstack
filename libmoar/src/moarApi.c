@@ -7,6 +7,7 @@
 #include "moarApiCommands.h"
 #include "moarServiceApp.h"
 #include "funcResults.h"
+#include <moarApi.h>
 
 #ifndef MIN
 #define MIN(x,y) (((x)>(y))?(y):(x))
@@ -15,16 +16,21 @@
 int moarAddrFromStr(char* address, RouteAddr_T* routeAddr){
 	if(NULL == address || NULL == routeAddr)
 		return FUNC_RESULT_FAILED_ARGUMENT;
+
 	int res = routeAddrFromStr(address, routeAddr);
 	return res;
 }
 
 int moarClose(MoarDesc_T *fd) {
+	if(NULL == fd)
+		return FUNC_RESULT_FAILED_ARGUMENT;
     shutdown(fd->SocketFd, SHUT_RDWR);
     return (close(fd->SocketFd) == 0)?FUNC_RESULT_SUCCESS:FUNC_RESULT_FAILED;
 }
 
 int moarSocketGetDescriptor(MoarDesc_T *fd) {
+	if(NULL == fd)
+		return FUNC_RESULT_FAILED_ARGUMENT;
     return fd->SocketFd;
 }
 
@@ -57,11 +63,11 @@ MoarDesc_T* moarSocket() {
 }
 
 int moarBind(MoarDesc_T* fd, const AppId_T *appId) {
-    int result;
-    if (fd->SocketFd < 0) {
-        perror("Invalid socket descriptor");
+	if(NULL == fd || fd->SocketFd < 0 || NULL == appId) {
+        perror("Invalid argument");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
+	int result = FUNC_RESULT_FAILED;
     LayerCommandStruct_T command = {0};
     AppBindMetadata_T bindMetadata;
     //bindMetadata.MoarFd = fd.MoarFd;
@@ -108,37 +114,24 @@ int moarBind(MoarDesc_T* fd, const AppId_T *appId) {
 
 /* Traditional receive function. Places data to msg limiting by size len */
 ssize_t moarRecvFrom(MoarDesc_T* fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId) {
-    int result;
-    if (fd->SocketFd < 0) {
-        perror("Invalid socket descriptor");
-        return FUNC_RESULT_FAILED_ARGUMENT;
-    }
-    LayerCommandStruct_T readCommand = {0};
-    result = ReadCommand(fd->SocketFd, &readCommand);
-    if (result != FUNC_RESULT_SUCCESS) {
-        perror("Read command failed");
-        return result;
-    }
-    if (readCommand.Command != LayerCommandType_Receive) {
-        perror("Invalid incoming command");
-        FreeCommand(&readCommand);
-        return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
-    }
-    ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
-	if(appId != NULL)
-    	*appId = metadata->RemoteAppId;
-	if(routeAddr != NULL)
-    	*routeAddr = metadata->RemoteAddr;
-    size_t copyLen = MIN(readCommand.DataSize, len);
-    memcpy(msg, readCommand.Data, copyLen);
-    FreeCommand(&readCommand);
-    return copyLen;
+    void* dataPtr = NULL;
+	ssize_t recvRes = moarRecvFromRaw(fd, &dataPtr, routeAddr, appId);
+	if(recvRes >= 0) {
+		ssize_t copyLen = 0;
+		if (NULL != msg && NULL != dataPtr) {
+			copyLen = MIN(recvRes, (ssize_t)len);
+			memcpy(msg, dataPtr, copyLen);
+		}
+		free(dataPtr);
+		return copyLen;
+	}
+    return recvRes;
 }
 
 /* Raw variant of Read. Return allocated message buffer */
 ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId) {
     int result;
-    if (fd->SocketFd < 0) {
+    if (NULL == fd || fd->SocketFd < 0) {
         perror("Invalid socket descriptor");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
@@ -153,22 +146,28 @@ ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppI
         FreeCommand(&readCommand);
         return FUNC_RESULT_FAILED_UNEXPECTED_COMMAND;
     }
+
     ServicePacketReceivedMetadata_T *metadata = readCommand.MetaData;
+
 	if(appId != NULL)
     	*appId = metadata->RemoteAppId;
 	if(routeAddr != NULL)
     	*routeAddr = metadata->RemoteAddr;
-    *msg = readCommand.Data;
-    readCommand.Data = NULL; // prevent Data ptr from being disposed in FreeCommand()
-    ssize_t len = readCommand.DataSize;
+
+	ssize_t len = 0;
+	if(NULL != msg && NULL != *msg) {
+		*msg = readCommand.Data;
+		readCommand.Data = NULL; // prevent Data ptr from being disposed in FreeCommand()
+		len = readCommand.DataSize;
+	}
     FreeCommand(&readCommand);
     return len;
 }
 
 ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_T *routeAddr, const AppId_T *appId, MessageId_T *msgId) {
     int result;
-    if (fd->SocketFd < 0) {
-        perror("Invalid socket descriptor");
+    if (NULL == fd || fd->SocketFd < 0 || NULL == msg || 0 == len || NULL == routeAddr || NULL == appId) {
+        perror("Invalid argument");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
     LayerCommandStruct_T command = {0};
@@ -222,8 +221,8 @@ ssize_t moarSendTo(MoarDesc_T* fd, const void *msg, size_t len, const RouteAddr_
 
 int moarMsgState(MoarDesc_T* fd, const MessageId_T *msgId, MessageState_T *state) {
     int result;
-    if (fd->SocketFd < 0) {
-        perror("Invalid socket descriptor");
+    if (NULL == fd || fd->SocketFd < 0 || NULL == msgId || NULL == state) {
+        perror("Invalid argument");
         return FUNC_RESULT_FAILED_ARGUMENT;
     }
     LayerCommandStruct_T command = {0};

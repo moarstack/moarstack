@@ -37,13 +37,19 @@ int moarSocketGetDescriptor(MoarDesc_T *fd) {
     return fd->SocketFd;
 }
 
-MoarDesc_T* moarSocket() {
+MoarDesc_T* moarSocket(){
+	return moarSocketFile(SERVICE_APP_SOCKET_FILE);
+}
+
+MoarDesc_T* moarSocketFile(char* fileName) {
     int result = 0;
+	if(NULL == fileName)
+		return NULL;
 	MoarDesc_T* moarDesc = malloc(sizeof(MoarDesc_T));
 	if(NULL == moarDesc)
 		return NULL;
     int socketValue;
-    result = SocketOpenFile(SERVICE_APP_SOCKET_FILE, false, &socketValue);
+    result = SocketOpenFile(fileName, false, &socketValue);
     if (result != FUNC_RESULT_SUCCESS) {
         free(moarDesc);
         return NULL;

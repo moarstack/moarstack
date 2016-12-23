@@ -9,6 +9,7 @@ extern int moarAddrFromStr(char* address, RouteAddr_T* routeAddr);
 extern int moarClose(MoarDesc_T *fd);
 extern int moarSocketGetDescriptor(MoarDesc_T *fd);
 extern MoarDesc_T* moarSocket();
+extern MoarDesc_T* moarSocketFile(char* fileName);
 extern int moarBind(MoarDesc_T* fd, const AppId_T *appId);
 /* Traditional receive function. Places data to msg limiting by size len */
 extern ssize_t moarRecvFrom(MoarDesc_T* fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId);

@@ -1,6 +1,7 @@
 #include <moarApiCommon.h>
 #include <moarCommons.h>
 #include <moarServiceApp.h>
+#include <moarService.h>
 #include "moarApiCommon.h"
 #include "moarApiCommands.h"
 #include "moarServiceApp.h"
@@ -9,6 +10,10 @@
 #ifndef MIN
 #define MIN(x,y) (((x)>(y))?(y):(x))
 #endif
+
+int moarSocketGetDescriptor(MoarDesc_T *fd) {
+    return fd->SocketFd;
+}
 
 int moarSocket(MoarDesc_T *MoarDesc) {
     int result = 0;

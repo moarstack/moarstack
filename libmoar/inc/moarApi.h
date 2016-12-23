@@ -5,6 +5,8 @@
 
 __BEGIN_DECLS
 
+extern int moarSocketGetDescriptor(MoarDesc_T *fd);
+
 extern int moarSocket(MoarDesc_T *fd);
 
 extern int moarClose(MoarDesc_T *MoarDesc);

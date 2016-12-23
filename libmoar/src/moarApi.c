@@ -17,6 +17,10 @@ int moarClose(MoarDesc_T *MoarDesc) {
     return (close(MoarDesc->SocketFd) == 0)?FUNC_RESULT_SUCCESS:FUNC_RESULT_FAILED;
 }
 
+int moarSocketGetDescriptor(MoarDesc_T *fd) {
+    return fd->SocketFd;
+}
+
 int moarSocket(MoarDesc_T *MoarDesc) {
     int result = 0;
     int socketValue;

@@ -91,27 +91,27 @@ int processMsgStateCommand(void* layerRef, int fd, LayerCommandStruct_T *command
 	return FUNC_RESULT_SUCCESS;
 }
 
+//int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+//	if(NULL == layerRef || fd <= 0 || NULL == command)
+//		return FUNC_RESULT_FAILED_ARGUMENT;
+//
+//	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
+//	AppStartSendMetadata_T* metadata = (AppStartSendMetadata_T*)command->MetaData;
+//
+//	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
+//	if(conFd==NULL)
+//		return FUNC_RESULT_FAILED;
+//
+//	bool exist = hashContain(&layer->MidStorage,&metadata->Mid);
+//	if(exist)
+//		return FUNC_RESULT_FAILED;
+//
+//	int res = pushSendToPresentation(layer, command->Data, command->DataSize,
+//									 &metadata->Mid, &metadata->RemoteAddr, &conFd->AppId, &metadata->RemoteAppId);
+//	return res;
+//}
+
 int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
-	if(NULL == layerRef || fd <= 0 || NULL == command)
-		return FUNC_RESULT_FAILED_ARGUMENT;
-
-	ServiceLayer_T* layer = (ServiceLayer_T*)layerRef;
-	AppStartSendMetadata_T* metadata = (AppStartSendMetadata_T*)command->MetaData;
-
-	AppConection_T* conFd = csGetByFdPtr(&layer->ConnectionStorage,fd);
-	if(conFd==NULL)
-		return FUNC_RESULT_FAILED;
-
-	bool exist = hashContain(&layer->MidStorage,&metadata->Mid);
-	if(exist)
-		return FUNC_RESULT_FAILED;
-
-	int res = pushSendToPresentation(layer, command->Data, command->DataSize,
-									 &metadata->Mid, &metadata->RemoteAddr, &conFd->AppId, &metadata->RemoteAppId);
-	return res;
-}
-
-int processSendWRCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 	if(NULL == layerRef || fd <= 0 || NULL == command)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
@@ -252,6 +252,16 @@ int processAppMessageStateCommand(void* layerRef, int fd, LayerCommandStruct_T *
 	com.MetaData = &meta;
 	com.MetaSize = sizeof(ServiceMsgStateResultMetadata_T);
 	int res = WriteCommand(fd, &com);
+
+	return res;
+}
+
+// echo like command to reorder commands in socket
+int processAppReceiveCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
+	if(NULL == layerRef || fd <= 0 || NULL == command)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	int res = WriteCommand(fd, command);
 
 	return res;
 }

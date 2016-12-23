@@ -21,7 +21,6 @@ typedef uint32_t	Crc_T; // type for values of CRC calculating result
 typedef enum {
 	LayerCommandType_None,
     LayerCommandType_Send,
-	LayerCommandType_SendWR,
 	LayerCommandType_SendResult,
 	LayerCommandType_Receive,
     LayerCommandType_NewNeighbor,

@@ -7,6 +7,8 @@ __BEGIN_DECLS
 
 extern int moarSocket(MoarDesc_T *fd);
 
+extern int moarClose(MoarDesc_T *MoarDesc);
+
 extern int moarBind(MoarDesc_T fd, const AppId_T *appId);
 
 extern ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId);

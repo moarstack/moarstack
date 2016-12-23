@@ -10,6 +10,13 @@
 #define MIN(x,y) (((x)>(y))?(y):(x))
 #endif
 
+int moarAddrFromStr(char* address, RouteAddr_T* routeAddr){
+	if(NULL == address || NULL == routeAddr)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	int res = routeAddrFromStr(address, routeAddr);
+	return res;
+}
+
 int moarSocket(MoarDesc_T *MoarDesc) {
     int result = 0;
     int socketValue;

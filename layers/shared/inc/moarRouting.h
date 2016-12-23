@@ -43,7 +43,7 @@ typedef struct{
 
 __BEGIN_DECLS
 extern bool routeAddrEqualPtr(const RouteAddr_T* first, const RouteAddr_T* second);
-
+extern int routeAddrFromStr(char* address, RouteAddr_T* routeAddr);
 __END_DECLS
 #define routeAddrEqual(first, second) routeAddrEqualPtr(&(first),&(second))
 

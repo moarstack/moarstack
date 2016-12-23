@@ -26,9 +26,9 @@
 #define SOCK_FLNM_FRMT	"%108s" // format string to read socket filename as a string safely
 #define MAX_CLIENTS		10
 #define BUF_SIZE		32
-#define POWER_BUF_SIZE	10
+#define POWER_BUF_SIZE	12
 #define ADDR_SIZE		30
-#define LIGHT_SPEED		299792458
+#define LIGHT_SPEED		299.792458
 #define TIME_SIZE		30
 #define M_PI			3.14159265358979323846
 
@@ -107,7 +107,7 @@ void readConfig( Config_T * cfg ) {
 
 	fscanf( configFile, SOCK_FLNM_FRMT, cfg->socketFilename );
 	fscanf( configFile, "%f%d", &( cfg->coefficient ), &clientsLimit ); // here coefficient is equal to frequency
-	cfg->coefficient = 4.0 * M_PI * LIGHT_SPEED / cfg->coefficient;
+	cfg->coefficient = ( float )20.0 * log10f( ( float )4.0 * ( float )M_PI * cfg->coefficient / ( float )LIGHT_SPEED );
 	Init_Hash( cfg->addr_hash );
 
 	for( int i = 0; i < clientsLimit; i++ ) {
@@ -169,8 +169,8 @@ float distance( float x1, float y1, float x2, float y2 ) {
 }
 
 float leftPower( AddrData_T * to, const AddrData_T * from, float startPower, float coefficient ) {
-	float finishPower = startPower - 20.0 * log10f( coefficient * distance( to->x, to->y, from->x, from->y ) );
-	return finishPower < startPower ? finishPower : startPower;
+	float finishPower = startPower - coefficient - ( float )10.0 * log10f( distance( to->x, to->y, from->x, from->y ) );
+	return ( finishPower < startPower ? finishPower : startPower );
 }
 
 static inline char * unpack( char buf[], float * power, int * size ) {

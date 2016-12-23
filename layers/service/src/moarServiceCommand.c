@@ -123,16 +123,18 @@ int processSendCommand(void* layerRef, int fd, LayerCommandStruct_T *command){
 		return FUNC_RESULT_FAILED;
 	int res = FUNC_RESULT_FAILED;
 
-	// build uniq mid
 	MessageId_T mid;
-	do{
-		res = midGenerate(&mid, MoarLayer_Service);
-		CHECK_RESULT(res);
-	}while(hashContain(&layer->MidStorage,&mid));
 
-	res = pushSendToPresentation(layer, command->Data, command->DataSize,
+	if(command->DataSize <= MAX_MSG_SIZE) {
+		// build uniq mid
+		do {
+			res = midGenerate(&mid, MoarLayer_Service);
+			CHECK_RESULT(res);
+		} while (hashContain(&layer->MidStorage, &mid));
+
+		res = pushSendToPresentation(layer, command->Data, command->DataSize,
 									 &mid, &metadata->RemoteAddr, &conFd->AppId, &metadata->RemoteAppId);
-
+	}
 	//send response
 	LayerCommandStruct_T com = {0};
 

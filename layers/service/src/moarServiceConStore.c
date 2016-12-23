@@ -8,7 +8,7 @@
 #include <hashTable.h>
 
 hashVal_T hashAppId(void *data, size_t size){
-	return hashInt32(data,size);
+	return hashBytesEx(data,size, 0x3fa941);
 }
 void freeStoredAppConnection(void* ptr){
 	if(ptr!=NULL)

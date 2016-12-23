@@ -15,7 +15,7 @@ int receiveAnyData( IfaceState_T * layer, PowerFloat_T * finishPower );
 int transmitResponse( IfaceState_T * layer, IfaceNeighbor_T * receiver, Crc_T crcInHeader, Crc_T crcFull );
 
 // transmit message to the physical layer
-int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse );
+int transmitMessage( IfaceState_T * layer, IfaceNeighbor_T * receiver, bool needResponse, LayerCommandStruct_T * command );
 
 // transmit beacon to the physical layer
 int transmitBeacon( IfaceState_T * layer );

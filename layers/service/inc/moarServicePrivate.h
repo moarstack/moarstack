@@ -25,6 +25,7 @@
 #define APP_PROCESSING_RULES_COUNT			7
 
 #define MID_CACH_TABLE_SIZE					100
+#define MAX_MSG_SIZE						0xFFFF
 
 typedef struct{
 	int 					UpSocket;

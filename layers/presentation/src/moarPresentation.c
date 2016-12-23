@@ -6,6 +6,9 @@
 #include <funcResults.h>
 #include <sys/epoll.h>
 #include <moarPresentationCommand.h>
+#include <moarLayerEntryPoint.h>
+#include <moarCommons.h>
+#include <moarRoutingPresentation.h>
 #include "moarLayerEntryPoint.h"
 #include "moarCommons.h"
 #include "moarPresentation.h"
@@ -20,6 +23,9 @@ int presentationInit(PresentationLayer_T* layer, void* arg){
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	MoarLayerStartupParams_T* params = (MoarLayerStartupParams_T*)arg;
+
+	layer->RoutingSocket = params->DownSocketHandler;
+	layer->ServiceSocket = params->UpSocketHandler;
 
 	layer->RoutingProcessingRules[0] = MakeProcessingRule(LayerCommandType_Receive, processReceiveCommand);
 	layer->RoutingProcessingRules[1] = MakeProcessingRule(LayerCommandType_MessageState, processMsgStateCommand);
@@ -79,6 +85,7 @@ void * MOAR_LAYER_ENTRY_POINT(void* arg){
 	int epollInitRes = initEpoll(&layer);
 	if(FUNC_RESULT_SUCCESS != epollInitRes)
 		return NULL;
+
 	// enable process
 	layer.Running = true;
 	while(layer.Running) {

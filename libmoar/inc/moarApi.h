@@ -9,7 +9,7 @@ extern int moarSocket(MoarDesc_T *fd);
 
 extern int moarBind(MoarDesc_T fd, const AppId_T *appId);
 
-extern ssize_t moarRecvFromRaw(MoarDesc_T fd, void *msg, RouteAddr_T *routeAddr, AppId_T  *appId);
+extern ssize_t moarRecvFromRaw(MoarDesc_T fd, void **msg, RouteAddr_T *routeAddr, AppId_T  *appId);
 
 extern ssize_t moarRecvFrom(MoarDesc_T fd, void *msg, size_t len, RouteAddr_T *routeAddr, AppId_T  *appId);
 

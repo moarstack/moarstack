@@ -40,8 +40,8 @@ int initEpoll(RoutingLayer_T* layer){
 		return FUNC_RESULT_FAILED;
 	// add presentation socket
 	struct epoll_event epollEventPresentation;
-	epollEventChannel.events = EPOLL_PRESENTATION_EVENTS;
-	epollEventChannel.data.fd = layer->PresentationSocket;
+	epollEventPresentation.events = EPOLL_PRESENTATION_EVENTS;
+	epollEventPresentation.data.fd = layer->PresentationSocket;
 	int presentationRes = epoll_ctl(layer->EpollHandler, EPOLL_CTL_ADD, layer->PresentationSocket, &epollEventPresentation);
 	if(0 != presentationRes)
 		return FUNC_RESULT_FAILED;

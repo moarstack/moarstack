@@ -13,7 +13,7 @@ typedef struct {
     //TODO: Possibly add mutex for multithreading apps
 } MoarDesc_T;
 
-typedef int32_t AppId_T;
+typedef uint16_t AppId_T;
 
 typedef enum {
     AppBind_OK = 0,

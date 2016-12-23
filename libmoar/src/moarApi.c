@@ -39,14 +39,16 @@ int moarSocketGetDescriptor(MoarDesc_T *fd) {
 
 MoarDesc_T* moarSocket() {
     int result = 0;
-	MoarDesc_T* MoarDesc = malloc(sizeof(MoarDesc_T));
+	MoarDesc_T* moarDesc = malloc(sizeof(MoarDesc_T));
+	if(NULL == moarDesc)
+		return NULL;
     int socketValue;
     result = SocketOpenFile(SERVICE_APP_SOCKET_FILE, false, &socketValue);
     if (result != FUNC_RESULT_SUCCESS) {
-        free(MoarDesc);
+        free(moarDesc);
         return NULL;
     }
-    MoarDesc->SocketFd = socketValue;
+    moarDesc->SocketFd = socketValue;
     //Create command structure
     LayerCommandStruct_T command = {0};
     command.MetaSize = 0;
@@ -56,10 +58,10 @@ MoarDesc_T* moarSocket() {
     command.Command = LayerCommandType_ConnectApplication;
     result = WriteCommand(socketValue, &command);
     if (result != FUNC_RESULT_SUCCESS) {
-		free(MoarDesc);
+		free(moarDesc);
         return NULL;
     }
-    return MoarDesc;
+    return moarDesc;
 }
 
 int moarBind(MoarDesc_T* fd, const AppId_T *appId) {
@@ -150,7 +152,7 @@ ssize_t moarRecvFromRaw(MoarDesc_T* fd, void **msg, RouteAddr_T *routeAddr, AppI
     	*routeAddr = metadata->RemoteAddr;
 
 	ssize_t len = 0;
-	if(NULL != msg && NULL != *msg) {
+	if(NULL != msg) {
 		*msg = readCommand.Data;
 		readCommand.Data = NULL; // prevent Data ptr from being disposed in FreeCommand()
 		len = readCommand.DataSize;

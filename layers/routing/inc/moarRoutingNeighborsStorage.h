@@ -10,6 +10,7 @@
 
 #define STORAGE_HASH_SIZE 41
 
+#pragma pack(push, 1)
 
 typedef struct{
 	RouteAddr_T Address;
@@ -19,6 +20,8 @@ typedef struct{
 	hashTable_T Storage;
 	int Count;
 }RoutingNeighborsStorage_T;
+
+#pragma pack(pop)
 
 int storageInit(RoutingNeighborsStorage_T* storage);
 int storageDeinit(RoutingNeighborsStorage_T* storage);

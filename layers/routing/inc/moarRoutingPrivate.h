@@ -37,6 +37,8 @@
 #define DEFAULT_PROBE_SEND_PERIOD			120000 // in milliseconds
 #define DEFAULT_TABLE_RENEW_PERIOD			15000 // calibrate!
 
+#pragma pack(push, 1)
+
 typedef struct{
 	int 						ChannelSocket;
 	int 						PresentationSocket;
@@ -55,6 +57,8 @@ typedef struct{
 	moarTime_T					NextProbeSentTime,
 								NextTableRenewTime;
 } RoutingLayer_T;
+
+#pragma pack(pop)
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay );
 int helperUpdateRouteAddrChainBefore( RoutingLayer_T * layer, RouteAddr_T * list, size_t count );

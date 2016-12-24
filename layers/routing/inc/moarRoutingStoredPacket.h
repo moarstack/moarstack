@@ -9,6 +9,8 @@
 #include <moarRoutingMessageId.h>
 #include <moarTime.h>
 
+#pragma pack(push, 1)
+
 typedef enum{
 	StoredPackState_Received,
 	StoredPackState_InProcessing,
@@ -38,5 +40,7 @@ typedef struct{
 	int 				TrysLeft;
 	RouteXTL_T 			XTL;
 }RouteStoredPacket_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARROUTINGPACKETMETADATA_H

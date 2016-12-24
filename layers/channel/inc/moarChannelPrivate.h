@@ -38,6 +38,8 @@
 #define NEIGHBORS_NONRES_TABLE_SIZE			23
 #define NEIGHBORS_INTERFACES_TABLE_SIZE		17
 
+#pragma pack(push, 1)
+
 typedef struct {
 	UnIfaceAddr_T 	Address;
 	time_t 			LastSeen;
@@ -100,6 +102,8 @@ typedef struct {
 	CommandProcessingRule_T InterfaceProcessingRules[INTERFACE_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T RoutingProcessingRules[ROUTING_PROCESSING_RULES_COUNT];
 } ChannelLayer_T;
+
+#pragma pack(pop)
 
 int processCloseConnection(ChannelLayer_T* layer, int fd);
 

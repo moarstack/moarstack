@@ -32,6 +32,8 @@
 #define TIME_SIZE		30
 #define M_PI			3.14159265358979323846
 
+#pragma pack(push, 1)
+
 typedef struct sockaddr_un	SockAddr_T;
 typedef int					Addr_T;
 
@@ -52,6 +54,8 @@ typedef struct {
 	char		socketFilename[ SOCK_FLNM_SZ ],
 				configFilename[ CONFIG_FLNM_SZ ];
 } Config_T;
+
+#pragma pack(pop)
 
 const char * getTime( void ) {
 	static struct timeval	moment;

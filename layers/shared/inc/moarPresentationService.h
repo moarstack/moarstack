@@ -11,6 +11,8 @@
 #include "moarPresentation.h"
 #include "moarService.h"
 
+#define PACK_STATE_PRESENT_BITS	8
+
 #pragma pack(push, 1)
 
 // possible states of packet when it is moving from presentation to service
@@ -29,7 +31,7 @@ typedef struct {
 
 typedef struct {
 	MessageId_T 		Mid; // mid of current packet
-	PackStatePresent_T State;
+	PackStatePresent_T State:PACK_STATE_PRESENT_BITS;
 } PresentMsgStateMetadata_T;
 
 // metadata of packet moving from service to presentation

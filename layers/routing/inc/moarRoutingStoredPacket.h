@@ -9,6 +9,8 @@
 #include <moarRoutingMessageId.h>
 #include <moarTime.h>
 
+#define STORED_PACK_STATE_BITS	8
+
 #pragma pack(push, 1)
 
 typedef enum{
@@ -20,8 +22,8 @@ typedef enum{
 }StoredPackState_T;
 
 typedef struct{
-	RoutePackType_T 	PackType;
-	StoredPackState_T	State;
+	RoutePackType_T 	PackType:ROUTE_PACK_TYPE_BITS;
+	StoredPackState_T	State:STORED_PACK_STATE_BITS;
 
 	RouteAddr_T			Source;
 	RouteAddr_T			Destination;

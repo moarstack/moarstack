@@ -10,6 +10,14 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#define FIELD_TYPE_BITS	8
+
+//make binding macro
+
+#define MAKENAME(strct, field) (#strct "." #field)
+#define MAKEOFFSET(strct, field) ((Offset_T)&(((strct*)NULL)->field))
+#define BINDINGMAKE(b, s, f, t) bindingMake(b, MAKENAME(s,f), MAKEOFFSET(s, f), t)
+
 #pragma pack(push, 1)
 
 typedef ptrdiff_t Offset_T;
@@ -34,19 +42,13 @@ typedef enum{
 
 typedef struct{
 	char* Name; // lower case field name
-	FieldType_T FieldType;
+	FieldType_T FieldType:FIELD_TYPE_BITS;
 	Offset_T Offset; // offset in structure
 }SettingsBind_T;
 
 typedef int (bindingFunc_F)(SettingsBind_T** binding, int* count);
 
 #pragma pack(pop)
-
-//make binding macro
-
-#define MAKENAME(strct, field) (#strct "." #field)
-#define MAKEOFFSET(strct, field) ((Offset_T)&(((strct*)NULL)->field))
-#define BINDINGMAKE(b, s, f, t) bindingMake(b, MAKENAME(s,f), MAKEOFFSET(s, f), t)
 
 //__BEGIN_DECLS
 

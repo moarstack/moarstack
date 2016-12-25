@@ -7,6 +7,10 @@
 #include <moarMessageId.h>
 #include <moarRouting.h>
 
+#define APP_BIND_RESULT_BITS	8
+#define APP_SENT_RESULT_BITS	8
+#define MESSAGE_STATE_BITS		8
+
 #pragma pack(push, 1)
 
 typedef struct {

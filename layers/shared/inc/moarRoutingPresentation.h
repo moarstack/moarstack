@@ -10,6 +10,8 @@
 #include "moarRouting.h"
 #include "moarPresentation.h"
 
+#define PACK_STATE_ROUTE_BITS	8
+
 #pragma pack(push, 1)
 
 // possible states of packet when it is moving from routing to presentation
@@ -28,7 +30,7 @@ typedef struct {
 
 typedef struct {
 	MessageId_T	Id;
-	PackStateRoute_T State;
+	PackStateRoute_T State:PACK_STATE_ROUTE_BITS;
 } RouteMessageStateMetadata_T;
 
 // metadata of packet moving from presentation to routing

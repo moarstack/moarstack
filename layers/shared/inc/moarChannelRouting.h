@@ -11,8 +11,9 @@
 #include "moarRouting.h"
 #include <moarMessageId.h>
 
-#define	CHANNEL_RECEIVE_METADATA_SIZE  sizeof( ChannelReceiveMetadata_T )
-#define	ROUTE_SEND_METADATA_SIZE  sizeof( RouteSendMetadata_T )
+#define	CHANNEL_RECEIVE_METADATA_SIZE	sizeof( ChannelReceiveMetadata_T )
+#define	ROUTE_SEND_METADATA_SIZE		sizeof( RouteSendMetadata_T )
+#define PACK_STATE_CHANNEL_BITS			8
 
 #pragma pack(push, 1)
 
@@ -41,7 +42,7 @@ typedef struct {
 
 typedef struct {
 	MessageId_T Id;
-	PackStateChannel_T State;
+	PackStateChannel_T State:PACK_STATE_CHANNEL_BITS;
 	SendTrys_T SentTrys;
 	ChannelAddr_T NeighborAddress;
 } ChannelMessageStateMetadata_T;

@@ -12,6 +12,7 @@
 
 //#define ROUTE_ADDR_SIZE	8
 #define ROUTING_HEADER_SIZE 			sizeof(RoutingHeader_T)
+#define ROUTE_PACK_TYPE_BITS			8
 #define routeAddrEqual(first,second)	routeAddrEqualPtr(&(first),&(second))
 
 #pragma pack(push, 1)
@@ -32,7 +33,7 @@ typedef enum{
 }RoutePackType_T;
 
 typedef struct{
-	RoutePackType_T 	PacketType;
+	RoutePackType_T 	PacketType:ROUTE_PACK_TYPE_BITS;
 	PayloadSize_T 		PayloadSize;
 	RouteAddr_T 		Source;
 	RouteAddr_T 		Destination;

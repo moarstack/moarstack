@@ -7,6 +7,8 @@
 #include <moarMessageId.h>
 #include <moarRouting.h>
 
+#pragma pack(push, 1)
+
 typedef struct {
     int MoarFd;
     int SocketFd;
@@ -33,5 +35,6 @@ typedef enum {
     MessageState_Lost,
 } MessageState_T;
 
+#pragma pack(pop)
 
 #endif

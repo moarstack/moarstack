@@ -17,6 +17,8 @@
 #define IFACE_PACK_STATE_METADATA_SIZE				sizeof( IfacePackStateMetadata_T )
 #define IFACE_MODE_STATE_METADATA_SIZE				sizeof( IfaceModeStateMetadata_T )
 
+#pragma pack(push, 1)
+
 // type for length of universal address
 typedef uint8_t UnIfaceAddrLen_T;
 
@@ -41,8 +43,6 @@ typedef enum {
 	IfaceModeState_Responsing,	// interface is sending response (if needed)
 	IfaceModeState_Ready		// interface is ready to send or receive
 } IfaceModeState_T;
-
-#pragma pack(push, 1)
 
 // metadata of packet state command
 typedef struct {

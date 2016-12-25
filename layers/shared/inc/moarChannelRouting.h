@@ -11,6 +11,11 @@
 #include "moarRouting.h"
 #include <moarMessageId.h>
 
+#define	CHANNEL_RECEIVE_METADATA_SIZE  sizeof( ChannelReceiveMetadata_T )
+#define	ROUTE_SEND_METADATA_SIZE  sizeof( RouteSendMetadata_T )
+
+#pragma pack(push, 1)
+
 typedef uint8_t SendTrys_T;
 
 // possible states of packet when it is moving from channel to routing
@@ -45,7 +50,6 @@ typedef struct {
 	ChannelAddr_T	Address;
 } ChannelNeighborMetadata_T;
 
-#define	CHANNEL_RECEIVE_METADATA_SIZE  sizeof( ChannelReceiveMetadata_T )
-#define	ROUTE_SEND_METADATA_SIZE  sizeof( RouteSendMetadata_T )
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARCHANNELROUTING_H

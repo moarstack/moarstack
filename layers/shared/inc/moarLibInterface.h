@@ -14,6 +14,8 @@
 #define MOAR_LIBRARY_INFO MoarLibraryInfo
 #define MOAR_LIBRARY_INFO_NAME "MoarLibraryInfo"
 
+#pragma pack(push, 1)
+
 typedef enum{
     MoarLayer_Interface = 0,
     MoarLayer_Channel,
@@ -34,17 +36,14 @@ typedef struct{
     MoarLayerType_T LayerType;
 } MoarLibInfo_T;
 
-
 typedef int (*moarLibraryInfo_F)(MoarLibInfo_T* libInfo);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#pragma pack(pop)
+
+__BEGIN_DECLS
 
 extern int MOAR_LIBRARY_INFO(MoarLibInfo_T* libInfo);
 
-#ifdef __cplusplus
-};
-#endif
+__END_DECLS
 
 #endif //MOARSTACK_LIBINTERFACE_H

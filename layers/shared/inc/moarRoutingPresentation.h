@@ -10,6 +10,8 @@
 #include "moarRouting.h"
 #include "moarPresentation.h"
 
+#pragma pack(push, 1)
+
 // possible states of packet when it is moving from routing to presentation
 typedef enum {
 	PackStateRoute_None, 		// not defined state of enum
@@ -34,6 +36,8 @@ typedef struct {
 	MessageId_T	Id;
 	RouteAddr_T	Destination;
 } PresentSendMetadata_T;
+
+#pragma pack(pop)
 
 //const size_t	ROUTE_MSG_UP_SIZE = sizeof( RouteMsgUp_T );
 //const size_t	PRESENT_MSG_DOWN_SIZE = sizeof( PresentMsgDown_T );

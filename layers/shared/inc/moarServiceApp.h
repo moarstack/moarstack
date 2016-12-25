@@ -9,6 +9,8 @@
 #define APP_READ_ATTEMPTS_COUNT 5
 #define SERVICE_APP_SOCKET_FILE "/tmp/moarServiceApi.sock"
 
+#pragma pack(push, 1)
+
 typedef struct {
     /* No metadata to send */
 } AppConnectMetadata_T;
@@ -72,5 +74,7 @@ typedef struct {
     AppSentResult_T SendResult;
     MessageId_T MsgId;
 } ServiceSendResultMetadata_T;
+
+#pragma pack(pop)
 
 #endif

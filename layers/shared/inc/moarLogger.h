@@ -49,6 +49,8 @@
 													}									\
 												} while( 0 )
 
+#pragma pack(push, 1)
+
 typedef char	LogFilepath_T[ LOG_FILEPATH_SIZE ];
 typedef char	LogMoment_T[ LOG_TIMESTAMP_SIZE ];
 typedef FILE	* LogFileHandle_T;
@@ -76,6 +78,8 @@ typedef struct {
 } LogDescriptor_T;
 
 typedef LogDescriptor_T	* LogHandle_T;
+
+#pragma pack(pop)
 
 __BEGIN_DECLS
 

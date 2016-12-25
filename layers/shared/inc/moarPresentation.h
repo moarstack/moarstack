@@ -7,10 +7,10 @@
 
 #include <moarPresentId.h>
 
+#pragma pack(push, 1)
+
 // type for enumerating parts of one message
 typedef uint16_t PresentPartCount_T;
-
-#pragma pack(push, 1)
 
 typedef struct {
 //	PresentId_T			PrId;

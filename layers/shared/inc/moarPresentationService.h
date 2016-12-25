@@ -11,6 +11,8 @@
 #include "moarPresentation.h"
 #include "moarService.h"
 
+#pragma pack(push, 1)
+
 // possible states of packet when it is moving from presentation to service
 typedef enum {
 	PackStatePresent_None, 			// not defined state of enum
@@ -36,5 +38,6 @@ typedef struct {
 	RouteAddr_T			Destination; // destination of packet
 } ServiceSendMsgDown_T;
 
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARPRESENTATIONSERVICE_H

@@ -8,7 +8,8 @@
 #include <moarCommons.h>	// SocketFilepath_T
 #include <moarLogger.h>		// LogFilepath_T
 
-#define IFACE_ADDR_SIZE	sizeof( unsigned int )
+#define IFACE_ADDR_BASE_TYPE	unsigned int
+#define IFACE_ADDR_SIZE			sizeof( IFACE_ADDR_BASE_TYPE )
 
 #pragma pack(push, 1)
 

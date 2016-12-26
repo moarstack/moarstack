@@ -8,13 +8,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define CHANNEL_ADDR_SIZE	8
+#define CHANNEL_ADDR_SIZE			8
+#define CHANNEL_LAYER_HEADER_SIZE	sizeof(ChannelLayerHeader_T)
 
 #pragma pack(push, 1)
 
 typedef struct{
 	uint8_t			Address[ CHANNEL_ADDR_SIZE ];
 } ChannelAddr_T;
+
 typedef uint16_t	ChannelDataSize_T;
 
 typedef struct{
@@ -23,8 +25,6 @@ typedef struct{
 	ChannelDataSize_T 	PayloadSize;
 	bool 				Hello;
 }ChannelLayerHeader_T;
-
-#define CHANNEL_LAYER_HEADER_SIZE sizeof(ChannelLayerHeader_T)
 
 #pragma pack(pop)
 

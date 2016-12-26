@@ -8,11 +8,15 @@
 #include <moarSettingsBinder.h>
 #include <moarInterface.h>
 
+#pragma pack(push, 1)
+
 typedef struct{
 	char		* LogPath,
 				* MockItSocket;
 	IfaceAddr_T	Address;
 }mockIface;
+
+#pragma pack(pop)
 
 int makeMockIfaceBinding(SettingsBind_T** binding, int* count);
 

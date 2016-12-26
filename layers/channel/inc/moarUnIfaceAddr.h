@@ -9,12 +9,15 @@
 #include <stdbool.h>
 #include <moarInterfaceChannel.h>
 
+#pragma pack(push, 1)
 
 // struct for iface address of any length
 typedef struct {
 	UnIfaceAddrLen_T	Length;
 	uint8_t 			* Value;
 } UnIfaceAddr_T;
+
+#pragma pack(pop)
 
 hashVal_T unAddressHash(void* address, size_t size);
 // read from socket

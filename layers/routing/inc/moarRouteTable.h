@@ -18,6 +18,8 @@
 typedef uint16_t RouteTableSize_T;
 typedef char	 RouteChance_T;
 
+#pragma pack(push, 1)
+
 typedef struct{
 	uint8_t TableSize;
 
@@ -42,6 +44,8 @@ typedef struct {
 	moarTime_T				LastTimeUpdated;
 	RouteTableSettings_T	*Settings;
 } RouteDataTable_T;
+
+#pragma pack(pop)
 
 int RouteTableInit(RouteDataTable_T * table, RouteTableSettings_T* settings);
 RouteDataTable_T * RouteTableCreate( RouteTableSettings_T* settings);

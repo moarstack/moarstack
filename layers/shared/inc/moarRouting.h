@@ -9,7 +9,11 @@
 #include <moarRoutingMessageId.h>
 #include <moarChannel.h>
 #include <moarCommons.h>
+
 //#define ROUTE_ADDR_SIZE	8
+#define ROUTING_HEADER_SIZE 			sizeof(RoutingHeader_T)
+#define ROUTE_PACK_TYPE_BITS			8
+#define routeAddrEqual(first,second)	routeAddrEqualPtr(&(first),&(second))
 
 #pragma pack(push, 1)
 
@@ -29,7 +33,7 @@ typedef enum{
 }RoutePackType_T;
 
 typedef struct{
-	RoutePackType_T 	PacketType;
+	RoutePackType_T 	PacketType:ROUTE_PACK_TYPE_BITS;
 	PayloadSize_T 		PayloadSize;
 	RouteAddr_T 		Source;
 	RouteAddr_T 		Destination;
@@ -39,12 +43,11 @@ typedef struct{
 
 #pragma pack(pop)
 
-#define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
-
 __BEGIN_DECLS
+
 extern bool routeAddrEqualPtr(const RouteAddr_T* first, const RouteAddr_T* second);
 extern int routeAddrFromStr(char* address, RouteAddr_T* routeAddr);
+
 __END_DECLS
-#define routeAddrEqual(first, second) routeAddrEqualPtr(&(first),&(second))
 
 #endif //MOARSTACK_MOARROUTING_H

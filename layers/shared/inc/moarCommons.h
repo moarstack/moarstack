@@ -11,6 +11,7 @@
 
 #define SOCKET_FILEPATH_SIZE	108 // limited with length of [struct sockadddr_un].sun_path
 #define CRC_SIZE				sizeof( Crc_T )
+#define LAYER_COMMAND_TYPE_BITS	8
 
 #pragma pack(push, 1)
 
@@ -46,14 +47,14 @@ typedef size_t 	PayloadSize_T;
 
 // struct to describe command and related arguments (so-called 'metadata') in socket
 typedef struct {
-    LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
+    LayerCommandType_T  Command:LAYER_COMMAND_TYPE_BITS;    // type of command according to enum LayerCommandType_T
 	PayloadSize_T       MetaSize;   // size of command arguments depending on the command type
 	PayloadSize_T 		DataSize;
 } LayerCommandPlain_T;
 
 // struct to describe command and related arguments (so-called 'metadata') in memory
 typedef struct {
-	LayerCommandType_T  Command;    // type of command according to enum LayerCommandType_T
+	LayerCommandType_T  Command:LAYER_COMMAND_TYPE_BITS;    // type of command according to enum LayerCommandType_T
 	PayloadSize_T       MetaSize;   // size of command arguments depending on the command type
 	PayloadSize_T 		DataSize;
 	void				* MetaData;	// metadata for current command
@@ -66,7 +67,7 @@ typedef uint8_t NeighborsCount_T;   // type to describe nearmates count
 typedef int (*CommandProcessor_T)(void *, int, LayerCommandStruct_T*);
 
 typedef struct{
-	LayerCommandType_T CommandType;
+	LayerCommandType_T CommandType:LAYER_COMMAND_TYPE_BITS;
 	CommandProcessor_T ProcessingRule;
 } CommandProcessingRule_T;
 

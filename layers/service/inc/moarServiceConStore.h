@@ -12,6 +12,8 @@
 
 #define TABLE_SIZE 1024
 
+#pragma pack(push, 1)
+
 typedef struct{
 	int fd;
 	AppId_T AppId;
@@ -22,6 +24,8 @@ typedef struct{
 	hashTable_T appIdTable;
 	int Count;
 }AppConnectionStorage_T;
+
+#pragma pack(pop)
 
 int csInit(AppConnectionStorage_T* storage);
 int csDeinit(AppConnectionStorage_T* storage);

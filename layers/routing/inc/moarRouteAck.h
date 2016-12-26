@@ -14,12 +14,16 @@
 #include <moarRoutingStoredPacket.h>
 #include <moarRoutingPrivate.h>
 
+#pragma pack(push, 1)
+
 typedef struct
 {
     RouteAddr_T             originalSource;
     RouteAddr_T             originalDestination;
     RoutingMessageId_T      messageId;
 } RoutePayloadAck_T;
+
+#pragma pack(pop)
 
 int produceAck(RoutingLayer_T *layer, RouteStoredPacket_T* original);
 

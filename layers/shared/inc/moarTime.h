@@ -7,9 +7,14 @@
 
 #include <stdint.h>
 
+#define INFINITY_TIME	INT64_MAX
+
+#pragma pack(push, 1)
+
 typedef int64_t moarTime_T;
 typedef int64_t moarTimeInterval_T;
-#define INFINITY_TIME					INT64_MAX
+
+#pragma pack(pop)
 
 moarTime_T timeGetCurrent();
 moarTimeInterval_T timeGetDifference(moarTime_T first, moarTime_T second);

@@ -7,9 +7,13 @@
 
 #include <moarChannelPrivate.h>
 
+#pragma pack(push, 1)
+
 typedef struct{
 
 } ChannelHelloMessagePayload_T;
+
+#pragma pack(pop)
 
 int channelHelloFill(ChannelLayer_T* layer);
 int channelHelloUpdateInterface(ChannelLayer_T* layer);

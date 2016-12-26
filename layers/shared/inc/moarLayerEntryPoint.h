@@ -7,8 +7,10 @@
 
 #include <hashTable.h>
 
-#define MOAR_LAYER_ENTRY_POINT MoarLayerEntryPoint
-#define MOAR_LAYER_ENTRY_POINT_NAME "MoarLayerEntryPoint"
+#define MOAR_LAYER_ENTRY_POINT		MoarLayerEntryPoint
+#define MOAR_LAYER_ENTRY_POINT_NAME	"MoarLayerEntryPoint"
+
+#pragma pack(push, 1)
 
 typedef struct{
     int UpSocketHandler;
@@ -18,14 +20,12 @@ typedef struct{
 
 typedef void* (*moarLayerEntryPoint_F)(void *);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#pragma pack(pop)
+
+__BEGIN_DECLS
 
 extern void* MOAR_LAYER_ENTRY_POINT(void* arg);
 
-#ifdef __cplusplus
-};
-#endif
+__END_DECLS
 
 #endif //MOARSTACK_MOARLAYERENTRYPOINT_H

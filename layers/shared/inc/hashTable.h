@@ -10,6 +10,8 @@
 #include <stdint.h>
 #define HASH_ENABLE_ITERATOR
 
+#pragma pack(push, 1)
+
 typedef uint32_t hashVal_T;
 
 // hash function proto
@@ -58,9 +60,9 @@ typedef struct{
 #endif
 }hashTable_T;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#pragma pack(pop)
+
+__BEGIN_DECLS
 
 extern int hashInit(hashTable_T* table, hashFunc_T function, int storageSize, size_t keySize, size_t dataSize);
 extern int hashClear(hashTable_T* table);
@@ -81,8 +83,7 @@ extern void* hashIteratorData(hashIterator_T* item);
 extern void* hashIteratorKey(hashIterator_T* item);
 extern int hashIteratorFree(hashIterator_T* item);
 #endif
-#ifdef __cplusplus
-}
-#endif
+
+__END_DECLS
 
 #endif //MOARSTACK_HASHTABLE_H

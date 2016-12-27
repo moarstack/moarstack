@@ -100,7 +100,7 @@ int processCommandIfaceNeighborNew( IfaceState_T * layer, IfaceAddr_T * address 
 	IfaceNeighborMetadata_T	metadata;
 
 	metadata.Neighbor = *address;
-	result = processCommandIface( layer, LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
+	result = processCommandIface( layer, LayerCommandType_NewNeighbor, &metadata, layer->Memory.Payload, layer->Memory.BufferHeader.Size );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborNew()" );
@@ -113,7 +113,7 @@ int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * addre
 	IfaceNeighborMetadata_T	metadata;
 
 	metadata.Neighbor = *address;
-	result = processCommandIface( layer, LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
+	result = processCommandIface( layer, LayerCommandType_UpdateNeighbor, &metadata, layer->Memory.Payload, layer->Memory.BufferHeader.Size );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborUpdate()" );

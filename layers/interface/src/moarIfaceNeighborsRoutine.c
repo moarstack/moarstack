@@ -45,10 +45,43 @@ int neighborRemove( IfaceState_T * layer, IfaceNeighbor_T * neighbor ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int neighborUpdate( IfaceState_T * layer, IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
+int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 	if( newMinPower < neighbor->MinPower && neighbor->AttemptsLeft < IFACE_DEFAULT_ATTEMPTS_COUNT )
 		neighbor->AttemptsLeft++; // neighbor became closer
 
 	neighbor->MinPower = newMinPower;
+	return FUNC_RESULT_SUCCESS;
+}
+
+int neighborClean( IfaceState_T * layer ) {
+	int				index,
+					count;
+	IfaceNeighbor_T	* read,
+					* write;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	layer->Memory.LastSent = NULL; // just avoiding errors
+	read = write = layer->Memory.Neighbors;
+	count = index = 0;
+
+	while( index < layer->Config.NeighborsCount ) {
+		if( 0 >= read->AttemptsLeft )
+			count++;
+		else {
+			*write = *read;
+			write++;
+		}
+
+		read++;
+		index++;
+	}
+
+	layer->Config.NeighborsCount -= count;
+
+	if( 0 < count )
+		LogWrite( layer->Config.LogHandle, LogLevel_Debug4, "Cleaned %d neighbors from the table", count );
+
 	return FUNC_RESULT_SUCCESS;
 }

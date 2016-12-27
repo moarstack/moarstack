@@ -3,7 +3,6 @@
 //
 
 #include <moarIfaceCommands.h>
-#include <moarInterfacePrivate.h>
 
 size_t commandMetaSize( LayerCommandType_T type ) {
 	size_t	size;
@@ -73,6 +72,11 @@ int processCommandIfaceTimeoutFinished( IfaceState_T * layer, bool gotResponse )
 	metadata.Id = layer->Memory.ProcessingMessageId;
 	metadata.State = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
 	result = processCommandIface( layer, LayerCommandType_MessageState, &metadata, NULL, 0 );
+
+	if( !gotResponse && NULL != layer->Memory.LastSent && 0 < layer->Memory.LastSent->AttemptsLeft )
+		layer->Memory.LastSent->AttemptsLeft--;
+
+	layer->Memory.LastSent = NULL;
 	layer->Config.IsWaitingForResponse = false;
 
 	if( FUNC_RESULT_SUCCESS != result )
@@ -178,6 +182,7 @@ int processCommandChannelSend( IfaceState_T * layer, LayerCommandStruct_T * comm
 			if( metadata->NeedResponse ) {
 				layer->Config.IsWaitingForResponse = true;
 				layer->Memory.LastNeedResponse = timeGetCurrent();
+				layer->Memory.LastSent = neighbor;
 			} else
 				result = processCommandIfaceMessageSent( layer );
 		}

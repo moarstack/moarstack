@@ -3,18 +3,12 @@
 //
 
 #include <moarInterfacePrivate.h>
-#include <moarIfacePhysicsRoutine.h>
-#include <moarIfaceChannelRoutine.h>
 #include <moarIfaceNeighborsRoutine.h>
 #include <moarIfaceTransmitReceive.h>
 #include <moarIfaceCommands.h>
 #include <moarIfaceMockitActions.h>
-#include <moarInterface.h>
 #include <moarCommonSettings.h>
-#include <moarLayerEntryPoint.h>
 #include <mockIfaceSettings.h>
-#include <moarTime.h>
-#include "mockIfaceSettings.h"
 
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
@@ -143,6 +137,11 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		return NULL;
 
 	while( state.Config.IsRunning ) {
+		result = neighborClean( &state );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			LogErrMoar( state.Config.LogHandle, LogLevel_Warning, result, "failed cleaning neighbors table" );
+
 		timeout = ifaceEpollTimeout( &state );
 		LogWrite( state.Config.LogHandle, LogLevel_Dump, "%d cycle iteration, will (or not) wait in epoll for %d msecs", ++count, timeout );
 

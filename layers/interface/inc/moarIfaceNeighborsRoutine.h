@@ -24,6 +24,9 @@ int neighborAdd( IfaceState_T * layer, IfaceAddr_T * address, PowerFloat_T minPo
 int neighborRemove( IfaceState_T * layer, IfaceNeighbor_T * neighbor );
 
 // update specified neighbor
-int neighborUpdate( IfaceState_T * layer, IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower );
+int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower );
+
+// delete all neighbors with no attempts left
+int neighborClean( IfaceState_T * layer );
 
 #endif //MOARSTACK_MOARIFACENEIGHBORSROUTINE_H

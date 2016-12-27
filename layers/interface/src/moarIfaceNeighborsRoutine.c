@@ -23,6 +23,7 @@ int neighborAdd( IfaceState_T * layer, IfaceAddr_T * address, PowerFloat_T minPo
 	layer->Memory.Neighbors[ layer->Config.NeighborsCount ].MinPower = minPower;
 	layer->Memory.Neighbors[ layer->Config.NeighborsCount ].AttemptsLeft = IFACE_DEFAULT_ATTEMPTS_COUNT;
 	layer->Memory.Neighbors[ layer->Config.NeighborsCount ].LinkQuality = IFACE_DEFAULT_LINK_QUALITY;
+	layer->Config.NeighborsCount++;
 
 	return FUNC_RESULT_SUCCESS;
 }

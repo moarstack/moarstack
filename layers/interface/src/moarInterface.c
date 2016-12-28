@@ -137,11 +137,6 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 		return NULL;
 
 	while( state.Config.IsRunning ) {
-		result = neighborClean( &state );
-
-		if( FUNC_RESULT_SUCCESS != result )
-			LogErrMoar( state.Config.LogHandle, LogLevel_Warning, result, "failed cleaning neighbors table" );
-
 		timeout = ifaceEpollTimeout( &state );
 		LogWrite( state.Config.LogHandle, LogLevel_Dump, "%d cycle iteration, will (or not) wait in epoll for %d msecs", ++count, timeout );
 
@@ -159,7 +154,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				result = transmitBeacon( &state );
 
 			if( FUNC_RESULT_SUCCESS != result )
-				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: timeout action" );
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( state.Memory.EpollEvents[ eventIndex ].data.fd == state.Config.MockitSocket )
@@ -170,9 +165,13 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
 				if( FUNC_RESULT_SUCCESS != result )
-					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: command/event action" );
 			}
 
+		result = neighborClean( &state );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			LogErrMoar( state.Config.LogHandle, LogLevel_Warning, result, "failed cleaning neighbors table" );
 	}
 
 }

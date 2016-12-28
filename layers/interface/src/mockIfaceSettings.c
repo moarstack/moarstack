@@ -17,7 +17,7 @@ int makeMockIfaceBinding(SettingsBind_T** binding, int* count){
 
 	BINDINGMAKE(bind++, mockIface, LogPath, FieldType_char);
 	BINDINGMAKE(bind++, mockIface, MockItSocket, FieldType_char);
-	BINDINGMAKE(bind++, mockIface, Address, FieldType_IfaceAddr_T);
+	BINDINGMAKE(bind++, mockIface, Address, FieldType_int);
 
 	return FUNC_RESULT_SUCCESS;
 }

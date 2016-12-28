@@ -5,7 +5,7 @@
 #include "moarChannelHello.h"
 #include <moarChannelMetadata.h>
 #include <memory.h>
-
+#include <funcResults.h>
 
 int channelHelloFill(ChannelLayer_T* layer){
 	if(NULL == layer)

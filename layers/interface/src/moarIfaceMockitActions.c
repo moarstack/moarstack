@@ -3,7 +3,6 @@
 //
 
 #include <moarIfaceMockitActions.h>
-#include <moarInterfacePrivate.h>
 
 
 PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
@@ -21,7 +20,7 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 	startPower = calcMinPower( layer->Memory.BufferFooter.MinSensitivity, finishPower );
 
 	if( NULL != sender ) {
-		result = neighborUpdate( layer, sender, startPower );
+		result = neighborUpdate( sender, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			result = processCommandIfaceNeighborUpdate( layer, address );

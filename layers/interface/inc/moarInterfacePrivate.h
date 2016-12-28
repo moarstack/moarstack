@@ -103,7 +103,8 @@ typedef struct {
 							BeaconPayload[ IFACE_MAX_PAYLOAD_BEACON_SIZE ];
 	IfaceHeader_T			BufferHeader;
 	IfaceFooter_T			BufferFooter;
-	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
+	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ],
+							* LastSent;
 	MessageId_T				ProcessingMessageId;
 	struct epoll_event		EpollEvents[ IFACE_OPENING_SOCKETS ];
 	moarTime_T				LastBeacon,

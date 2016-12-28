@@ -3,6 +3,7 @@
 //
 
 #include <moarIfaceNeighborsRoutine.h>
+#include <moarIfaceCommands.h>
 
 IfaceNeighbor_T * neighborFind( IfaceState_T * layer, IfaceAddr_T * address ) {
 	for( int i = 0; i < layer->Config.NeighborsCount; i++ )
@@ -45,10 +46,52 @@ int neighborRemove( IfaceState_T * layer, IfaceNeighbor_T * neighbor ) {
 	return FUNC_RESULT_SUCCESS;
 }
 
-int neighborUpdate( IfaceState_T * layer, IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
+int neighborUpdate( IfaceNeighbor_T * neighbor, PowerFloat_T newMinPower ) {
 	if( newMinPower < neighbor->MinPower && neighbor->AttemptsLeft < IFACE_DEFAULT_ATTEMPTS_COUNT )
 		neighbor->AttemptsLeft++; // neighbor became closer
 
 	neighbor->MinPower = newMinPower;
+	return FUNC_RESULT_SUCCESS;
+}
+
+int neighborClean( IfaceState_T * layer ) {
+	int				index,
+					count,
+					result,
+					sum;
+	IfaceNeighbor_T	* read,
+					* write;
+
+	if( NULL == layer )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	layer->Memory.LastSent = NULL; // just avoiding errors
+	read = write = layer->Memory.Neighbors;
+	sum = count = index = 0;
+
+	while( index < layer->Config.NeighborsCount ) {
+		if( 0 >= read->AttemptsLeft ) {
+			count++;
+			result = processCommandIfaceNeighborLost( layer, &( read->Address ) );
+
+			if( FUNC_RESULT_SUCCESS != result )
+				sum++;
+		} else {
+			*write = *read;
+			write++;
+		}
+
+		read++;
+		index++;
+	}
+
+	layer->Config.NeighborsCount -= count;
+
+	if( 0 < sum )
+		LogWrite( layer->Config.LogHandle, LogLevel_Warning, "errors occured while neighbors cleanup" );
+
+	if( 0 < count )
+		LogWrite( layer->Config.LogHandle, LogLevel_Debug4, "cleaned %d neighbors from the table", count );
+
 	return FUNC_RESULT_SUCCESS;
 }

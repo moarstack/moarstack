@@ -3,18 +3,12 @@
 //
 
 #include <moarInterfacePrivate.h>
-#include <moarIfacePhysicsRoutine.h>
-#include <moarIfaceChannelRoutine.h>
 #include <moarIfaceNeighborsRoutine.h>
 #include <moarIfaceTransmitReceive.h>
 #include <moarIfaceCommands.h>
 #include <moarIfaceMockitActions.h>
-#include <moarInterface.h>
 #include <moarCommonSettings.h>
-#include <moarLayerEntryPoint.h>
 #include <mockIfaceSettings.h>
-#include <moarTime.h>
-#include "mockIfaceSettings.h"
 
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
@@ -160,7 +154,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				result = transmitBeacon( &state );
 
 			if( FUNC_RESULT_SUCCESS != result )
-				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: timeout action" );
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( state.Memory.EpollEvents[ eventIndex ].data.fd == state.Config.MockitSocket )
@@ -171,9 +165,13 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
 				if( FUNC_RESULT_SUCCESS != result )
-					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: command/event action" );
 			}
 
+		result = neighborClean( &state );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			LogErrMoar( state.Config.LogHandle, LogLevel_Warning, result, "failed cleaning neighbors table" );
 	}
 
 }

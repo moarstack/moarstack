@@ -13,6 +13,7 @@
 #include <moarChannelTable.h>
 #include <moarChannelHello.h>
 #include <moarChannelRouting.h>
+#include <moarCommons.h>
 
 
 int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, RouteSendMetadata_T * metadata, SendTrys_T sendTrys){
@@ -30,6 +31,7 @@ int sendResponseToRouting(ChannelLayer_T* layer, PackStateChannel_T state, Route
 	messageStateMetadata.NeighborAddress = metadata->Bridge;
 	// create command
 	LayerCommandStruct_T stateCommand = {0};
+	stateCommand.Command = LayerCommandType_MessageState;
 	stateCommand.MetaData = &messageStateMetadata;
 	stateCommand.MetaSize = sizeof(ChannelMessageStateMetadata_T);
 	int writeRes = WriteCommand(layer->UpSocket, &stateCommand);

@@ -23,6 +23,7 @@
 
 typedef ChannelAddr_T	RouteAddr_T;
 typedef uint16_t 		RouteXTL_T;
+typedef uint16_t 		RoutingPayloadSize_T;
 
 typedef enum{
 	RoutePackType_Data,
@@ -33,12 +34,12 @@ typedef enum{
 }RoutePackType_T;
 
 typedef struct{
-	RoutePackType_T 	PacketType:ROUTE_PACK_TYPE_BITS;
-	PayloadSize_T 		PayloadSize;
-	RouteAddr_T 		Source;
-	RouteAddr_T 		Destination;
-	RoutingMessageId_T 	Id;
-	RouteXTL_T			XTL;		// something To Live - hops or time or something similiar (now supposed to be HOPS)
+	RoutePackType_T 		PacketType:ROUTE_PACK_TYPE_BITS;
+	RoutingPayloadSize_T 	PayloadSize;
+	RouteAddr_T 			Source;
+	RouteAddr_T 			Destination;
+	RoutingMessageId_T 		Id;
+	RouteXTL_T				XTL;		// something To Live - hops or time or something similiar (now supposed to be HOPS)
 }RoutingHeader_T;
 
 #pragma pack(pop)

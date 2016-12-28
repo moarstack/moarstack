@@ -7,6 +7,9 @@
 
 #include <moarApiCommon.h>
 #include <stdint.h>
+#include <stdint.h>
+#include <stddef.h>
+#define MAX_MSG_SIZE		64000 // limited by underlying layers headers
 
 #pragma pack(push, 1)
 

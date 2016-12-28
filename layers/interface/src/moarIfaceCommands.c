@@ -125,6 +125,19 @@ int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * addre
 	return result;
 }
 
+int processCommandIfaceNeighborLost( IfaceState_T * layer, IfaceAddr_T * address ) {
+	int						result;
+	IfaceNeighborMetadata_T	metadata;
+
+	metadata.Neighbor = *address;
+	result = processCommandIface( layer, LayerCommandType_LostNeighbor, &metadata, NULL, 0 );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborLost()" );
+
+	return result;
+}
+
 int processCommandIfaceReceived( IfaceState_T * layer ) {
 	int						result;
 	IfaceReceiveMetadata_T	metadata;

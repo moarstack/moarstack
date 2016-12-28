@@ -6,6 +6,7 @@
 #include <moarChannelInterfaces.h>
 #include <moarChannelHello.h>
 #include <moarChannelNeighbors.h>
+#include <funcResults.h>
 
 int notifyRouting(ChannelLayer_T* layer, LayerCommandType_T type, ChannelAddr_T* address){
 	if(NULL == layer)

@@ -32,7 +32,7 @@ typedef enum{
 	FieldType_uint8_t,
 	FieldType_RouteAddr_T,
 	FieldType_ChannelAddr_T,
-	FieldType_IfaceAddr_T,
+//	FieldType_IfaceAddr_T,
 //	FieldType_moarTime_T,
     FieldType_int64_t,
 	FieldType_int32_t,
@@ -50,7 +50,7 @@ typedef int (bindingFunc_F)(SettingsBind_T** binding, int* count);
 
 #pragma pack(pop)
 
-//__BEGIN_DECLS
+__BEGIN_DECLS
 
 extern void bindingFreeName(SettingsBind_T* binding);
 extern int bindingMake(SettingsBind_T* binding, char* name, Offset_T offset, FieldType_T type);
@@ -59,6 +59,6 @@ extern int bindingBindStruct(hashTable_T* settings, SettingsBind_T* binding, int
 extern int bindingBindStructFunc(hashTable_T* settings, bindingFunc_F func, void* targetStruct);
 int bindingSet_ByteArray(void* ptr, char* val, size_t len);
 
-//__END_DECLS
+__END_DECLS
 
 #endif //MOARSTACK_MOARSETTINGSBINDER_H

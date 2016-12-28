@@ -65,90 +65,91 @@ char * ReadInputData(int fd, size_t * dataLen) {
 	return storage;
 }
 
-
-int main (int argc, char **argv)  {
-	/* Flag set by ‘--verbose’. */
-	static int verbose = 0;
+typedef struct {
+	int verbose;
 	AppId_T OwnAppId;
 	AppId_T RemoteAppId;
 	RouteAddr_T RemoteAddr;
-	char * CustomSocketPath = NULL;
+	char * SocketPath;
+} CliArgs_T;
 
-	static struct option long_options[] = {
-			{"verbose", no_argument,      &verbose, 1}, // verbosity mode
-			{"socket",  required_argument, 0, 's'}, //custom socket
-			{"appid",   required_argument, 0, 'p'}, //Remote AppId to send data to
-			{"remote",  required_argument, 0, 'h'}, //Remore Address
-			{"listen",  required_argument, 0, 'l'},  // Listening mode; argument is own AppId
-			{0, 0, 0, 0}
-	};
-	int c;
-	while (1) {
+void ShowUsage() {
+	puts("moarnc usage:\n");
+	puts("-v\t--verbose\tVerbose otput");
+	puts("-s\t--socket\tSpecify custom file socket to interact with MOAR stack");
+	puts("-p\t--appid\t\tRemote application id to send data");
+	puts("-h\t--remote\tRemote node address to send data");
+	puts("-l\t--listen\tLocal application id");
+}
+
+static struct option long_options[] = {
+	{"verbose", no_argument,       0, 'v'}, //verbosity mode
+	{"socket",  required_argument, 0, 's'}, //custom socket
+	{"appid",   required_argument, 0, 'p'}, //Remote AppId
+	{"remote",  required_argument, 0, 'h'}, //Remore Address
+	{"listen",  required_argument, 0, 'l'}, //Own AppId
+	{0, 0, 0, 0}
+};
+
+int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
+	int optchar, optindex;
+	while ((optchar = getopt_long(argc, argv, "vs:p:h:l:", long_options, &optindex)) != -1) {
 		int intValue;
-		/* getopt_long stores the option index here. */
-		int option_index = 0;
-		c = getopt_long (argc, argv, "s:p:h:l:v", long_options, &option_index);
-		/* Detect the end of the options. */
-		if (c == -1)
-			break;
-		switch (c) {
-			case 0:
-				/* If this option set a flag, do nothing else now. */
-				if (long_options[option_index].flag != 0)
-					break;
-				printf ("option %s", long_options[option_index].name);
-				if (optarg)
-					printf (" with arg %s", optarg);
-				printf ("\n");
-				break;
-
+		switch (optchar) {
 			case 'v':
-				verbose = true;
+				CliArgs->verbose = true;
 				break;
 			case 's':
-				CustomSocketPath = optarg;
-				fprintf (stderr , "NOTE: using socket path \"%s\"\n", CustomSocketPath);
+				CliArgs->SocketPath = optarg;
+				fprintf (stderr , "NOTE: using socket path \"%s\"\n", optarg);
 				break;
 			case 'p':
-				if (AppIdFromStr(optarg, &OwnAppId) != FUNC_RESULT_SUCCESS) {
+				if (AppIdFromStr(optarg, &CliArgs->RemoteAppId) != FUNC_RESULT_SUCCESS) {
 					fprintf(stderr, "ERROR: appid is invalid \"%s\"\n", optarg);
-					return EXIT_FAILURE;
+					return FUNC_RESULT_FAILED_ARGUMENT;
 				}
 				break;
 			case 'h':
-				if (moarAddrFromStr(optarg, &RemoteAddr) != FUNC_RESULT_SUCCESS) {
+				if (moarAddrFromStr(optarg, &CliArgs->RemoteAddr) != FUNC_RESULT_SUCCESS) {
 					fprintf(stderr, "ERROR: remote address is invalid \"%s\"\n", optarg);
-					return EXIT_FAILURE;
+					return FUNC_RESULT_FAILED_ARGUMENT;
 				}
 				break;
 			case 'l':
-				printf ("option -l with value `%s'\n", optarg);
-				if (AppIdFromStr(optarg, &RemoteAppId) != FUNC_RESULT_SUCCESS) {
+				if (AppIdFromStr(optarg, &CliArgs->OwnAppId) != FUNC_RESULT_SUCCESS) {
 					fprintf(stderr, "ERROR: appid is invalid: \"%s\"\n", optarg);
-					return EXIT_FAILURE;
+					return FUNC_RESULT_FAILED_ARGUMENT;
 				}
 				break;
 			case '?':
-				/* getopt_long already printed an error message. */
-				break;
 			default:
-				abort ();
+				return FUNC_RESULT_FAILED_ARGUMENT;
 		}
 	}
+	return FUNC_RESULT_SUCCESS;
+}
 
+int main (int argc, char **argv)  {
+	CliArgs_T CliArgs = {0};
+	
+	if (parseArgs(argc, argv, &CliArgs) != FUNC_RESULT_SUCCESS) {
+		ShowUsage();
+		return EXIT_FAILURE;
+	}
+	
 	MoarDesc_T * md;
-	md = (CustomSocketPath)?moarSocketFile(CustomSocketPath):moarSocket();
+	md = (CliArgs.SocketPath)?moarSocketFile(CliArgs.SocketPath):moarSocket();
 	if (!md) {
 		fprintf(stderr, "ERROR: Could not open MOARStack socket\n");
 		return EXIT_FAILURE;
 	}
-	if (moarBind(md, &OwnAppId) != FUNC_RESULT_SUCCESS) {
-		fprintf(stderr, "ERROR: Could not bind socket to appid %d", (int) OwnAppId);
+	if (moarBind(md, &CliArgs.OwnAppId) != FUNC_RESULT_SUCCESS) {
+		fprintf(stderr, "ERROR: Could not bind socket to appid %d", (int) CliArgs.OwnAppId);
 		return EXIT_FAILURE;
 	}
-	if (verbose)
-		fprintf(stderr, "Socket successfully bint: fd=%d; appid=%d\n", md->SocketFd, OwnAppId);
-
+	if (CliArgs.verbose)
+		fprintf(stderr, "Socket successfully bint: fd=%d; appid=%d\n", md->SocketFd, CliArgs.OwnAppId);
+	
 	struct epoll_event events[MAX_EPOLL_EVENTS], event;
 	int efd;
 	if ((efd = epoll_create(MAX_EPOLL_EVENTS)) == -1) {
@@ -161,7 +162,6 @@ int main (int argc, char **argv)  {
 	int result = 0;
 	while (true) {
 		int newFd;
-		// wait event via epoll
 		int n = epoll_wait (efd, events, MAX_EPOLL_EVENTS, -1);
 		int i;
 		for (i = 0; i < n; i++) {
@@ -175,19 +175,19 @@ int main (int argc, char **argv)  {
 			if (event.data.fd == STDIN_FILENO) {
 				size_t dataLen = 0;
 				char * data = ReadInputData(STDIN_FILENO, &dataLen);
-				if (verbose)
+				if (CliArgs.verbose)
 					fprintf(stdout, "dataLen = %u; message=\"%s\"\n", dataLen, data);
 				
 				MessageId_T msgId;
-				result = moarSendTo(md, data, dataLen, &RemoteAddr, &RemoteAppId, &msgId);
+				result = moarSendTo(md, data, dataLen, &CliArgs.RemoteAddr, &CliArgs.RemoteAppId, &msgId);
 				
 				printf("moarSendTo return value: %d\n", result);
 				free(data);
 			}
 			else if (event.data.fd == md->SocketFd) {
-				char * inData;
+				void * inData;
 				result = moarRecvFromRaw(md, &inData, NULL, NULL);
-				printf("moarRecvFromRaw return value: %d; message = \"%s\"\n", result, inData);
+				printf("moarRecvFromRaw return value: %d; message = \"%s\"\n", result, (char *) inData);
 				printf("test output\n");
 				free(inData);
 			}

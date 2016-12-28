@@ -98,8 +98,6 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 		if( layer->Memory.ReceivedData ) {
 			switch( layer->Memory.BufferHeader.Type ) {
-				case IfacePackType_NeedNoResponse:
-					break;
 
 				case IfacePackType_NeedResponse :
 					sender = neighborFind( layer, &address );
@@ -107,6 +105,10 @@ int actMockitReceived( IfaceState_T * layer ) {
 					if( NULL != sender )
 						result = transmitResponse( layer, sender, layer->Memory.BufferHeader.CRC,
 												   0 ); // crc is not implemented yet TODO
+					// no break should be here!
+				case IfacePackType_NeedNoResponse:
+					if( 0 < layer->Memory.BufferHeader.Size ) // if contains payload
+						result = processCommandIfaceReceived( layer );
 
 					break;
 
@@ -124,11 +126,6 @@ int actMockitReceived( IfaceState_T * layer ) {
 					LogWrite( layer->Config.LogHandle, LogLevel_Warning,
 							  "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
 			}
-
-			if( FUNC_RESULT_SUCCESS == result &&
-				IfacePackType_IsResponse != layer->Memory.BufferHeader.Type &&
-				0 < layer->Memory.BufferHeader.Size ) // if contains payload
-				result = processCommandIfaceReceived( layer );
 		}
 	} else
 		result = actMockitRegisterResult( layer );

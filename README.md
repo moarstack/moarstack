@@ -50,7 +50,7 @@ Program to check accessibility of node specified by its address. Sends special p
 
 ### License ###
 
-License for M.O.A.R. stack is BSD-3-Clause
+Current license for M.O.A.R. stack is BSD-3-Clause
 
 ### Copyright holder ###
 

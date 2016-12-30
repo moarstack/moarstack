@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include "moarApi.h"
 #include <getopt.h>
-#include <moarService.h>
 #include <sys/epoll.h>
 #include <sys/fcntl.h>
+#include <time.h>
 
 #define MAX_EPOLL_EVENTS 100
 #define BUFFER_SIZE_INITIAL 1024
@@ -17,12 +17,12 @@
 
 
 int sockNonBlock(int fd) {
-	int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0) {
 		perror("fcntl(F_GETFL)");
 		return EXIT_FAILURE;
 	}
-	if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
 		perror("fcntl(F_SETFL)");
 		return EXIT_FAILURE;
 	}
@@ -30,12 +30,11 @@ int sockNonBlock(int fd) {
 }
 
 int addToEpoll(int efd, int newfd) {
-	int rc;
 	struct epoll_event event = {
 			.data.fd = newfd,
 			.events = EPOLLIN | EPOLLET
 	};
-	if ((rc = epoll_ctl (efd, EPOLL_CTL_ADD, newfd, &event)) == -1) {
+	if (epoll_ctl (efd, EPOLL_CTL_ADD, newfd, &event) == -1) {
 		perror ("epoll_ctl(EPOLL_CTL_ADD)");
 		return FUNC_RESULT_FAILED_IO;
 	}
@@ -44,11 +43,11 @@ int addToEpoll(int efd, int newfd) {
 
 int AppIdFromStr(const char *str, AppId_T *appid) {
 	int intValue;
-	if (sscanf(optarg, "%d", &intValue) == 0) {
+	if (sscanf(str, "%d", &intValue) == 0) {
 		fprintf(stderr, "ERROR: appid is invalid\n");
 		return FUNC_RESULT_FAILED_ARGUMENT;
 	}
-	*appid = intValue;
+	*appid = (AppId_T)intValue;
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -96,7 +95,7 @@ size_t ReadInputData(int fd, MessageStorage_T *storage) {
 			storage->buffer = realloc(storage->buffer, storage->StorageSize * 2);
 			storage->StorageSize *= 2;
 		}
-		memcpy((void *) (storage->buffer + eventReadLen), buffer, readLen);
+		memcpy((void *) (storage->buffer + eventReadLen), buffer, (size_t)readLen);
 		eventReadLen += readLen;
 	}
 	storage->DataLen = eventReadLen;
@@ -139,7 +138,6 @@ int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 	bool hasRemoteAppId = false,
 	     hasRemoteAddr = false;
 	while ((optchar = getopt_long(argc, argv, "vhs:p:r:l:", long_options, &optindex)) != -1) {
-		int intValue;
 		switch (optchar) {
 			case 'v':
 				CliArgs->verbose = true;
@@ -178,7 +176,7 @@ int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 		}
 	}
 	if (hasRemoteAddr ^ hasRemoteAppId) {
-		puts("Application id and remote addr must be set simultaneously!");
+		puts("Application id and remote addr must be set simultaneously!\n");
 		ShowUsage();
 		exit(EXIT_FAILURE);
 	}
@@ -188,7 +186,8 @@ int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 
 int main (int argc, char **argv)  {
 	CliArgs_T CliArgs = {0};
-	
+	srand((unsigned int)time(NULL));
+	CliArgs.OwnAppId = (AppId_T)(rand()&0xFFFF);
 	if (parseArgs(argc, argv, &CliArgs) != FUNC_RESULT_SUCCESS) {
 		ShowUsage();
 		return EXIT_FAILURE;
@@ -218,19 +217,18 @@ int main (int argc, char **argv)  {
 	addToEpoll(efd, STDIN_FILENO);
 	addToEpoll(efd, md->SocketFd);
 	
-	int result = 0;
+	ssize_t result = 0;
 	while (true) {
-		int newFd;
 		int n = epoll_wait (efd, events, MAX_EPOLL_EVENTS, -1);
 		int i;
 		for (i = 0; i < n; i++) {
 			event = events[i];
-			/*printf("NEW EVENT: %u [%d %d %d %d]\r\n", events[i].events,
-				   event.events & EPOLLIN,
-				   event.events & EPOLLOUT,
-				   event.events & EPOLLERR,
-				   event.events & EPOLLHUP
-			);*/
+//			printf("NEW EVENT: %u [%d %d %d %d]\r\n", events[i].events,
+//				   event.events & EPOLLIN,
+//				   event.events & EPOLLOUT,
+//				   event.events & EPOLLERR,
+//				   event.events & EPOLLHUP
+//			);
 			if (event.data.fd == STDIN_FILENO && CliArgs.send) {
 				size_t dataLen = 0;
 				MessageStorage_T * storage = MessageStorageCreate(BUFFER_SIZE_INITIAL);
@@ -238,22 +236,32 @@ int main (int argc, char **argv)  {
 				MessageId_T msgId;
 				result = moarSendTo(md, storage->buffer, dataLen, &CliArgs.RemoteAddr, &CliArgs.RemoteAppId, &msgId);
 				if (CliArgs.verbose) {
-					printf("moarSendTo return value: %d\n", result);
+					printf("moarSendTo return value: %zd\n", result);
 					fflush(stdout);
+				}
+				if(result < 0) {
+					fprintf(stderr, "ERROR: writing to stack\n");
+					return EXIT_FAILURE;
 				}
 				MessageStorageFree(storage);
 			}
 			else if (event.data.fd == md->SocketFd) {
 				AppId_T RemoteAppId;
 				RouteAddr_T RemoteAddr;
-				void * inData;
+				void * inData = NULL;
 				result = moarRecvFromRaw(md, &inData, &RemoteAddr, &RemoteAppId);
 				if (CliArgs.verbose) {
-					printf("moarRecvFromRaw return value: %d\n", result);
+					printf("moarRecvFromRaw return value: %zd\n", result);
 				}
-				OutMessage(inData, result);
-				fflush(stdout);
-				free(inData);
+				if(result >=0) {
+					OutMessage(inData, (size_t)result);
+					fflush(stdout);
+					free(inData);
+				}
+				else {
+					fprintf(stderr, "ERROR: reading from stack\n");
+					return EXIT_FAILURE;
+				}
 			}
 		}
 	}

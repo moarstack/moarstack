@@ -41,7 +41,7 @@
 #define IFACE_ADDR_SIZE						sizeof( IFACE_ADDR_BASE_TYPE )
 
 typedef float	PowerFloat_T;
-typedef uint8_t PowerInt_T;
+typedef int8_t	PowerInt_T;
 typedef float	LinkQuality_T;
 typedef uint8_t LinkAttempts_T;
 

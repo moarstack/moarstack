@@ -9,11 +9,24 @@
 #include <sys/fcntl.h>
 
 #define MAX_EPOLL_EVENTS 100
+#define BUFFER_SIZE_INITIAL 1024
+
+#ifndef MIN
+#define MIN(x,y) (((x)>(y))?(y):(x))
+#endif
+
 
 int sockNonBlock(int fd) {
 	int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-	fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-	//TODO: return code
+	if (flags < 0) {
+		perror("fcntl(F_GETFL)");
+		return EXIT_FAILURE;
+	}
+	if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) < 0) {
+		perror("fcntl(F_SETFL)");
+		return EXIT_FAILURE;
+	}
+	return EXIT_SUCCESS;
 }
 
 int addToEpoll(int efd, int newfd) {
@@ -23,7 +36,7 @@ int addToEpoll(int efd, int newfd) {
 			.events = EPOLLIN | EPOLLET
 	};
 	if ((rc = epoll_ctl (efd, EPOLL_CTL_ADD, newfd, &event)) == -1) {
-		perror ("epoll_ctl: add");
+		perror ("epoll_ctl(EPOLL_CTL_ADD)");
 		return FUNC_RESULT_FAILED_IO;
 	}
 	return FUNC_RESULT_SUCCESS;
@@ -46,8 +59,12 @@ void DumpRouteAddr(FILE *fp, const RouteAddr_T * addr) {
 	}
 }
 
-#define MIN(x,y) (((x)>(y))?(y):(x))
-#define BUFFER_SIZE_INITIAL 1024
+void OutMessage(char *msg, size_t len) {
+	char *smb;
+	for (smb = msg; smb < msg + len; smb++)
+		putchar(*smb);
+	putchar('\n');
+}
 
 //Shrinkable buffer for incoming data
 typedef struct {
@@ -71,51 +88,21 @@ void MessageStorageFree(MessageStorage_T *storage) {
 
 size_t ReadInputData(int fd, MessageStorage_T *storage) {
 	char * buffer = malloc(BUFFER_SIZE_INITIAL);
-	printf("buffer ptr: %p\n", buffer);
 	size_t eventReadLen = 0;
 	ssize_t readLen = 0;
-	printf("Reading from stdin\n");
 	while ((readLen = read(fd, buffer, BUFFER_SIZE_INITIAL)) > 0) {
-		printf("Read %ld\n", readLen);
 		// if not possible to place, reallocate storage
 		if (readLen > storage->StorageSize - eventReadLen) {
-			printf("realloc to size %ld\n", storage->StorageSize * 2);
 			storage->buffer = realloc(storage->buffer, storage->StorageSize * 2);
 			storage->StorageSize *= 2;
 		}
-		printf("Memcpy\n");
 		memcpy((void *) (storage->buffer + eventReadLen), buffer, readLen);
 		eventReadLen += readLen;
 	}
-	printf("Reading end\n");
 	storage->DataLen = eventReadLen;
-	printf("%p\n", buffer);
 	free(buffer);
-	printf("Free buffer ok\n");
 	return eventReadLen;
 }
-
-/*char * ReadInputData(int fd, size_t * dataLen) {
-	char * buffer = malloc(BUFFER_SIZE_INITIAL);
-	char * storage = malloc(BUFFER_SIZE_INITIAL);
-	char * offset = storage;
-	size_t storageSize = BUFFER_SIZE_INITIAL;
-	int done = 0;
-	size_t readLen = 0;
-	while ((readLen = read(fd, buffer, BUFFER_SIZE_INITIAL)) > 0) {
-		// if not possible to place, reallocate storage
-		if (readLen > storageSize - (offset - storage)) {
-			//need to reallocate 
-			storage = realloc(storage, storageSize * 2);
-			storageSize *= 2;
-		}
-		memcpy(offset, buffer, readLen);
-		offset += readLen;
-	}
-	*dataLen = offset - storage;
-	free(buffer);
-	return storage;
-}*/
 
 typedef struct {
 	bool verbose;
@@ -149,6 +136,8 @@ static struct option long_options[] = {
 
 int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 	int optchar, optindex;
+	bool hasRemoteAppId = false,
+	     hasRemoteAddr = false;
 	while ((optchar = getopt_long(argc, argv, "vhs:p:r:l:", long_options, &optindex)) != -1) {
 		int intValue;
 		switch (optchar) {
@@ -167,12 +156,14 @@ int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 					fprintf(stderr, "ERROR: appid is invalid \"%s\"\n", optarg);
 					return FUNC_RESULT_FAILED_ARGUMENT;
 				}
+				hasRemoteAppId = true;
 				break;
 			case 'r':
 				if (moarAddrFromStr(optarg, &CliArgs->RemoteAddr) != FUNC_RESULT_SUCCESS) {
 					fprintf(stderr, "ERROR: remote address is invalid \"%s\"\n", optarg);
 					return FUNC_RESULT_FAILED_ARGUMENT;
 				}
+				hasRemoteAddr = true;
 				break;
 			case 'l':
 				if (AppIdFromStr(optarg, &CliArgs->OwnAppId) != FUNC_RESULT_SUCCESS) {
@@ -186,6 +177,12 @@ int parseArgs(int argc, char *argv[], CliArgs_T *CliArgs) {
 				return FUNC_RESULT_FAILED_ARGUMENT;
 		}
 	}
+	if (hasRemoteAddr ^ hasRemoteAppId) {
+		puts("Application id and remote addr must be set simultaneously!");
+		ShowUsage();
+		exit(EXIT_FAILURE);
+	}
+	CliArgs->send = (hasRemoteAddr && hasRemoteAppId);
 	return FUNC_RESULT_SUCCESS;
 }
 
@@ -234,25 +231,28 @@ int main (int argc, char **argv)  {
 				   event.events & EPOLLERR,
 				   event.events & EPOLLHUP
 			);*/
-			if (event.data.fd == STDIN_FILENO) {
+			if (event.data.fd == STDIN_FILENO && CliArgs.send) {
 				size_t dataLen = 0;
-				//char * data = ReadInputData(STDIN_FILENO, &dataLen);
 				MessageStorage_T * storage = MessageStorageCreate(BUFFER_SIZE_INITIAL);
 				dataLen = ReadInputData(STDIN_FILENO, storage);
-				
 				MessageId_T msgId;
 				result = moarSendTo(md, storage->buffer, dataLen, &CliArgs.RemoteAddr, &CliArgs.RemoteAppId, &msgId);
-				if (CliArgs.verbose)
+				if (CliArgs.verbose) {
 					printf("moarSendTo return value: %d\n", result);
-				fflush(stdout);
+					fflush(stdout);
+				}
 				MessageStorageFree(storage);
 			}
 			else if (event.data.fd == md->SocketFd) {
+				AppId_T RemoteAppId;
+				RouteAddr_T RemoteAddr;
 				void * inData;
-				result = moarRecvFromRaw(md, &inData, NULL, NULL);
-				if (CliArgs.verbose)
+				result = moarRecvFromRaw(md, &inData, &RemoteAddr, &RemoteAppId);
+				if (CliArgs.verbose) {
 					printf("moarRecvFromRaw return value: %d\n", result);
-				printf("Received message: \"%s\"\n", (char *)inData);
+				}
+				OutMessage(inData, result);
+				fflush(stdout);
 				free(inData);
 			}
 		}

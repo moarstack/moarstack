@@ -38,6 +38,7 @@ typedef enum{
 	FieldType_int32_t,
 	FieldType_int16_t,
 	FieldType_int8_t,
+	FieldType_float
 } FieldType_T;
 
 typedef struct{

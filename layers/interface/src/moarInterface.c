@@ -69,6 +69,7 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	CHECK_RESULT( setStrValue( layer->Config.MockitSocketFilepath, ifaceSettings.MockItSocket, DEFAULT_MOCKIT_SOCKET_FILE, SOCKET_FILEPATH_SIZE ) );
 	CHECK_RESULT( setStrValue( layer->Config.LogFilepath, ifaceSettings.LogPath, DEFAULT_MOCKIFACE_LOG_FILE, LOG_FILEPATH_SIZE ) );
 	layer->Config.Address = ifaceSettings.Address;
+	layer->Config.CurrentSensitivity = ifaceSettings.Sensitivity;
 
 	result = LogOpen( layer->Config.LogFilepath, &( layer->Config.LogHandle) );
 

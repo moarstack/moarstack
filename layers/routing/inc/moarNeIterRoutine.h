@@ -10,11 +10,15 @@
 
 typedef int ( * RouteAddrCompare_F)( const void * one, const void * two );
 
+#pragma pack(push, 1)
+
 typedef struct {
 	RouteAddr_T			* List;
 	size_t 				Count;
 	RouteAddrCompare_F	CompareFunc;
 } RouteAddrSeekList_T;
+
+#pragma pack(pop)
 
 extern int raslCompareDefault( const void * one, const void * two );
 extern int raslInit( RouteAddrSeekList_T * rasl, size_t count, RouteAddrCompare_F compareFunc );

@@ -3,13 +3,17 @@
 //
 
 #include <moarIfaceMockitActions.h>
-#include <moarInterfacePrivate.h>
 
 
-PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
-	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
+PowerFloat_T calcMinPower( PowerInt_T startPower, PowerInt_T minSensitivity, PowerFloat_T finishPower ) {
+	PowerFloat_T	neededPower = ( PowerFloat_T )minSensitivity + ( PowerFloat_T )startPower - finishPower + IFACE_POWER_SAFE_GAP;
 
-	return ( IFACE_MAX_START_POWER < neededPower ? IFACE_MAX_START_POWER : neededPower );
+	if( IFACE_POWER_START_MIN > neededPower )
+		neededPower = IFACE_POWER_START_MIN;
+	else if( IFACE_POWER_START_MAX < neededPower )
+		neededPower = IFACE_POWER_START_MAX;
+
+	return neededPower;
 }
 
 int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerFloat_T finishPower ) {
@@ -18,10 +22,10 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 	PowerFloat_T	startPower;
 
 	sender = neighborFind( layer, address );
-	startPower = calcMinPower( layer->Memory.BufferFooter.MinSensitivity, finishPower );
+	startPower = calcMinPower( layer->Memory.BufferHeader.TxPower, layer->Memory.BufferFooter.MinSensitivity, finishPower );
 
 	if( NULL != sender ) {
-		result = neighborUpdate( layer, sender, startPower );
+		result = neighborUpdate( sender, startPower );
 
 		if( FUNC_RESULT_SUCCESS == result )
 			result = processCommandIfaceNeighborUpdate( layer, address );
@@ -99,8 +103,6 @@ int actMockitReceived( IfaceState_T * layer ) {
 
 		if( layer->Memory.ReceivedData ) {
 			switch( layer->Memory.BufferHeader.Type ) {
-				case IfacePackType_NeedNoResponse:
-					break;
 
 				case IfacePackType_NeedResponse :
 					sender = neighborFind( layer, &address );
@@ -108,6 +110,10 @@ int actMockitReceived( IfaceState_T * layer ) {
 					if( NULL != sender )
 						result = transmitResponse( layer, sender, layer->Memory.BufferHeader.CRC,
 												   0 ); // crc is not implemented yet TODO
+					// no break should be here!
+				case IfacePackType_NeedNoResponse:
+					if( 0 < layer->Memory.BufferHeader.Size ) // if contains payload
+						result = processCommandIfaceReceived( layer );
 
 					break;
 
@@ -125,11 +131,6 @@ int actMockitReceived( IfaceState_T * layer ) {
 					LogWrite( layer->Config.LogHandle, LogLevel_Warning,
 							  "interface got unknown packet type %d from mockit", layer->Memory.BufferHeader.Type );
 			}
-
-			if( FUNC_RESULT_SUCCESS == result &&
-				IfacePackType_IsResponse != layer->Memory.BufferHeader.Type &&
-				0 < layer->Memory.BufferHeader.Size ) // if contains payload
-				result = processCommandIfaceReceived( layer );
 		}
 	} else
 		result = actMockitRegisterResult( layer );

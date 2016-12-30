@@ -16,6 +16,10 @@
 #define CHANNEL_BEACON_UPDATE_METADATA_SIZE			sizeof( ChannelBeaconUpdateMetadata_T )
 #define IFACE_PACK_STATE_METADATA_SIZE				sizeof( IfacePackStateMetadata_T )
 #define IFACE_MODE_STATE_METADATA_SIZE				sizeof( IfaceModeStateMetadata_T )
+#define IFACE_PACK_STATE_BITS	8
+#define IFACE_MODE_STATE_BITS	8
+
+#pragma pack(push, 1)
 
 // type for length of universal address
 typedef uint8_t UnIfaceAddrLen_T;
@@ -42,17 +46,15 @@ typedef enum {
 	IfaceModeState_Ready		// interface is ready to send or receive
 } IfaceModeState_T;
 
-#pragma pack(push, 1)
-
 // metadata of packet state command
 typedef struct {
 	MessageId_T			Id;		// message identifier
-	IfacePackState_T	State;	// state of packet with specified identifier
+	IfacePackState_T	State:IFACE_PACK_STATE_BITS;	// state of packet with specified identifier
 } IfacePackStateMetadata_T;
 
 // metadata of iface state command
 typedef struct {
-	IfaceModeState_T	State; // current state of interface
+	IfaceModeState_T	State:IFACE_MODE_STATE_BITS; // current state of interface
 } IfaceModeStateMetadata_T;
 
 // metadata of command result of interface registering

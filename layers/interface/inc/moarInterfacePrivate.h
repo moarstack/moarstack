@@ -37,9 +37,11 @@
 #define IFACE_OPENING_SOCKETS			2 // just count of simultaneously kept sockets
 #define IFACE_MAX_NEIGHBOR_COUNT		10
 #define IFACE_PACKTYPE_HEADER_BITS		8
+#define IFACE_ADDR_BASE_TYPE				unsigned int
+#define IFACE_ADDR_SIZE						sizeof( IFACE_ADDR_BASE_TYPE )
 
 typedef float	PowerFloat_T;
-typedef uint8_t PowerInt_T;
+typedef int8_t	PowerInt_T;
 typedef float	LinkQuality_T;
 typedef uint8_t LinkAttempts_T;
 
@@ -51,6 +53,11 @@ typedef enum {
 } IfacePackType_T;
 
 #pragma pack(push, 1)
+
+typedef struct {
+	uint8_t	Address[ IFACE_ADDR_SIZE ];
+} IfaceAddr_T;
+
 
 // type for usual iface header
 typedef struct {
@@ -103,7 +110,8 @@ typedef struct {
 							BeaconPayload[ IFACE_MAX_PAYLOAD_BEACON_SIZE ];
 	IfaceHeader_T			BufferHeader;
 	IfaceFooter_T			BufferFooter;
-	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ];
+	IfaceNeighbor_T			Neighbors[ IFACE_MAX_NEIGHBOR_COUNT ],
+							* LastSent;
 	MessageId_T				ProcessingMessageId;
 	struct epoll_event		EpollEvents[ IFACE_OPENING_SOCKETS ];
 	moarTime_T				LastBeacon,

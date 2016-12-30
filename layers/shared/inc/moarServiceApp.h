@@ -9,6 +9,8 @@
 #define APP_READ_ATTEMPTS_COUNT 5
 #define SERVICE_APP_SOCKET_FILE "/tmp/moarServiceApi.sock"
 
+#pragma pack(push, 1)
+
 typedef struct {
     /* No metadata to send */
 } AppConnectMetadata_T;
@@ -24,7 +26,7 @@ typedef struct {
 } AppBindMetadata_T;
 
 typedef struct {
-    AppBindResult_T BindResult;
+    AppBindResult_T BindResult:APP_BIND_RESULT_BITS;
 } ServiceBindResultMetadata_T;
 
 /* Sent by application to get state of message by MsgId */
@@ -36,7 +38,7 @@ typedef struct {
 /* Response from service level containing state of message */
 typedef struct {
     MessageId_T MsgId;
-    MessageState_T MsgState;
+    MessageState_T MsgState:MESSAGE_STATE_BITS;
 } ServiceMsgStateResultMetadata_T;
 
 /* Command sent by application to start receiving data from all */
@@ -69,8 +71,10 @@ typedef struct {
 /* Command received by application from moarSendTo. It does not
  * report message status but return messageId and return code */
 typedef struct {
-    AppSentResult_T SendResult;
+    AppSentResult_T SendResult:APP_SENT_RESULT_BITS;
     MessageId_T MsgId;
 } ServiceSendResultMetadata_T;
+
+#pragma pack(pop)
 
 #endif

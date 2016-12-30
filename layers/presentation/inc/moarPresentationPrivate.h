@@ -17,6 +17,7 @@
 #define SERIVCE_PROCESSING_RULES_COUNT		2
 #define ROUTING_PROCESSING_RULES_COUNT		3
 
+#pragma pack(push, 1)
 
 typedef struct{
 	int 						RoutingSocket;
@@ -29,5 +30,7 @@ typedef struct{
 	CommandProcessingRule_T 	ServiceProcessingRules[SERIVCE_PROCESSING_RULES_COUNT];
 	CommandProcessingRule_T		RoutingProcessingRules[ROUTING_PROCESSING_RULES_COUNT];
 }PresentationLayer_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARPRESENTATIONPRIVATE_H

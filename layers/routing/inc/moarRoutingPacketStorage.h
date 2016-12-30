@@ -14,7 +14,8 @@
 #define DEST_HASH_SIZE 	37
 #define QUEUE_SIZE 		32
 
-// structure
+#pragma pack(push, 1)
+
 typedef struct{
 	int 			Count;
 	PriorityQueue_T NextProcessingTime;
@@ -23,6 +24,7 @@ typedef struct{
 	hashTable_T		RoutingMessageIds;
 }PacketStorage_T;
 
+#pragma pack(pop)
 
 // init
 int psInit(PacketStorage_T* storage);

@@ -51,7 +51,7 @@ int writeSendMetadata(int fd, ChannelSendMetadata_T* metadata, PayloadSize_T dat
 	int res = writeAddressToMetadata(&(metadata->Bridge), sendPlain, CHANNEL_SEND_METADATA_PLAIN_SIZE);
 	if(FUNC_RESULT_SUCCESS == res) {
 		// fill command
-		LayerCommandStruct_T command;
+		LayerCommandStruct_T command = {0};
 		command.Command = LayerCommandType_Send;
 		// metadata + address
 		command.MetaSize = metadataSize;

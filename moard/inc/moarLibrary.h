@@ -9,6 +9,8 @@
 #include <moarLibInterface.h>
 #include <pthread.h>
 
+#pragma pack(push, 1)
+
 typedef struct{
     char* Filename;
     MoarLibInfo_T Info;
@@ -17,5 +19,7 @@ typedef struct{
     void* Handle;
     pthread_t Thread;
 } MoarLibrary_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARLIBRARY_H

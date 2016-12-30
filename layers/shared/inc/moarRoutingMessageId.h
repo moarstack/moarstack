@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <hashFunc.h>
+
 #define ROUTING_MESSAGE_ID_SIZE	8
 
 #pragma pack(push, 1)
@@ -19,15 +20,12 @@ typedef struct {
 
 #pragma pack(pop)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
+
 extern hashVal_T rmidHash(void* id, size_t size);
 extern bool rmidEqual( RoutingMessageId_T * one, RoutingMessageId_T * two );
 extern int rmidGenerate( RoutingMessageId_T * identifier);
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif //MOARSTACK_MOARROUINTGMESSAGEID_H

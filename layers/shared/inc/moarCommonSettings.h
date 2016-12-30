@@ -9,6 +9,8 @@
 #include <moarRouting.h>
 #include <moarChannel.h>
 
+#pragma pack(push, 1)
+
 // node address
 typedef struct{
 	RouteAddr_T Address;
@@ -25,11 +27,15 @@ typedef struct{
 	char* FileName;
 } libraryLocation;
 
+#pragma pack(pop)
+
 __BEGIN_DECLS
+
 extern int makeAddressBinding(SettingsBind_T** binding, int* count);
 extern int makeIfaceSockBinding(SettingsBind_T** binding, int* count);
 extern int makeServSockBinding(SettingsBind_T** binding, int* count);
 extern int makeLibraryLocationBinding(SettingsBind_T** binding, int* count);
+
 __END_DECLS
 
 #endif //MOARSTACK_MOARCOMMONSETTINGS_H

@@ -3,7 +3,6 @@
 //
 
 #include <moarIfaceCommands.h>
-#include <moarInterfacePrivate.h>
 
 size_t commandMetaSize( LayerCommandType_T type ) {
 	size_t	size;
@@ -73,6 +72,11 @@ int processCommandIfaceTimeoutFinished( IfaceState_T * layer, bool gotResponse )
 	metadata.Id = layer->Memory.ProcessingMessageId;
 	metadata.State = ( gotResponse ? IfacePackState_Responsed : IfacePackState_Timeouted );
 	result = processCommandIface( layer, LayerCommandType_MessageState, &metadata, NULL, 0 );
+
+	if( !gotResponse && NULL != layer->Memory.LastSent && 0 < layer->Memory.LastSent->AttemptsLeft )
+		layer->Memory.LastSent->AttemptsLeft--;
+
+	layer->Memory.LastSent = NULL;
 	layer->Config.IsWaitingForResponse = false;
 
 	if( FUNC_RESULT_SUCCESS != result )
@@ -100,7 +104,7 @@ int processCommandIfaceNeighborNew( IfaceState_T * layer, IfaceAddr_T * address 
 	IfaceNeighborMetadata_T	metadata;
 
 	metadata.Neighbor = *address;
-	result = processCommandIface( layer, LayerCommandType_NewNeighbor, &metadata, NULL, 0 );
+	result = processCommandIface( layer, LayerCommandType_NewNeighbor, &metadata, layer->Memory.Payload, layer->Memory.BufferHeader.Size );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborNew()" );
@@ -113,10 +117,23 @@ int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * addre
 	IfaceNeighborMetadata_T	metadata;
 
 	metadata.Neighbor = *address;
-	result = processCommandIface( layer, LayerCommandType_UpdateNeighbor, &metadata, NULL, 0 );
+	result = processCommandIface( layer, LayerCommandType_UpdateNeighbor, &metadata, layer->Memory.Payload, layer->Memory.BufferHeader.Size );
 
 	if( FUNC_RESULT_SUCCESS != result )
 		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborUpdate()" );
+
+	return result;
+}
+
+int processCommandIfaceNeighborLost( IfaceState_T * layer, IfaceAddr_T * address ) {
+	int						result;
+	IfaceNeighborMetadata_T	metadata;
+
+	metadata.Neighbor = *address;
+	result = processCommandIface( layer, LayerCommandType_LostNeighbor, &metadata, NULL, 0 );
+
+	if( FUNC_RESULT_SUCCESS != result )
+		LogErrMoar( layer->Config.LogHandle, LogLevel_Warning, result, "processCommandIfaceNeighborLost()" );
 
 	return result;
 }
@@ -178,6 +195,7 @@ int processCommandChannelSend( IfaceState_T * layer, LayerCommandStruct_T * comm
 			if( metadata->NeedResponse ) {
 				layer->Config.IsWaitingForResponse = true;
 				layer->Memory.LastNeedResponse = timeGetCurrent();
+				layer->Memory.LastSent = neighbor;
 			} else
 				result = processCommandIfaceMessageSent( layer );
 		}

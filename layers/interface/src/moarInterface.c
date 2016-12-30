@@ -3,18 +3,12 @@
 //
 
 #include <moarInterfacePrivate.h>
-#include <moarIfacePhysicsRoutine.h>
-#include <moarIfaceChannelRoutine.h>
 #include <moarIfaceNeighborsRoutine.h>
 #include <moarIfaceTransmitReceive.h>
 #include <moarIfaceCommands.h>
 #include <moarIfaceMockitActions.h>
-#include <moarInterface.h>
 #include <moarCommonSettings.h>
-#include <moarLayerEntryPoint.h>
 #include <mockIfaceSettings.h>
-#include <moarTime.h>
-#include "mockIfaceSettings.h"
 
 int actMockitEvent( IfaceState_T * layer, uint32_t events ) {
 	int result;
@@ -46,6 +40,14 @@ int processChannelEvent( IfaceState_T * layer, uint32_t events ) {
 	return result;
 }
 
+int setStrValue( char * variable, const char * source, const char * defaultValue, size_t size ) {
+	if( NULL == variable || ( NULL == source && NULL == defaultValue ) )
+		return FUNC_RESULT_FAILED_ARGUMENT;
+
+	strncpy( variable, ( NULL == source ? defaultValue : source ), size );
+	return FUNC_RESULT_SUCCESS;
+}
+
 int initInterface( IfaceState_T * layer, void * params ) {
 	int							result;
 	MoarLayerStartupParams_T	* paramsStruct;
@@ -58,18 +60,16 @@ int initInterface( IfaceState_T * layer, void * params ) {
 	paramsStruct = ( MoarLayerStartupParams_T * )params;
 
 	ifaceSocket socketInfo = {0};
-
-	int res = bindingBindStructFunc(paramsStruct->LayerConfig, makeIfaceSockBinding, &socketInfo);
-	CHECK_RESULT(res);
+	CHECK_RESULT( bindingBindStructFunc(paramsStruct->LayerConfig, makeIfaceSockBinding, &socketInfo) );
 
 	mockIface ifaceSettings = {0};
-	res = bindingBindStructFunc(paramsStruct->LayerConfig, makeMockIfaceBinding, &ifaceSettings);
-	CHECK_RESULT(res);
+	CHECK_RESULT( bindingBindStructFunc(paramsStruct->LayerConfig, makeMockIfaceBinding, &ifaceSettings) );
 
-	strncpy( layer->Config.ChannelSocketFilepath, socketInfo.FileName, SOCKET_FILEPATH_SIZE );
-	strncpy( layer->Config.MockitSocketFilepath, ifaceSettings.MockItSocket, SOCKET_FILEPATH_SIZE );
-	strncpy( layer->Config.LogFilepath, ifaceSettings.LogPath, LOG_FILEPATH_SIZE );
+	CHECK_RESULT( setStrValue( layer->Config.ChannelSocketFilepath, socketInfo.FileName, DEFAULT_CHANNEL_SOCKET_FILE, SOCKET_FILEPATH_SIZE ) );
+	CHECK_RESULT( setStrValue( layer->Config.MockitSocketFilepath, ifaceSettings.MockItSocket, DEFAULT_MOCKIT_SOCKET_FILE, SOCKET_FILEPATH_SIZE ) );
+	CHECK_RESULT( setStrValue( layer->Config.LogFilepath, ifaceSettings.LogPath, DEFAULT_MOCKIFACE_LOG_FILE, LOG_FILEPATH_SIZE ) );
 	layer->Config.Address = ifaceSettings.Address;
+	layer->Config.CurrentSensitivity = ifaceSettings.Sensitivity;
 
 	result = LogOpen( layer->Config.LogFilepath, &( layer->Config.LogHandle) );
 
@@ -155,7 +155,7 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 				result = transmitBeacon( &state );
 
 			if( FUNC_RESULT_SUCCESS != result )
-				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+				LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: timeout action" );
 		} else
 			for( int eventIndex = 0; eventIndex < eventsCount; eventIndex++ ) {
 				if( state.Memory.EpollEvents[ eventIndex ].data.fd == state.Config.MockitSocket )
@@ -166,9 +166,13 @@ void * MOAR_LAYER_ENTRY_POINT( void * arg ) {
 					result = FUNC_RESULT_FAILED_ARGUMENT; // wrong socket
 
 				if( FUNC_RESULT_SUCCESS != result )
-					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle" );
+					LogErrMoar( state.Config.LogHandle, LogLevel_Error, result, "main cycle: command/event action" );
 			}
 
+		result = neighborClean( &state );
+
+		if( FUNC_RESULT_SUCCESS != result )
+			LogErrMoar( state.Config.LogHandle, LogLevel_Warning, result, "failed cleaning neighbors table" );
 	}
 
 }

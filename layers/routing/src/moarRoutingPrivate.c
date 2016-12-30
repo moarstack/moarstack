@@ -14,11 +14,15 @@
 #include "moarChannel.h"		// ChannelAddr_T
 #include "moarRoutingPrivate.h"
 
+#pragma pack(push, 1)
+
 typedef struct {
 	RouteAddr_T		Relay;
 	RouteChance_T	Chance;
 	bool			Found;
 } AimInfo_T;				// todo think about moving into header
+
+#pragma pack(pop)
 
 int helperFindRelay( RoutingLayer_T * layer, RouteAddr_T * dest, ChannelAddr_T * relay ) {
 	RouteDataRecord_T		* row;

@@ -4,16 +4,10 @@
 
 #include "moarSettingsBinder.h"
 #include "funcResults.h"
-#include "stddef.h"
-#include <errno.h>
 #include <string.h>
 #include <ctype.h>
-#include <bits/string2.h>
 #include <stdio.h>
 #include <moarRouting.h>
-#include <moarChannel.h>
-#include <moarCommons.h>
-#include <moarInterface.h>
 #include <inttypes.h>
 
 void bindingFreeName(SettingsBind_T* binding){
@@ -116,6 +110,14 @@ int bindingSet_int8_t(void* ptr, char* val){
 	*((int8_t*)ptr) = value;
 	return FUNC_RESULT_SUCCESS;
 }
+int bindingSet_float(void* ptr, char* val){
+	float value = 0;
+	int res = sscanf(val, "%f", &value);
+	if(1 != res)
+		return FUNC_RESULT_FAILED_ARGUMENT;
+	*((float*)ptr) = value;
+	return FUNC_RESULT_SUCCESS;
+}
 
 int hexToNum(char h){
 	if(h >= 'A' && h<= 'F')
@@ -189,16 +191,19 @@ int bindingBind(SettingsBind_T* binding, void* targetStruct, char* val){
 		case FieldType_char:
 			res = bindingSet_char(ptr, val);
 			break;
+		case FieldType_float:
+			res = bindingSet_float(ptr,val);
+			break;
 		case FieldType_RouteAddr_T:
 			res = bindingSet_ByteArray(ptr, val, sizeof(RouteAddr_T));
 			break;
 		case FieldType_ChannelAddr_T:
 			res = bindingSet_ByteArray(ptr, val, sizeof(ChannelAddr_T));
 			break;
-		case FieldType_IfaceAddr_T:
-			//res = bindingSet_ByteArray(ptr, val, sizeof(IfaceAddr_T));
-			res = bindingSet_int(ptr, val);
-			break;
+//		case FieldType_IfaceAddr_T:
+//			//res = bindingSet_ByteArray(ptr, val, sizeof(IfaceAddr_T));
+//			res = bindingSet_int(ptr, val);
+//			break;
 		default:
 			res = FUNC_RESULT_FAILED_ARGUMENT;
 	}

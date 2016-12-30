@@ -34,10 +34,13 @@
 #define LAYERS_COUNT	(MoarLayer_LayersCount+1)
 #endif
 
+#pragma pack(push, 1)
+
 typedef struct{
 	char* ConfigFile;
 } MoardCliArgs_T;
 
+#pragma pack(pop)
 
 Queue_T layersRunning = {0};
 int layersCount[MoarLayer_LayersCount] = {0};

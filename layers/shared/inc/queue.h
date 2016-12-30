@@ -5,9 +5,10 @@
 #ifndef MOARSTACK_QUEUE_H
 #define MOARSTACK_QUEUE_H
 
-
 #include <stdlib.h>
 #include <stdbool.h>
+
+#pragma pack(push, 1)
 
 typedef struct QueueListEntry_T QueueListEntry_T;
 
@@ -28,6 +29,8 @@ typedef struct{
 	size_t DataSize;
 }Queue_T;
 
+#pragma pack(pop)
+
 int queueInit(Queue_T* queue, size_t dataSize);
 int queueDeinit(Queue_T* queue);
 int queueClear(Queue_T* queue);
@@ -42,4 +45,5 @@ int queueIteratorNext(QueueIterator_T* iterator);
 int queueIteratorData(QueueIterator_T* iterator, void* data);
 void* queueIteratorDataPtr(QueueIterator_T* iterator);
 bool queueIteratorIsEnd(QueueIterator_T* iterator);
+
 #endif //MOARSTACK_QUEUE_H

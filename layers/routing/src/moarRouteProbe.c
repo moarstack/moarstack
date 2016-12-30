@@ -8,8 +8,6 @@
 #include <memory.h>
 #include <moarRoutingTablesHelper.h>
 #include <moarNeIterRoutine.h>
-#include <moarRoutingStoredPacket.h>
-#include <moarRoutingNeighborsStorage.h>
 
 int produceProbeFirst( RoutingLayer_T * layer, RouteAddr_T * next, RouteStoredPacket_T * packet ) {
 	RoutePayloadProbe_T	* payload;
@@ -161,11 +159,13 @@ int helperProbe2Rasl( RouteStoredPacket_T * probe, RouteAddrSeekList_T * rasl ) 
 		return result;
 	}
 
-	result = raslSet( rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
+	if( 0 < payload->DepthCurrent ) {
+		result = raslSet( rasl, 1, getProbePayloadAddress( payload, 0 ), payload->DepthCurrent );
 
-	if( FUNC_RESULT_SUCCESS != result ) {
-		raslDeinit( rasl );
-		return result;
+		if( FUNC_RESULT_SUCCESS != result ) {
+			raslDeinit( rasl );
+			return result;
+		}
 	}
 
 	result = raslSort( rasl );

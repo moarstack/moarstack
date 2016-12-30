@@ -25,7 +25,9 @@
 #define APP_PROCESSING_RULES_COUNT			7
 
 #define MID_CACH_TABLE_SIZE					100
-#define MAX_MSG_SIZE						0xFFFF
+
+
+#pragma pack(push, 1)
 
 typedef struct{
 	int 					UpSocket;
@@ -43,6 +45,8 @@ typedef struct{
 	AppConnectionStorage_T  ConnectionStorage;
 	hashTable_T				MidStorage;
 }ServiceLayer_T;
+
+#pragma pack(pop)
 
 int processCloseConnection(ServiceLayer_T* layer, int fd);
 

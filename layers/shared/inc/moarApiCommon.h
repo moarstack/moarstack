@@ -6,6 +6,13 @@
 #include <string.h>
 #include <moarMessageId.h>
 #include <moarRouting.h>
+#include <funcResults.h>
+
+#define APP_BIND_RESULT_BITS	8
+#define APP_SENT_RESULT_BITS	8
+#define MESSAGE_STATE_BITS		8
+
+#pragma pack(push, 1)
 
 typedef struct {
     int MoarFd;
@@ -33,5 +40,6 @@ typedef enum {
     MessageState_Lost,
 } MessageState_T;
 
+#pragma pack(pop)
 
 #endif

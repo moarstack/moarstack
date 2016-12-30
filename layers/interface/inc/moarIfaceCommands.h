@@ -32,6 +32,9 @@ int processCommandIfaceNeighborNew( IfaceState_T * layer, IfaceAddr_T * address 
 // push to the channel command update neighbor
 int processCommandIfaceNeighborUpdate( IfaceState_T * layer, IfaceAddr_T * address );
 
+// push to the channel command lost neighbor
+int processCommandIfaceNeighborLost( IfaceState_T * layer, IfaceAddr_T * address );
+
 // push to the channel command received
 int processCommandIfaceReceived( IfaceState_T * layer );
 

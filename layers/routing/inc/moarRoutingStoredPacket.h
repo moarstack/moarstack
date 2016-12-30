@@ -9,6 +9,10 @@
 #include <moarRoutingMessageId.h>
 #include <moarTime.h>
 
+#define STORED_PACK_STATE_BITS	8
+
+#pragma pack(push, 1)
+
 typedef enum{
 	StoredPackState_Received,
 	StoredPackState_InProcessing,
@@ -18,8 +22,8 @@ typedef enum{
 }StoredPackState_T;
 
 typedef struct{
-	RoutePackType_T 	PackType;
-	StoredPackState_T	State;
+	RoutePackType_T 	PackType:ROUTE_PACK_TYPE_BITS;
+	StoredPackState_T	State:STORED_PACK_STATE_BITS;
 
 	RouteAddr_T			Source;
 	RouteAddr_T			Destination;
@@ -38,5 +42,7 @@ typedef struct{
 	int 				TrysLeft;
 	RouteXTL_T 			XTL;
 }RouteStoredPacket_T;
+
+#pragma pack(pop)
 
 #endif //MOARSTACK_MOARROUTINGPACKETMETADATA_H

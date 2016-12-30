@@ -6,9 +6,11 @@
 #define MOARSTACK_PRIORITYQUEUE_H
 
 #include <stdio.h>
+
+#pragma pack(push, 1)
+
 //compare function
 typedef int (* pqCompareFunc_T)(void* key1, void* key2, size_t size);
-
 
 typedef struct{
 	void* Data;
@@ -23,6 +25,8 @@ typedef struct {
 	size_t DataSize;
 	pqCompareFunc_T Compare;
 }PriorityQueue_T;
+
+#pragma pack(pop)
 
 int pqInit(PriorityQueue_T* queue, int size, pqCompareFunc_T func, size_t keySize, size_t dataSize);
 int pqClear(PriorityQueue_T* queue);

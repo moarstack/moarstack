@@ -5,7 +5,7 @@
 #include "moarChannelHello.h"
 #include <moarChannelMetadata.h>
 #include <memory.h>
-
+#include <funcResults.h>
 
 int channelHelloFill(ChannelLayer_T* layer){
 	if(NULL == layer)
@@ -36,7 +36,7 @@ int channelHelloUpdateInterface(ChannelLayer_T* layer){
 	memset( &updateMetadata, 0, sizeof( ChannelBeaconUpdateMetadata_T ) );
 	//fill metadata
 	//create command
-	LayerCommandStruct_T updateCommand;
+	LayerCommandStruct_T updateCommand = {0};
 	memset( &updateCommand, 0, sizeof( LayerCommandStruct_T ) );
 	updateCommand.Command = LayerCommandType_UpdateBeaconPayload;
 	updateCommand.MetaData = &updateMetadata;

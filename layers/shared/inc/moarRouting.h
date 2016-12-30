@@ -9,7 +9,11 @@
 #include <moarRoutingMessageId.h>
 #include <moarChannel.h>
 #include <moarCommons.h>
+
 //#define ROUTE_ADDR_SIZE	8
+#define ROUTING_HEADER_SIZE 			sizeof(RoutingHeader_T)
+#define ROUTE_PACK_TYPE_BITS			8
+#define routeAddrEqual(first,second)	routeAddrEqualPtr(&(first),&(second))
 
 #pragma pack(push, 1)
 
@@ -19,6 +23,7 @@
 
 typedef ChannelAddr_T	RouteAddr_T;
 typedef uint16_t 		RouteXTL_T;
+typedef uint16_t 		RoutingPayloadSize_T;
 
 typedef enum{
 	RoutePackType_Data,
@@ -29,22 +34,21 @@ typedef enum{
 }RoutePackType_T;
 
 typedef struct{
-	RoutePackType_T 	PacketType;
-	PayloadSize_T 		PayloadSize;
-	RouteAddr_T 		Source;
-	RouteAddr_T 		Destination;
-	RoutingMessageId_T 	Id;
-	RouteXTL_T			XTL;		// something To Live - hops or time or something similiar (now supposed to be HOPS)
+	RoutePackType_T 		PacketType:ROUTE_PACK_TYPE_BITS;
+	RoutingPayloadSize_T 	PayloadSize;
+	RouteAddr_T 			Source;
+	RouteAddr_T 			Destination;
+	RoutingMessageId_T 		Id;
+	RouteXTL_T				XTL;		// something To Live - hops or time or something similiar (now supposed to be HOPS)
 }RoutingHeader_T;
 
 #pragma pack(pop)
 
-#define ROUTING_HEADER_SIZE 	sizeof(RoutingHeader_T)
-
 __BEGIN_DECLS
+
 extern bool routeAddrEqualPtr(const RouteAddr_T* first, const RouteAddr_T* second);
 extern int routeAddrFromStr(char* address, RouteAddr_T* routeAddr);
+
 __END_DECLS
-#define routeAddrEqual(first, second) routeAddrEqualPtr(&(first),&(second))
 
 #endif //MOARSTACK_MOARROUTING_H

@@ -6,6 +6,7 @@
 #include <moarChannelInterfaces.h>
 #include <moarChannelHello.h>
 #include <moarChannelNeighbors.h>
+#include <funcResults.h>
 
 int notifyRouting(ChannelLayer_T* layer, LayerCommandType_T type, ChannelAddr_T* address){
 	if(NULL == layer)
@@ -148,6 +149,10 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 	if (0 >= localSocket)
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
+	//get address from back translation
+	ChannelAddr_T* btAddr = (ChannelAddr_T*)hashGetPtr(&(layer->NeighborsBackTranslation), remoteAddress);
+	if(NULL != btAddr)
+		return FUNC_RESULT_SUCCESS;
 	//if channel address is unknown
 	if (NULL == address) {
 		int res = neighborNonResAdd(layer, remoteAddress, localSocket);
@@ -210,7 +215,7 @@ int neighborAdd(ChannelLayer_T* layer, ChannelAddr_T* address, UnIfaceAddr_T* re
 			int addNeighborRes = hashAdd(&(layer->Neighbors), address, neighbor);
 			// inform routing
 			if (FUNC_RESULT_SUCCESS == addNeighborRes)
-				notifyRouting(layer, LayerCommandType_LostNeighbor, address);
+				notifyRouting(layer, LayerCommandType_NewNeighbor, address);
 		}
 		free(neighbor); // stored in hash table
 	}

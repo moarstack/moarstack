@@ -59,7 +59,7 @@ typedef struct {
 MessageStorage_T *MessageStorageCreate(size_t initSize) {
 	MessageStorage_T *st = malloc(sizeof(MessageStorage_T));
 	st->StorageSize = initSize;
-	st->buffer = malloc(sizeof(st->StorageSize));
+	st->buffer = malloc(st->StorageSize);
 	st->DataLen = 0;
 	return st;
 }
@@ -84,7 +84,7 @@ size_t ReadInputData(int fd, MessageStorage_T *storage) {
 			storage->StorageSize *= 2;
 		}
 		printf("Memcpy\n");
-		memcpy((void *) storage->buffer + eventReadLen, buffer, readLen);
+		memcpy((void *) (storage->buffer + eventReadLen), buffer, readLen);
 		eventReadLen += readLen;
 	}
 	printf("Reading end\n");

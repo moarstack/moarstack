@@ -33,7 +33,7 @@ int raslInit( RouteAddrSeekList_T * rasl, size_t count, RouteAddrCompare_F compa
 }
 
 int raslSet( RouteAddrSeekList_T * rasl, size_t start, RouteAddr_T * source, size_t count ) {
-	if( NULL == rasl || NULL == source || rasl->Count <= start + count )
+	if( NULL == rasl || NULL == source || rasl->Count < start + count )
 		return FUNC_RESULT_FAILED_ARGUMENT;
 
 	memcpy( rasl->List + start, source, count * sizeof( RouteAddr_T ) );

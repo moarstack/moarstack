@@ -5,10 +5,15 @@
 #include <moarIfaceMockitActions.h>
 
 
-PowerFloat_T calcMinPower( PowerInt_T startPower, PowerFloat_T finishPower ) {
-	PowerFloat_T	neededPower = IFACE_MIN_FINISH_POWER + ( PowerFloat_T )startPower - finishPower;
+PowerFloat_T calcMinPower( PowerInt_T startPower, PowerInt_T minSensitivity, PowerFloat_T finishPower ) {
+	PowerFloat_T	neededPower = ( PowerFloat_T )minSensitivity + ( PowerFloat_T )startPower - finishPower + IFACE_POWER_SAFE_GAP;
 
-	return ( IFACE_MAX_START_POWER < neededPower ? IFACE_MAX_START_POWER : neededPower );
+	if( IFACE_POWER_START_MIN > neededPower )
+		neededPower = IFACE_POWER_START_MIN;
+	else if( IFACE_POWER_START_MAX < neededPower )
+		neededPower = IFACE_POWER_START_MAX;
+
+	return neededPower;
 }
 
 int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerFloat_T finishPower ) {
@@ -17,7 +22,7 @@ int actMockitReceivedBeacon( IfaceState_T * layer, IfaceAddr_T * address, PowerF
 	PowerFloat_T	startPower;
 
 	sender = neighborFind( layer, address );
-	startPower = calcMinPower( layer->Memory.BufferFooter.MinSensitivity, finishPower );
+	startPower = calcMinPower( layer->Memory.BufferHeader.TxPower, layer->Memory.BufferFooter.MinSensitivity, finishPower );
 
 	if( NULL != sender ) {
 		result = neighborUpdate( sender, startPower );

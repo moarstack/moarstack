@@ -3,12 +3,11 @@
 //
 
 #include "mockIfaceSettings.h"
-#include "funcResults.h"
 
 int makeMockIfaceBinding(SettingsBind_T** binding, int* count){
 	if(NULL == binding || NULL == count)
 		return FUNC_RESULT_FAILED_ARGUMENT;
-	*count = 3;
+	*count = 4;
 
 	SettingsBind_T* bind = malloc((*count)*sizeof(SettingsBind_T));
 	if(NULL == bind)
@@ -18,6 +17,7 @@ int makeMockIfaceBinding(SettingsBind_T** binding, int* count){
 	BINDINGMAKE(bind++, mockIface, LogPath, FieldType_char);
 	BINDINGMAKE(bind++, mockIface, MockItSocket, FieldType_char);
 	BINDINGMAKE(bind++, mockIface, Address, FieldType_int);
+	BINDINGMAKE(bind++, mockIface, Sensitivity, FieldType_float);
 
 	return FUNC_RESULT_SUCCESS;
 }

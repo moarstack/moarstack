@@ -19,9 +19,10 @@
 #pragma pack(push, 1)
 
 typedef struct{
-	char		* LogPath,
-				* MockItSocket;
-	IfaceAddr_T	Address;
+	char			* LogPath,
+					* MockItSocket;
+	IfaceAddr_T		Address;
+	PowerFloat_T	Sensitivity;
 }mockIface;
 
 #pragma pack(pop)

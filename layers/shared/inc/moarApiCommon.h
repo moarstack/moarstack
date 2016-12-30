@@ -6,6 +6,7 @@
 #include <string.h>
 #include <moarMessageId.h>
 #include <moarRouting.h>
+#include <funcResults.h>
 
 #define APP_BIND_RESULT_BITS	8
 #define APP_SENT_RESULT_BITS	8
